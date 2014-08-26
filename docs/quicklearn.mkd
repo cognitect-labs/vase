@@ -1,0 +1,141 @@
+
+Quick-learn
+===========
+
+This serves as a fast-paced schedule to help newcomers learn the paradigms,
+techniques, technologies and concepts.
+
+**Be open-minded, patient, and ask for help.**
+
+Per day, You should:
+ * Watch a talk/video
+ * Thumb a serious amount of a book
+ * Read a paper/article/short book
+ * Explore something related that interests you (read, code, anything)
+
+Before you begin read [Beating the averages](http://www.paulgraham.com/avg.html) by Paul Graham, and escape from the Blub paradox.
+
+### The list...
+
+ * Read [There's no getting around it: You're building a distributed system](http://queue.acm.org/detail.cfm?id=2482856) - ACM article introducing distributed systems, constructing and managing them.
+ * Thumb (and eventually read) [Out of the Tar Pit](http://shaffner.us/cs/papers/tarpit.pdf) - a paper that discusses the sources of complexity and ways to combat it (and a whole lot more)
+ * Watch [Hammock-driven development](http://www.youtube.com/watch?v=f84n5oFoZBc) - On the importance of critical and careful thinking before building
+ * Explore a concept you found interesting from the above
+
+- - - -
+
+ * Read [Functional programming for Java Developers](http://www.amazon.com/Functional-Programming-Java-Developers-Concurrency/dp/1449311032) - book
+   * If you're already comfortable with introductory FP topics, read/thumb the [Structure and Interpretation of Computer Programs](http://mitpress.mit.edu/sicp/full-text/book/book.html) - a book,
+ * Thumb (and eventually read) [Why Functional Programming Matters](http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html) - a well-cited paper from 1990 about the merits of FP
+ * Watch [Simple made easy](http://www.infoq.com/presentations/Simple-Made-Easy) - A talk that discuss the pursuit and virtues of simplicity over ease of use
+ * Explore a concept you found interesting from the above
+
+- - - -
+
+ * Read two interesting articles from [Functional Thinking](http://www.ibm.com/developerworks/views/java/libraryview.jsp?search_by=functional+thinking) - an online article series by Neal Ford
+   * If you're comfortable with introductory FP topics, read the articles on distpatch and pattern matching
+ * Thumb (and eventually read) [Enterprise integration patterns](http://www.amazon.com/Enterprise-Integration-Patterns-Designing-Deploying/dp/0321200683) - building services around message queues and MQ patterns
+ * Watch [How to design a good API](http://www.youtube.com/watch?v=aAb7hSCtvGw) - Google Tech Talk by Joshua Bloch, who authored a book of the same title
+ * Explore a concept you found interesting from the above
+
+- - - -
+
+ * Read two more articles from [Functional Thinking](http://www.ibm.com/developerworks/views/java/libraryview.jsp?search_by=functional+thinking)
+ * Thumb (and eventually read) one of the following (depending on your project and skill level)
+   * [Clojure Programming](http://www.amazon.com/Clojure-Programming-Chas-Emerick/dp/1449394701)
+   * [Programming Clojure](www.amazon.com/Programming-Clojure-Stuart-Halloway/dp/1934356867)
+   * [The Joy of Clojure](http://www.manning.com/fogus2/)
+ * Watch:
+   * Alex Miller's [Clojure: Enemy of the state](http://www.infoq.com/presentations/clojure-data-state-value) as a nice overview of the language and key concepts.
+   * Stu Halloway's talk on [Clojure tips and insight](http://www.infoq.com/presentations/Clojure-tips) from real world use.
+   * Optionally watch another talk about your technologies in production, like [The Functional Database](http://www.infoq.com/presentations/datomic-functional-database)
+ * Explore a concept you found interesting from the above
+
+- - - -
+
+ * Read the [intro chapter](#) of the TODO: Middleware technology specific book
+ * Thumb the [Hystrix wiki docs](https://github.com/Netflix/Hystrix/wiki)
+ * Watch [The value of values](http://www.infoq.com/presentations/Value-Values) - a critical look at the capability of our tools and the larger problems/systems we have to solve/build.  Touches upon queues.
+ * Play with the [Clojure Koans](http://www.clojurekoans.com) or [4Clojure](http://www.4clojure.com/)- practice problems to learn areas of the language (and practice with leiningen and clojure.test)
+
+- - - -
+
+ * Read two more articles from [Functional Thinking](http://www.ibm.com/developerworks/views/java/libraryview.jsp?search_by=functional+thinking)
+ * Thumb the TODO: Manual of the concrete infrastructure system you're using, like the [HornetQ Manual](http://docs.jboss.org/hornetq/2.3.0.Final/docs/user-manual/html_single/index.html)
+ * Watch [Are we there yet?](http://www.infoq.com/presentations/Are-We-There-Yet-Rich-Hickey) - on separating the notions of state, identity, and time
+ * Explore or do more Koans
+
+- - - -
+
+Once it has all sunk in, watch [Design, Composition, Performance](http://www.infoq.com/presentations/Design-Composition-Performance)
+
+#### The glossary and FP Technique guide
+
+Know the definition of each of the terms, how they apply to functional
+and to messaging systems, what problems they solve, and how they help us
+engineer better systems.
+
+ * Immutability
+ * Persistent data structures
+ * Referential transparency
+ * Idempotence
+ * Pure function
+ * Lazy evaluation (also called non-strict evaluation in some texts)
+ * First-class function
+ * Lambda function
+ * Partial function // Currying (how are they related)
+ * Higher-order functions
+ * Functional pattern matching // [dispatch](http://www.ibm.com/developerworks/library/j-ft15/)
+ * "Favor composition over inheritance"
+ * "Data all the things" or "Program with values"
+ * "Program to an interface, never an implementation" or "Compose abstractions"
+
+- - - -
+
+ * What OO Design patterns are automatically captured in the above techniques?
+ * Reduce/fold is often use to decompose a collection into a single scalar value.
+   How can it be used to build a collection up?  Or make multiple string substitutions?
+ * You should be comfortable with the HOF `map`
+
+
+### Don't forget your checklists, patterns, and starter docs...
+
+ * [Design Thinking toolkit](http://www.hcdconnect.org/methods) and [book](http://www.ideo.com/images/uploads/hcd_toolkit/IDEO_HCD_ToolKit.pdf)
+ * [Enterprise integration patterns](http://www.eaipatterns.com/toc.html) for message oriented systems
+ * [Internet facing application checklist](https://github.com/ohpauleez/se_checklist/raw/master/soft_checklist.pdf)
+
+
+### For the eager learner
+
+You may be eager to continue evolving the skills from above.
+
+ * Read the [Structure and Interpretation of Computer Programs](http://mitpress.mit.edu/sicp/full-text/book/book.html) - essential CS text; Programs should be composed of abstractions and data
+ * Thumb [Seven Languages in Seven Weeks](http://pragprog.com/book/btlang/seven-languages-in-seven-weeks) - seven languages, all with different paradigms, to help stretch and expand a developers frame of reference - Ruby, Io, Prolog, Scala, Erlang, Clojure, Haskell
+ * Watch [Functionally composing music](http://www.youtube.com/watch?v=Mfsnlbd-4xQ) - a great way to see FP in actions; **Live programming talk**
+ * Explore a new area of Functional Programming (or improve an area you previously struggled with)
+
+- - - -
+
+ * Read two more articles from [Functional Thinking](http://www.ibm.com/developerworks/views/java/libraryview.jsp?search_by=functional+thinking)
+ * Thumb (and read when you need to) [POSA: Distributed Systems](http://www.amazon.com/Pattern-Oriented-Software-Architecture-Volume-ebook/dp/B001C4RFRE) - a book of software patterns and architectural styles for distributed systems; a good general reference.
+ * Learn something new about HornetQ
+ * Watch one of the videos on The Expression Problem:
+   * [Haskell](http://channel9.msdn.com/Shows/Going+Deep/C9-Lectures-Dr-Ralf-Laemmel-Advanced-Functional-Programming-The-Expression-Problem)
+   * [Java to Clojure](http://www.infoq.com/presentations/Clojure-Expression-Problem)
+   * [OCaml, Scala, Haskell, Clojure](http://www.infoq.com/presentations/polymorphism-functional-oop) - compared and contrasted
+ * Explore a concept you found interesting from anything you've learned so far
+
+- - - -
+
+ * Read [11 proven practices for peer reviews](https://www.ibm.com/developerworks/rational/library/11-proven-practices-for-peer-review/) - helpful article on how to effectively conduct agile code reviews
+ * Read [Learning from the past to face the risks of today](http://cacm.acm.org/magazines/2013/6/164607-learning-from-the-past-to-face-the-risks-of-today/abstract) - about how the NASA Shuttle Program adapted over time to build higher quality systems with fewer defects
+ * Read [Applying systems thinking to analyze and learn from events](http://www.pauldee.org/Nancy_G_Leveson_2011.pdf)
+
+- - - -
+
+ * TODO - links around Generative/Property-based testing, QuickCheck, ScalaCheck, and test.generative
+
+- - - -
+
+ * TODO - Just Enough Architecture, Peopleware, Mythical Man Month
+

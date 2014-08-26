@@ -1,0 +1,70 @@
+
+Education
+=========
+
+This document exists to collect all materials for learning more about the tools
+used in this system.
+
+## Infrastructure, systems, and architecture
+### General software architecture and construction
+ * [Just Enough Software Architecture](http://www.amazon.com/Just-Enough-Software-Architecture-Risk-Driven/dp/0984618104) - a great book for building your architecture toolbox
+ * [Out of the Tar Pit](http://shaffner.us/cs/papers/tarpit.pdf) - a paper that discusses the sources of complexity and ways to combat it (and a whole lot more)
+ * [There's no getting around it: You're building a distributed system](http://queue.acm.org/detail.cfm?id=2482856) - ACM article introducing distributed systems, constructing and managing them.
+ * [How to design a good API](http://www.youtube.com/watch?v=aAb7hSCtvGw) - Google Tech Talk by Joshua Bloch, who authored a book of the same title
+ * [Structure and Interpretation of Computer Programs](http://mitpress.mit.edu/sicp/full-text/book/book.html) - essential CS text; Programs should be composed of abstractions and data
+ * [POSA: Distributed Systems](http://www.amazon.com/Pattern-Oriented-Software-Architecture-Volume-ebook/dp/B001C4RFRE) - a book of software patterns and architectural styles for distributed systems; a good general reference.
+ * [TypeSafe slides on Distributed Systems](http://www.slideshare.net/jboner/the-road-to-akka-cluster-and-beyond) - a nice overview, however bias towards Actors as the one-true-way.
+
+## Paradigms, thinking, problem solving
+### Problem decomposition and solution exploration
+ * [How to Solve It](http://www.amazon.com/How-Solve-Mathematical-Princeton-Science/dp/069111966X) - about mathematics, but can be generally applied
+ * [Simple made easy](http://www.infoq.com/presentations/Simple-Made-Easy) - A talk that discuss the pursuit and virtues of simplicity over ease of use
+ * [Hammock-driven development](http://www.youtube.com/watch?v=f84n5oFoZBc) - On the importance of critical and careful thinking before building
+ * [Seven Languages in Seven Weeks](http://pragprog.com/book/btlang/seven-languages-in-seven-weeks) - seven languages, all with different paradigms, to help stretch and expand a developers frame of reference - Ruby, Io, Prolog, Scala, Erlang, Clojure, Haskell
+
+### Functional programming
+ * [Functional programming for Java Developers](http://www.amazon.com/Functional-Programming-Java-Developers-Concurrency/dp/1449311032) - book
+ * [Thinking Functionally](http://www.ibm.com/developerworks/views/java/libraryview.jsp?search_by=functional+thinking) - an online article series by Neal Ford
+ * [Functional Programming for the OO Porgrammer](https://leanpub.com/fp-oo) - book
+ * [Functional Programming Patterns in Scala and Clojure](http://pragprog.com/book/mbfpp/functional-programming-patterns-in-scala-and-clojure) - book
+ * [Why Functional Programming Matters](http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html) - a well-cited paper from 1990 about the merits of FP
+
+## Languages, runtimes, and ecosystems
+### Clojure
+ * [Clojure documentation collection](http://clojure-doc.org/articles/content.html) - tutorials, guides, cookbooks - from the community
+ * [Interactive Clojure lang docs](http://clojuredocs.org/quickref/Clojure%20Core) - interactive API browsing with examples and linked related functions
+ * [Clojure cheatsheet](http://clojure.org/cheatsheet) - a quick reference guide to the language
+ * [Clojure.org doc collection](http://clojure.org/documentation) - as managed by core Clojure contributors
+ * [Clojure Programming](http://www.amazon.com/Clojure-Programming-Chas-Emerick/dp/1449394701) - a good starting book
+ * [The Joy of Clojure](http://www.manning.com/fogus2/) - Answers "when" and "why", less of how/what. A GREAT book to pull you into intermediate/advanced Clojure
+ * [4Clojure](http://www.4clojure.com/) - an interactive problem set for incrementally learning the language
+ * [Clojure koans](http://clojurekoans.com/) - a set of practice problems that explore key areas of the language
+ * [ClojureTV on YouTube](http://www.youtube.com/channel/UCaLlzGqiPE2QRj6sSOawJRg) - Clojure and Rich Hickey talks // tutorials // overviews
+ * [Clojure content on InfoQ](http://www.infoq.com/clojure) - videos, interviews, talks, articles, tutorials
+ * [Planet Clojure](http://planet.clojure.in/) - Clojure news aggregator; great way to learn about the ecosystem
+ * [Clojure mailing list](https://groups.google.com/forum/#!forum/clojure) - the goto place for Clojure support
+ * [Clojars](https://clojars.org/) - Central community Clojure project maven repo
+ * [ClojureSphere](http://www.clojuresphere.com/) - search engine, popularity, and dependency graph of all open-source Clojure libs
+ * [Clojure Toolbox](http://www.clojure-toolbox.com/) - the most popular Clojure libs, divided by topic area
+
+### Datomic
+ * Watch [The Functional Database](http://www.infoq.com/presentations/datomic-functional-database) talk by Rich Hickey
+ * Read an overview of [Datomic's architecture](http://www.infoq.com/articles/Architecture-Datomic)
+ * Watch Tim Ewald's [tutorial screencast](http://www.youtube.com/watch?v=kd1yTmx7m2A)
+ * Read the [Datomic tutorial](http://docs.datomic.com/tutorial.html)
+ * Work through [Learn Datalog Today](http://www.learndatalogtoday.org/)
+ * Watch Craig Andera's [Real World Datomic](http://www.infoq.com/presentations/datomic-use-case) talk
+ * Read about [Datomic's Information model](http://www.infoq.com/articles/Datomic-Information-Model)
+
+### Simulation & Generative testing
+ * [Better than unit tests](http://thinkrelevance.com/blog/2013/11/26/better-than-unit-tests) - Nygard discusses strategies to verification
+ * [Testing an API with Simulant](http://martintrojer.github.io/clojure/2013/09/29/testing-an-api-with-simulant/) - a tutorial and example of simulation testing in action
+ * [Simulation testing with Simulant](http://www.infoq.com/presentations/Simulation-Testing) - talk by Stu Halloway, author of Simulant
+
+### Third-party
+ * [Hystrix](https://github.com/Netflix/Hystrix) - Reliability, fault and latency tolerance, Java (and Clojure) library.  Captures circuit-breaker, failover, bulkhead and more.
+   * [How it works](https://github.com/Netflix/Hystrix/wiki/How-it-Works)
+   * [How-To-Use](https://github.com/Netflix/Hystrix/wiki/How-To-Use) - Clear step-by-step features and use cases
+   * [Metrics and Monitoring](https://github.com/Netflix/Hystrix/wiki/Metrics-and-Monitoring)
+ * [Immutant](http://immutant.org/) - JBossAS packaged up nicely for full-stack Clojure development
+

@@ -1,0 +1,12 @@
+{:db-uri "datomic:dev://localhost:4334/cr-ocs"
+ :service-port 8080
+ :http-app-root "/"
+ :enable-upsert true
+ :http-upsert false
+ :transact-upsert true
+ :launch-transactor-on-start true
+ :initial-descriptor "sample_descriptor.edn"
+ :initial-version [:example :v1]
+ :test-trials 36
+ }
+

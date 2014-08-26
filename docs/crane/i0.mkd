@@ -1,0 +1,349 @@
+Project Overview: cr-ane
+=========================
+
+Consumer Reports Annotated Extractor
+
+This was created in parallel with the original [I0 whiteboard doc](https://docs.google.com/a/thinkrelevance.com/document/d/1s-8OmqPwLjLTeSNznIYzuZQiXUISR0l8PRywq4L9lRU/)
+Please see the document for the raw I0 notes, some information only exists there.
+
+Please see the original [CR-ocs I0](../i0.mkd) for additional context.
+
+Stand-ups are at 9:30am, on Skype.  Call is initiated by a Cognitect employee.
+
+Team members
+------------
+
+### Consumer Reports
+ * **[David Roubini](mailto://droubini@consumer.org)** - Technology Project Sponsor *(914) 378-2182 // droubini @Skype*
+   * What do they do?
+ * **[Christian Evans](mailto://cevans@consumer.org)** -  Technical Project Manager / Product Manager *(914) 378-2278 // christianevansnyc @Skype*
+   * What do they do?
+ * **[Jonah Benton](mailto://jbenton@consumer.org)** - Technical Lead / Architect (Product/story owner) *(555) 555-5555 // jonahrbenton @Skype*
+   * What do they do?
+ * **[Gui Weinmann](mailto://gweinmann@consumer.org)** - CFA Electronics Lead  *(914) 378-2404 // gui.weinmann @Skype*
+   * What do they do?
+ * **[Lisa Koenigsburg](mailto://lkoenigsberg@consumer.org)** - Co-sponsor *(555) 555-5555 // lisa_koenigsberg @Skype*
+   * What do they do?
+ * **[Jeff](mailto://jeff@example.com)** - Contractor / Technical input *(555) 555-5555 // TODO @Skype*
+   * What do they do?
+
+### Cognitect
+ * **[Naoko Higashide](mailto://naoko@cognitect.com)** - Coach (part-time) *(919) 417-3145 // naoko.hig @Skype*
+   * All things project and accounts management
+ * **[Paul deGrandis](mailto://paul@cognitect.com)** - Developer, Tech Lead *(603) 401-2102 // ohpauleez @Skype*
+   * What do they do?
+ * **[Timothy Baldridge](mailto://timothy@cognitect.com)** - Developer *(555) 555-5555 // tbaldridge @Skype*
+   * What do they do?
+
+
+Background
+-----------
+
+### Why was this project proposed?
+
+ * See the [CR-ocs I0 answer](../i0.mkd#why-was-this-project-proposed)
+ * CR0 Rebuild is an ongoing effort
+ * CR is continuing investigating and evaluating Datomic as a primary data persistence solution
+
+
+### What business need/challenge are we solving?
+
+ * CR-ocs illustrated how to evolve new systems with Datomic, but how do benefit
+   with Datomic for data/systems that exist today?
+ * What is Datomic's approach to ingesting data from various sources?
+ * What is the approach to adjusting well-established data models (relational, hierarchical)
+   for the best possible use in Datomic?
+ * Can we allow CR-ocs to be seeded with existing and useful data sets?
+ * How effectively can Datomic combine related data (Products and user reviews, for example)
+ * For context, see [CR-ocs I0 answer](../i0.mkd#what-business-needchallenge-are-we-solving)
+
+
+### What are the pain points today?
+
+ * It's unclear how we move forward modeling data for Datomic.
+ * CR-ocs adoption would be better (in the long run) if there was a way to migrate data sets in
+ * For context, see [CR-ocs I0 answer](../i0.mkd#what-are-the-pain-points-today)
+
+
+### What auxiliary goals/opportunities are we trying to accomplish or achieve?
+
+ * See above
+
+
+### What constraints currently exist for the process/system/organization?
+
+ * No additional constraints aside from the ones mentioned in the [CR-ocs I0](../i0.mkd#what-constraints-currently-exist-for-the-processsystemorganization)
+ * If anything, the constraints are relaxed since we're only dealing with product
+   data, not user data.
+
+
+### How long is the solution expected to last?
+
+ * While the ETL tool may evolve, the initial schema will appear in some form
+   for 1-2 years (assuming the company moves forward with Datomic)
+
+The final product that emerges from the CR-ocs/CR-ane will become part of the technological foundation as the company moves forward (5 years)
+
+
+### *How might we...?* and co-design
+
+ * TODO; See raw I0 notes for brainstorming pieces
+ * Additional tool along side or integrated into CR-ocs
+
+
+Project statement
+------------------
+
+```
+The (name of team) will
+(build, develop, design, implement, etc.)
+a (what) for (whom)
+```
+
+As of March 03, 2014
+**The `CR-ane Team` will review, model, and potentially build tooling to support the ingestion of relevant data in the
+Electronics space to Datomic for evaluation, exploration, analysis & education of the platform team.**
+
+
+### Completion
+
+This project will be be considered **successfully** completed when:
+
+ * We have schema for the electronics data
+ * A document describing the approached used for modeling the data
+ * (Bonus)  If possible, tooling to support ingesting the data, making it available under CRocs tool
+ * (Bonus)  Deployment process
+ * (Bonus)  Other data sets (cars, etc)
+
+
+### Win conditions
+
+Everyone gets to pick three
+
+| Condition             |   1   |   2   |   3   | Definition                   |
+| :-------------------- | :---: | :---: | :---: | :--------------------------- |
+| Schedule              |       |       |       | Min 1 month, up to 2 months  |
+| Scope                 |       |       |       | As described                 |
+| Quality               |       |   X   |       | Data quality, Schema, docs   |
+| Budget                |       |       |       |                              |
+| Customer satisfaction |   X   |       |       | Christian's Satisfaction     |
+| Teamwork/Learning     |       |       |   X   | CR could recreate schema     |
+
+ 1. Customer satisfaction
+ 2. Quality
+ 3. Teamwork / Learning
+
+
+### Scope
+
+| In Scope                       | Out of Scope                             |
+| :----------------------------: | :--------------------------------------: |
+| Development & Testing          | Cross-browser testing                    |
+| Documentation / Tutorials      | On-site training                         |
+| Data migration; not full ETL   | UI design work by Cognitect              |
+| Hosting as provided today      | Production deployment                    |
+| Schema creation                | Load testing                             |
+|                                | Performance testing                      |
+|                                | Post-deployment support                  |
+|                                | Security audit                           |
+|                                | Application hosting                      |
+
+#### Scope statement
+
+TODO Narrative
+
+- - - -
+
+The tutorial should:
+ * Be more of a guide than a tutorial
+  * Not necessarily a step-by-step guide, but a design narrative around per-attribute tradeoff analysis
+  * "Model ID should be captured as a `_____` because `______`.  This allows for developers to `_____` but prevents them from `________`.  Other alternatives for modeling could be `_______` if `______` was important"
+  * Describe core concepts in entity design (relational vs graph, utilizing uniqueness, cardinality, cross-cutting attributes and their namespaces)
+ * Identify further reading, information, talks, etc
+ * Identify patterns and anti-patterns in data modeling and Datomic usage (keeping in mind people new to Datomic - time, retract, etc)
+ * include a section on expanding the schema and steps to consider when prototyping new data-related functionality
+ * Describe how to model “Are these two products compatible?” and general other “rule sets”
+
+The schema should:
+ * Be described in a text-based, human readable, data format
+ * Capture general model information, taxonomy (tags), structured editorial text, user reviews (attribute oriented)
+ * Model the entirety of a core CFA (Electronics) to start
+ * Potentially capture product price information (updated frequently), and how do we handle the updates
+ * Potentially allow for informing a query based on a geospatial location (“Where can I buy this?”)
+ * Potentially start to shape personalization pieces on a prototype-basis (“Products I own” or “wishlists”)
+
+The tooling should:
+ * Recognize different data sources (zip file vs Oracle DB connection) and load data appropriately
+ * Be extensible in terms of data sources
+ * Abstract tool that allows for an open-for-extension extract function, a data-described transform step, and a Datomic load step
+ * Allow for open Datomic configuration (various Pro settings, various local/dev settings)
+ * data > functions > macros
+
+Future iterations may tackle:
+ * Other CFA data (Cars)
+ * Deeper (higher on the pipeline) Electronics Data
+ * Deployment beyond proof-of-concept and developer scenarios
+ * Datomic operations best practices
+ * Privacy/access rules around data (Certain peers can only see certain partitions)
+ * Integrating with general analytics/reporting for user-facing systems (general BI)
+ * Integration with third-party systems (SOLR, Hadoop, etc)
+ * Schema evolution tooling
+ * Production ETL
+ * Additional data sources for the tool
+ * Selector and rating page experience (powered by a full-stack effort)
+
+
+### Quality attributes and scenarios
+
+Everyone gets to pick three
+Definitions from [MSDN Architecture Guide](http://msdn.microsoft.com/en-us/library/ee658094.aspx)
+
+| Attribute       |   1   |   2   |   3   | Definition                              |
+| :-------------- | :---: | :---: | :---: | :-------------------------------------- |
+| Scalability     |       |       |       | The ability of a system to handle increases in load without impact on the performance/runtime characteristics of the system |
+| Security        |       |       |       | The capability of a system to prevent malicious or accidental actions outside of the designed usage, and to prevent disclosure or loss of information |
+| Modifiability   |   X   |       |       | The ability of the system to undergo changes with a degree of ease |
+| Maintainability |       |       |       | The ease of which the system is monitored, serviced, deployed, updated; Manageability |
+| Reliability     |       |       |       | The ability of a system to remain operational over time, in the face of errors/defects/unknowns |
+| Availability    |       |       |       | The proportion of time that the system is functional and working |
+| Robustness      |       |       |       | The extent to which a software system can tolerate changes in its environment without intervention |
+| Adaptability    |       |       |   X   | The extent to which a software system adapts to change in its environment without intervention |
+| Usability       |       |   X   |       | Conformance to requirements, fitting [good design criteria](https://en.wikipedia.org/wiki/Heuristic_evaluation#Nielsen.27s_heuristics) |
+| Performance     |       |       |       | Data Throughput (load/ingest time) |
+
+#### Quality attribute ranking
+
+Modifiability > Usability > Adaptability
+
+#### Scenarios // thresholds
+
+ * Common data operations (schema changes and evolution) should be data-only modifications.
+ * Data can easily be consumed, used, and evolved in various application, each with potentially different goals/outcomes
+ * Data sets can be enhanced by individual teams without affecting the original data set (new changes shouldn’t break existing systems)
+ * Datomic/tooling doesn’t prohibit snapshotting and reloading data sets
+ * The tutorial is a living document and should be structured to be expanded
+ * "Which products can solve this problem for me?"
+   * Modifiability should support growing data sets and schemas to enhance open-ended/exploratory, almost rule-engine or question-answering.  What’s the path?
+ * Use Nielsen’s Heuristics as the usability checklist
+ * All deliverables will conform to the usability criteria described in early user/developer-reviews
+ * The solution should easily migrate between storage (Cassandra, Dynamo, Local/Dev)
+ * The solution should be easily deployed on different environments (local, EC2, CloudFoundry)
+ * All data types (strings, long string, etc) are captured accurately in the data model used by Datomic
+
+
+### Known risks and areas of unknown risks
+
+ * See the list from the [CR-ocs I0](../i0.mkd#known-risks-and-areas-of-unknown-risks)
+ * See the external [risk assessment](https://docs.google.com/a/thinkrelevance.com/document/d/1GJbOxXwcnJPi6DvcKzeAT4k-7S-QySIPO0v3bJg6vzA/edit)
+
+
+Metrics
+-------
+
+Metrics help us understand the project's context and progress.  They aid in
+recognizing and identifying when project-wide problems occur.  Metrics provide
+a baseline of objective data for making informed project-oriented decisions.
+
+### Project metrics
+
+ * Iteration burn up - points dev-completed within an iteration
+ * Project burn down - total points remaining for the project (delivered to production)
+ * Running tested features - cards or points delivered to production (not including defects or tasks)
+
+### Software metrics
+
+
+### System metrics
+
+
+Extra
+-----
+
+### Special Conditions
+
+ * Open source?
+ * IP Restrictions?
+ * Special documents?
+ * Special clearance?
+ * Additional technology restrictions?
+
+
+### Baseline top-down estimations
+
+ * Use [COCOMO with Monte Carlo simulation](http://csse.usc.edu/tools/COCOMO.php) to get an idea of where the project might end up
+  * [Our project](./ext/crane-cocomo-estimation.pdf) is estimated at 1-1.5 person-months of effort.
+
+
+### Baseline bottom-up estimations
+
+Break down all major milestones into their individual tasks, and estimate effort (person-months) based on historical data
+
+ * ~30-40 Person-days of effort (1-2 person-months)
+   * A large portion of this is making the tool useful to other CFA teams (data sets)
+ * 37 story points of effort
+
+
+Schedule
+--------
+*Caveat: if the per-phase assumptions are false, phases will need to be adjusted/adapted*
+
+### Phase 1 :: 5-7 person days :: 10 SLOC :: 8 points
+
+ * Writing a cards and producing Top-down/bottom up estimate
+ * Land I0, Design, Education, Quicklearn docs
+ * Design, define, and confirm extraction formats; then document
+ * Design, define, and confirm data formats; then document
+ * Design, define, and confirm the operations of the tool; then document
+
+
+### Phase 2 :: 8-12 person-days :: 90 SLOC :: 9 points
+
+ * Bootstrap tooling to accept additional config/format conventions
+   * Extraction/"transform" functions resolve
+ * Handle JSON hierarchy, XML taxonomy data, and User Reviews.  All normalized.
+ * Schema hinting run:
+   * Data type modeling, design, and documentation
+   * Extract hierarchy by crawling directories/files
+   * Initial protocols/dispatch for reading and normalizing data (type conversion)
+   * An implementation of the above for file hierarchy
+   * Runs at any level within the file hierarchy
+   * Incoming data forms flattened // keymerge
+   * Call out/extract refs and inject into a model/structure
+ * Build out a test harness as needed, or enhance the existing one
+
+
+### Phase 3 :: 6-8 person-days :: 60 SLOC :: 8 points
+
+ * Capture schema based on the schema-hinter and validate correctness
+ * Write lower-level type converters that match schema coercions
+ * Enhance test suite
+
+
+### Phase 4 :: 4-6 person-days :: 45 SLOC :: 8 points
+
+ * Given a schema captured as data, perform a full import
+   * Import should work at any specified path with the hierarchy
+   * Import performs type conversion as it enters Datomic
+   * Import preserves all data as it exists (IDs will remain as ints/strings), and then additionally adds refs linking those entities
+   * Loading the data set should be a one-off (but repeatable) operation, not something that happens with CR-ocs upsert
+   * Import should be done via a script
+ * Validate the integrity of the data
+ * Capture as test cases
+
+
+### Phase 5 :: 6-8 person-days :: 20 SLOC :: 4 points
+
+ * Final Docs, tutorials, guides, best-practices for data modelling, Datomic Console demo/tutorial
+  * Write queries of different levels of sophistication;
+    * backref - "Look up all products for a vendor"
+    * as-of or non-transacted data query
+    * rollups/aggregates/collections - "What's the rank of vendors given their average product ratings?"
+    * Query a local data structure - classic "is in some set" query
+
+
+### Phase 6 (Guided by what CR thinks is best)
+
+ * Final presentation/demo
+ * Bug fixes and polish
+ * `Future` tickets
+

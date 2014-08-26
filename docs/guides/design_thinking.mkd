@@ -1,0 +1,65 @@
+
+Design Thinking
+================
+
+### Stories
+
+ * Worst day, Best day
+ * Worst project, Best project
+ * Where do you ...?:
+   * Spend the most money
+   * Spend most of your time
+   * Spend most of your effort
+   * Make the most money
+ * One wish
+
+
+### POV MadLib
+
+ * **[USER] needs to [USER’S NEED] because [SURPRISING INSIGHT]**
+
+
+### POINT and Co-design
+
+*Problems, Obstacles, Insights, Needs, Themes*
+
+ * Extract common themes
+ * Pick your favorite theme and problem area
+ * Explore opportunities: "How might we..."
+   * "How might we collect real-time metrics?"
+   * "How might we extract personalized information to promote a sale?"
+
+
+### Brainstorming
+
+Pick a few related `HMW` statements and brain storm all possible solutions.
+
+
+### Drafting the idea
+
+Select a few feasible solutions from brainstorming and loosely draft together
+what a concrete solution might look like.
+
+
+### Prototyping across all fidelities
+
+Pick the most feasible solution from the drafts that addresses the most
+identified needs, and build a low-fidelity prototype.  This may be a real
+web-service with dummy data, a paper-prototype of the UI, anything that helps
+you *validate* the solution - are we building the right thing.
+
+Ask yourself, ["why" three times](http://www.youtube.com/watch?feature=player_detailpage&v=1zdzivUmL4s#t=794),
+this is a lightweight method for a rough validation.
+
+Collect input from user/stakeholder feedback or system simulations.
+
+Build a higher-fidelity prototype and repeat.
+
+
+### Make it real
+
+Take all the feedback from the prototypes and design the final system or solution.
+
+Build it, validate it, verify it, ship it.
+
+

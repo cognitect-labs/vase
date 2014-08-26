@@ -1,0 +1,523 @@
+
+Designs for Data-described User Interfaces
+==========================================
+
+## Introduction
+
+This document describes the design of a system for describing user interfaces
+in data.  It constrains the design to interfaces which only contain a need
+for data binding (via any dataflow mechanism), but do not require rich, complex,
+application-like interactions.  For example, the system targets applications
+that must constrain, format, and display snapshots of data,
+and not something like an in-browser game or text-editor (applications that require
+a lot of client-side business logic).
+
+
+### Goals
+
+The goal of this document is to elaborate on the constraints, trade-offs, formats,
+and general architecture of the system.  These decisions ensure the system can
+easily evolve and adapt, while achieving the target quality attributes and
+auxiliary goals.
+
+**This is a living document, it should evolve along with the system.**
+
+
+# Consumer Reports: Annotated Interface Technology
+
+The **Consumer Reports: Annotated Interface Technology**, or CR-aniate, is
+a toolchain system that produces interactive user
+interfaces (rich client-side web applications) from data-only description files.
+The format, conventions, and general approach borrows heavily from [CR-ocs](./design_doc),
+and extends the approach into the client-side.
+
+The annotated interfaces (called, crania), describe reactive data cells (much
+like a spreadsheet), actions to be triggered, constant values used throughout
+an application (like internationalized phrases), and the user interface to display.
+The system is divided into two sections: Functionality that is compiled ahead
+of time and shipped as the base of your application, and functionality that is
+interpreted at runtime and rendered within your application.  The UI's layout
+and description is purely data - it, along with the Constants data, is processed
+at runtime.  A system that describes how to interpret that data (ie: what gets
+generated for a `:button`), is written, extended, and compiled ahead of time,
+along with the Cells and Actions for an application.
+
+Since the UI is expressed purely in data, it can be saved/revived from local
+storage, saved in the DB, changed rapidly without recompilation of assets, and
+passed over the wire.  This feature allows for rapid prototyping of applications
+and encourages the reuse of programmed Cells and UI component libraries.
+
+#### A rich landscape of options
+
+This document describes only **one** way to approach UIs and applications in
+ClojureScript, and is specifically targeted at developers coming from a
+Backbone mindset.  A very similar thing can be achieved with channels only, or
+even a very expressive pub/sub system - both which are relatively easy to write
+in ClojureScript.  The most important take-away is that powerful constructs allow
+you to build new/special-purpose tools quickly that directly solve your
+problems, and no tool is ever closed from extension.
+
+Similar ideas can be found in:
+
+ * [Reflex](https://github.com/lynaghk/reflex) - Knockout style computed observables
+ * [Javelin](https://github.com/tailrecursion/javelin) - dataflow via Spreadsheet cells ala FRP
+ * [Hoplon](https://github.com/tailrecursion/hoplon) - a full client-side application stack
+ * Directly using core.async like [Pedestal/Cornice](https://github.com/rkneufeld/cornice)
+   or as done in this [demo](https://github.com/wvdlaan/todomvc) in a source/sink dataflow
+ * [Shoreleave PubSub](https://github.com/shoreleave/shoreleave-pubsub) - Pub/Sub dataflow without state management
+ * [Enfocus](https://github.com/ckirkendall/enfocus) and [Kioo](https://github.com/ckirkendall/kioo) (React version) - Selector-based bindings and actions
+ * And many others
+
+... all of which are worth taking a look at and watching presentations about.
+
+
+
+### An annotated interface: Crania
+
+Consider the following application:
+
+> There is a unordered list of items fetched from the server using XHR,
+> text field, and a button.
+>
+>  * The list contains string elements
+>  * The text field filters the items in the list as you type.
+>    * When you clear the field, you see the entire list
+>  * When you click the button it randomly changes the order of the items in
+>    the list, and randomly changes its own button text
+
+We can use a Crania descriptor to express the contents of the list, what
+the filtered list should look like, and set the button text.
+We can also capture the action to be taken when the button is clicked,
+and finally describe the entire layout of the application itself.
+
+It's best to read the descriptor starting at the `:ui` and look back at the
+`:cells` and `:consts` as they're referenced.
+
+```clojure
+{:cells {:button-text "A Button"
+         :item-list #crania/remote {:uri "/default-list" :dtype :xhr
+                                      :or []}
+         :filter ""
+         :filtered-list (filter #(.contains % #crania/bind [:cells :filter]) #crania/bind [:cells :item-list])}
+ :consts {:greeting "Hello!"}
+ :ui [{:dtype :div
+       :id "application"
+       :contents [{:dtype :h2 :value #crania/bind [:consts :greeting]}
+                  {:dtype :inputtext
+                   :id "filter-box"
+                   :onKeyPress #crania/reset [[:filter] #crania/bind [:ui 0 :contents 1 :value]]}
+                  {:dtype :textarea :value #crania/bind [:cells :filtered-list]}
+                  {:dtype :button
+                   :text #crania/bind [:cells button-text]
+                   :onClick #crania/reset [[:cells :button-text] (str (rand-int))
+                                           [:cells :item-list] (shuffle #crania/bind [:cells :item-list])]}
+
+       ]}]}
+```
+
+The descriptor is the complete rich-web application.  Let's highlight some
+specific details:
+
+ * `:cells` are an abstract idea, backed a literals that a programmed against protocols.
+   They can be implemented with anything: channels, Javelin cells, even atoms.
+ * A cell is either a time-based resolved-value cell (remote calls like xhr, sse),
+   a value cell (a string, vector, etc), or a derived cell (a list that is
+   treated like a function, whose output at access time is the value of the cell).
+   Derived cells are also called formulas or computed-observables
+ * The concrete value of a cell at any given time is extracted with `#bind`,
+   which creates a data binding to that cell.  Bindings are resolved at render-time.
+ * All cell modifications trigger a render
+ * The value of a cell can be changed or, `#reset`
+   * `#resets` can only produce value-cells (not derived cells)
+ * The entire descriptor is parsed during runtime.
+   * You can optionally bundle/compile your descriptor in your CLJS code (for AOT compilation)
+   * The entire application can be activated/rendered/updated on-demand.
+ * Custom functions can be added to an extensible `cell-fn` system, used when parsing application descriptors
+ * `:consts` are constant values used throughout your UI
+ * `#bind` can also fetch the current value of a path into `:consts`, or the `:ui`.
+   * If given a vector, it is a path
+   * MAYBE: If given a string, it is treated like a CSS Selector; Would need refactor
+ * All `:ui` elements contain a `:dtype`, a DOM type, that can refer to a DOM object or a React Component
+ * A global render channel is how any element in an application can request a render
+ * `#remote` calls are open for extension via a multi-method;
+
+#### Reusable user interface components
+
+In the above list is a subtle and powerful concept: the separation of the intent
+of a UI element (like a `:button`) and what it generates in your application.
+
+This technology is built upon Facebook's [React](http://facebook.github.io/react/index.html), and specifically the
+ClojureScript support found in [Quiescent](https://github.com/levand/quiescent).
+Element `:types` can be any
+[pseudo-DOM tag](http://facebook.github.io/react/docs/tags-and-attributes.html),
+[React component](http://facebook.github.io/react/docs/reusable-components.html),
+[Om component](https://github.com/swannodette/om/wiki/Basic-Tutorial#your-first-om-component),
+or [Quiescent component](https://github.com/levand/quiescent/blob/master/docs.md#defining-components).
+
+The dispatching mechanism that reads the UI descriptor (`:button`), and generates
+a concrete implementation is open for extension.
+
+The use of React.js is also advantageous given our use of immutable data
+structures within ClojureScript.  This ensures that the diff-checking React
+does when communicating a render to the browser's DOM is cheap.  This allows
+us to use the core of React.js to our advantage, passing our entire application
+state to the container of components, and letting React determine if a render
+needs to happen.  This is only possible because of the language constructs that
+ClojureScript is built upon.
+
+#### Crania literals
+
+Above, all the literals are mentioned and their intents explained.  Here is a
+reference list:
+
+ * `#crania/remote` - fetching remote data from the server.  Supports XHR and SSE,
+   but open for extension.
+ * `#crania/bind` - resolve and fetch the concrete value of a cell at render time; a data-binding
+ * `#crania/reset` - set a cell to a new value
+
+#### Application variations
+
+The descriptor can also specify different variations the application an optional
+apply.  Variations might change data sources or filter cells, present a
+different user interface - anything you might see in an A/B test, paywall, or
+similar system.
+
+Variations are applied by declaratively referencing a location within the
+descriptor, and applying some action at that location.  This action can modify
+the current value in the descriptor, add/append to it, or completely replace it.
+
+Locations in the descriptor file are specified within a vector using a mixture
+of paths and selectors.  The selectors are heavily influenced by CSS selectors.
+If you use a string in your location vector, it's parsed as a selector.
+You location may match multiple spots within the descriptor - the variation
+function will be applied to all locations.
+
+```clojure
+[:ui "#application"] ;; - the element with and :id of "application"
+[:ui ".row"] ;; - all elements that contain the "row" class
+[:ui "ul>"] ;; - apply to the contents within the "ul" elements
+[:ui :ul] ;; - all :ul DOM elements
+[:ui :ul 0] ;; - the first child of all :ul DOM elements
+[:cells :products] ;; - a cell named ":products"
+```
+
+Variation actions can `:reset` (replace) the data in the root descriptor, or
+`:conj` (append/merge) additional data.
+
+A full example might look like,
+
+```clojure
+{ ;; ... somewhere in your descriptor
+ :variations {:remove-lists [[[:ul] :reset nil]
+                             [[:div] :conj [:foo :bar]]
+                             [[:div] :conj {:bar :baz}]
+                             [[:div] :conj {:id "application"}]]}
+}
+```
+
+The variations are an open system, allowing for extended functionality when
+needed.
+
+- - - -
+
+### Design notes; unedited
+
+**What follows is the output of the design process; It's maintained here for reference.**
+
+The idea is to create a closed grammar to express UIs.
+
+The grammar includes functionality binding (via reader literals),
+and a set of common keywords used to express UI elements.
+
+A second file that gets compiled ahead of time during the deployment phase,
+implements code-generation backends for the UI elements.  This sort of
+dispatch can easily happen via a multi-method.
+
+The UI is expressed purely in data, so it can be saved/revived from local
+storage, saved in the DB, changed rapidly without recompilation of assets, and
+passed over the wire.
+
+The heart of the system is pub/sub, based on core.async channels.  Binding
+a channel to an expected-value field (like the text of a button), creates a
+cell-like system.
+
+Data flows can be expressed via the pub/sub system as well, although that's
+not a direct concern/interest.
+
+### The grammar and rules
+
+ * All collections are hashmaps, key'd with the element id.  That is, all
+   elements get IDs
+   * These include divs, lists, etc
+ * The application is placed inside a default div with the name and id, "application"
+
+#### Literals
+
+ * `#craniate/pub` - Returns a 0-arg function that puts a payload on a topic
+   channel, and returns that payload.  It takes a map of `:topic` and `:payload`.
+   Both values must be value-types.
+ * `#craniate/sub` - Returns a channel via a `go` block.  It takes a map that
+   describes the subscription `:topic` and the `:default` starting value
+   * OPEN QUESTION - should you be able to specify some sort of `:process` fn?
+ * `#craniate/bind` - returns a channel.  It takes a vector,
+   the path into an `app-state`, that is bi-direction; puts set the state,
+   state changes come out.
+ * ``
+ * `#craniate/genstr` - generate a random/unique id str.  Takes a vector, and will
+   `str` the args to provide an id name prefix.  Uses `gensym`
+ * `#craniate/js` - Returns raw/injected javascript; exposes CLJS's `js*` as the
+   ultimate dirty and dangerous escape hatch
+ * `#js` - specifies JS objects and arrays; built into CLJS
+
+Open questions:
+
+ * Should there be a literal for atoms?  As a means to express app state
+ * Should application state be omni present and forced? (I personally don't think so)
+   * The alternative is allowing developers to set whatever app state atoms they
+     want
+ * Should subscriptions be backed by a protocol (ala Shoreleave) to allow
+   subscribing to an atom, or should flows be manually and explicitly defined.
+   * For example, setting the text of a button based only on a value in
+     application state
+ * Should app state just be the UI/descriptor tree?  Conflating UI with state?
+   * Should there just be two trees that you manage however you want?
+
+
+### Pub/sub details
+
+raw notes:
+
+subscriptions should take default values, which are consumed on init.  This
+allows a developer to set the default value (text of a button) to something
+before values flow through the pub/sub system
+
+Open questions
+
+
+### An example description
+
+There is a unordered list of items fetched from the server using XHR,
+text field, and a button.
+
+ * The list contains string elements
+ * The text field filters the items in the list as you type.
+   * When you clear the field, you see the original list
+ * When you click the button it randomly changes the order of the items in
+   the list, and randomly changes its own button text.
+
+What's really happening:
+
+ * TODO: Once we have a final design laid out.
+
+The descriptor
+
+```clojure
+{:state {:item-list  #craniate/xhr {:url "/default-list"
+                                    :default []}
+         :current-list #craniate/bind [:ui 0 :contents 2 :contents] ;; should this be allowed? Derive state from the DOM?
+         :button-text "Randomize"}
+ :subscriptions [#craniate/sub {:topic :randomize
+                                :process (fn [x] #craniate/pub {:topic :shuffle-list
+                                                                :payload (shuffle #craniate/state [:state :current-list]))}
+                #craniate/sub {:topic :randomize
+                               :process (fn [x] #craniate/assoc {:path [:state :button-text] :payload (str (rand-int))})}
+                #craniate/sub {:topic :shuffle-list
+                                :default #craniate/bind [:state :item-list]
+                                :process (fn [x] #craniate/pub {:topic :filtered-list
+                                                                :payload (filter #(substring? % #craniate/state [:ui 0 :contents 0 :text]) x)})}]
+ :ui [{:div {:id "application"
+             :contents [{:textbox {:id "filterText"}}
+                        {:ul {:id "theList"
+                              :contents #craniate/sub {:topic :filtered-list
+                                                       :default #craniate/state [:state :item-list]}}}
+                        {:button {:id "randomButton"
+                                  :text #craniate/bind [:state :button-text] ;; this could have been a subscription too
+                                  :onClick #craniate/pub {:topic :randomize
+                                                          :payload "this is a dummy value"}}]}
+```
+
+
+
+Questions:
+
+ * Pub/sub + bind = cells.  Does it make more sense to just complect the two?
+ * Should we include cells too?  Making the common-case fast?
+ * What parts of React/Quiscent make cells obsolete?  Does it make sense to:
+   * Cells manage state
+   * React casts data/state/cells as dom updates
+
+I'm very frustrated with this result now.  It's quickly spun out of control.
+React (and Quiescent specifically) is nice because it lets us have dom elements
+and composed "components" that take immutable data and render correctly, based
+on efficient diffs.
+
+
+Let's state the goals again.  It would be nice to have:
+
+ * Application state managed by something composable that played nice with SSE, XHR, and channels
+ * State transitions/transactions were function that consumed immutatable data and returned immutable data
+ * UI description separate from semantics
+ * DOM State is derived from applying UI descriptions to the app-state
+   * Renders happen on non-nil results?
+ * Application state changes are requested via a channel (pub), and transacted via a channel (sub)
+
+TODO: Maybe I should rewrite the example app a few different ways until I'm satisfied
+
+TODO: Maybe I can get away with using only bind and assoc/reset (and compose)
+ * but how would you handle alerting on a button click? Compose a bunch of "resets"?
+   Note: This would require having a #compose literal
+ * this basically amounts to cells (as expressed in javelin) + some channel support,
+   Is there a way to do all of this with channels only?
+
+TODO: What if absolutely everything was a channel (potentially built around pub sub),
+and there was no app-state, just a notion of derived values.
+If you wanted, you could save the derived state into an atom or a cell,
+or just reflect it all immediately on the DOM.
+The channels are carrying immutable values, which are applied to elements/components,
+which in turn trigger renders - or possibly, communicate a render
+to a channel.
+Literals would express the creation of channels and puting/taking of values from
+those channels.  The data description then is basically a map of the data flow.
+Again, this looks dangerously similar to cell-like UIs.
+
+
+
+#### Channel-based cell-oriented dataflow
+
+Besides being fully buzzword compliant, there is no notion of "application state",
+everything is derived.  That said, there is always a need to declare constants (yet to be designed)
+
+```clojure
+{:chans {:unused-server-msgs #craniate/sse {:url "/some-sse-endpoint"}
+         :button-text "A Button"
+         :item-list #craniate/xhr {:url "/default-list"
+                                   :or []}
+         :filter ""
+         :filtered-list (filter #(.contains % #craniate/get [:chans :filter]) #craniate/get [:chans :item-list])}
+ :ui [{:div {:id "appliction"
+             :contents [{:inputtext {:id "filter-box"
+                                     :onKeyPress #craniate/assoc [[:filter] #craniate/get [:ui 0 :contents 0 :value]]}}
+                        {:textarea {:value #craniate/get [:chans :filtered-list]}}
+                        {:button {:text #craniate/get [:chans button-text]
+                                  :onClick #craniate/assoc [[:chans :button-text] (str (rand-int))
+                                                            [:chans :item-list] (shuffle #craniate/get [:chans :item-list])]}}
+
+             ]}}]}
+```
+
+Ideas and notes:
+
+ * `get` implies a core.async take.  This could be renamed to `pull` to avoid any semantic confusion
+ * `assoc` implies a function that does a core.async put.  This could be renamed `push`
+ * It's implied that even the UI has some notion of channels (get the state current state), which may be incorrect
+
+Problems:
+
+ * Functionality is split between `chans` and `ui`
+   * Potentially `chans` is established ahead of time (requires compilation) and `ui` only pushes and pulls values (basically sub/pub)
+ * There's no way to specify constant data
+   * Add a `:const` section
+ * Semantic complection around "get the current state" and "take the current value"
+   * Change `get` to `take`, and use `get` to me "current state"
+   * This might also imply that `take` can only refer to something in `:chans`
+
+How would these ideas look?
+
+```clojure
+{:chans {:unused-server-msgs #craniate/sse {:url "/some-sse-endpoint"}
+         :button-text "A Button"
+         :item-list #craniate/xhr {:url "/default-list"
+                                   :or []}
+         :filter ""
+         :filtered-list (filter #(.contains % #craniate/take [:chans :filter]) #craniate/take [:chans :item-list])
+         :randomize-button-action #craniate/assoc [[:chans :button-text] (str (rand-int))
+                                                   [:chans :item-list] (shuffle #craniate/take [:chans :item-list])]}
+ :consts {:greeting "Hello!"}
+ :ui [{:div {:id "application"
+             :contents [{:h2 #craniate/get [:consts :greeting]}
+                        {:inputtext {:id "filter-box"
+                                     :onKeyPress #craniate/assoc [[:filter] #craniate/get [:ui 0 :contents 0 :value]]}}
+                        {:textarea {:value #craniate/take [:chans :filtered-list]}}
+                        {:button {:text #craniate/take [:chans button-text]
+                                  :onClick #craniate/assoc [[:chans :randomize-button-text] :true]}}
+
+             ]}}]}
+```
+
+Ideas and notes:
+
+ * `chans` contain code fragments and are compiled AOT; the UI and Constants data can be on-demand
+ * `get` fetches the current immutable value of an item.  It can only be used on the UI and Constants
+ * `take` is a subscription the memoizes the last seen value
+   * if the channel source of a `take` is empty, it should used the last seen value (memoized/closed-over); defaults to `nil`
+   * `take` returns a value, but the value is from a channel (a subscription)
+   * `take` can only refer to items in `:chans`
+   * `bind` might be a more descriptive name
+ * `assoc` is a publish (or a push) into a channel (subscription/stream)
+   * `assoc` can only refer to items in `:chans`
+
+Problems:
+
+ * `chans` really are cells. Does it makes sense to build them with async?
+ * Channels vs Triggers
+   * Some of the `chans` really are channels; streams of values
+   * Others are functions that consume some channels and produce on other
+     channels, but don't result in a consumable channel; But they could
+   * `assoc` and `trigger` should be two functions, or there should be a `:actions` section
+ * It's implied that `#assoc` is a function, but what does it return if it acts on channels?
+   * Should it model the same semantics as `put` or more like Clojure's `assoc`
+
+
+
+
+```clojure
+{:cells {:unused-server-msgs #craniate/remote {:uri "/some-sse-endpoint" :type :sse}
+         :button-text "A Button"
+         :item-list #craniate/remote {:uri "/default-list" :type :xhr
+                                      :or []}
+         :filter ""
+         :filtered-list (filter #(.contains % #craniate/bind [:cells :filter]) #craniate/bind [:cells :item-list])}
+ :actions {:randomize-button-action #craniate/reset [[:cells :button-text] (str (rand-int))
+                                                     [:cells :item-list] (shuffle #craniate/bind [:cells :item-list])]}
+ :consts {:greeting "Hello!"}
+ :ui [{:type :div
+       :id "application"
+       :contents [{:type :h2 :value #craniate/get [:consts :greeting]}
+                  {:type :inputtext
+                   :id "filter-box"
+                   :onKeyPress #craniate/reset [[:filter] #craniate/get [:ui 0 :contents 1 :value]]}
+                  {:type :textarea :value #craniate/bind [:cells :filtered-list]}
+                  {:type :button
+                   :text #craniate/bind [:cells button-text]
+                   :onClick #craniate/trigger [[:cells :randomize-button-text]]}
+
+       ]}]}
+```
+
+Ideas and notes:
+
+ * `:cells` are an abstract idea, backed a literals that a programmed against protocols.
+   They can be implemented with anything: channels, Javelin cells, even atoms.
+ * A cell is either a time-based resolved-value cell (remote calls like xhr, sse),
+   a value cell (a string, vector, etc), or a derived cell (a list that is
+   treated like a function, whose output at access time is the value of the cell).
+   Derived cells are also called formulas or computed-observables
+ * The concrete value of a cell at any given time is extracted with `#bind`,
+   which creates a data binding to that cell.  Bindings are resolved at render-time.
+ * All cell modifications trigger a render
+ * The value of a cell can be changed or, `#reset`
+ * `:actions` are stateful functions which modify or toggle cells
+ * You can kick off, or `#trigger` an action in any standard JS function/event location
+ * `:cells` and `:actions` are compiled ahead of time into JS code
+ * `:consts` are constant values used throughout your UI
+ * `:consts` and `:ui` are pure data and can be activated/rendered on-demand.
+ * `#get` fetches the current value of a path into `:consts`, or the `:ui`/DOM.
+   * If given a vector, it is a path
+   * MAYBE: If given a string, it is treated like a CSS Selector
+ * All `:ui` elements contain a `:type`, that can refer to a DOM object or a React Component
+ * A global render channel is how any element in an application can request a render
+ * `#remote` calls are open for extension via a multi-method;
+   You must include their definitions in your `:cell` backends
+ * it is assumed (for performance reasons) that a value returned by a deref-able item (such as a cell or binding) will not itself contain other derefable items. It is therefore up to each binding/cell to deref its return value if needed. This behavior can be changed by using `deep-deref` instead of `shallow-deref` during the render phase. Tests performed during development showed that `deep-deref` runs about 5x slower than `shallow-deref`.
+
+

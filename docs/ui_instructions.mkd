@@ -1,0 +1,127 @@
+
+Running the Ratings Application
+===============================
+
+This guide assumes you have a CR-ocs system, with a fully ingested Prod
+database.  If you don't, please see the instructions for CR-ocs and CR-ane.
+
+### Quickstart
+
+1. Build the application with: `lein build-all` - this takes about 40 seconds.
+2. Start a prod server (that has data loaded): `lein run-prod`
+3. View [raw application](http://127.0.0.1:8080/index.html) or see it
+   [embedded in CR](http://127.0.0.1:8080/ratings/cognitect.html)
+
+### Changing the application
+
+The most straight forward way to update/modify the application is by editing
+the [`application.edn`](../resources/public/application.edn) file and refresh
+the browser.  You can alternatively just call `cr_ania.main.refresh_descriptor()`
+in the JavaScript Console within your browser.  The current descriptor and
+application are always at `cr_ania.main.descriptor` and `cr_ania.main.app`,
+respectively.
+
+You may hack the descriptor and application directly - the following functions
+can help you:
+
+ * `cr_ania.application.replace_application_BANG_` - Given a descriptor, replace the current application with the new one.
+   * Descriptors can be strings or hashmaps
+   * For example: `cr_ania.application.replace_application_BANG_("{:ui {:dtype :div :contents []}}")` will produce a blank app
+ * `cr_ania.application.descriptor__GT_application_BANG_`
+ * `cr_ania.application.remove_application_BANG_`
+ * `cr_ania.main.refresh_descriptor("/path/to/new/descriptor.edn)` - will load a new descriptor from the server
+
+At no point does an application modification affect the prod server.  You
+should only need to restart your server if you modify your service descriptor
+(if you changed or added a query, for example).
+
+### Working with variations
+
+CR-ania also allows application descriptions to establish variations that can
+be toggled on-demand.  This allows for A/B style application testing, but well
+beyond two pages - the variation system can toggle different cells, data sources,
+UI elements, and more.  It can also compose variations, allowing developers to
+pick and choose which variations they'd like to see applied together.
+
+For a working example, let's look at the [varied-application](../resources/public/dev/varied-app.edn#L28)
+example.  You'll notice a section called `:variations` - it's pasted here for reference.
+
+```clojure
+ :variations {:limit-results [[[] :assoc-in [:cells :products-src] (cr-ania.data-processing/products #crania-bind [:cells :category-id])]
+                              [[] :assoc-in [:cells :products] (take 10 #crania-bind [:cells :products-src])]
+
+                              [["#selector-chart-table"] :reset nil]
+                              [["div>"] :conj {:dtype :unordered-list
+                                                 :source #crania-bind [:cells :products]
+                                                 :key :name}]]
+              :limit-products [[[] :assoc-in [:cells :filtered-products] (take 10 #crania-bind [:cells :products])]]
+              :no-search [[["#crania-search"] :reset nil]]}
+```
+
+Variations are grouped together within a vector and given a name.  Above we can
+see three variations: `:limit-results`, `:limit-products`, and `:no-search`.
+Variations are applied by navigating to a location in the application
+descriptor, and performing some operation there.  This single variation step is
+also stored within a vector and a single named variation (`:limit-results`) may
+perform many of these smaller application modifications.
+
+Navigation within a variation step is done with a selector-vector.  There are
+three types of selectors:
+
+ * A keyword grabs all UI elements of that `:dtype`
+ * A string performs a CSS-like selection on the UI section of the application
+ * A vector of keywords performs a path-like selection across the entire application
+
+When given an empty vector, the selector logic selects the entire application.
+
+The action/verb mechanism to apply some function at the navigated location is
+open for extension.  CR-ania comes with three default actions:
+
+ * `:conj` - add to/append/merge a payload with an element/selection
+ * `:assoc-in` - add to to the element/selection given a path and a payload
+ * `:reset` - replace the element/selection
+
+It might be helpful to reference the variation [tests](https://github.com/relevance/cr-ocs/blob/master/test/cr_ania/query_and_apply_test.cljs)
+or [design docs](https://github.com/relevance/cr-ocs/blob/master/docs/ui_design.mkd).
+
+#### Loading variations
+
+Variations are normally activated by a cookie value, but they can be forced
+in the developer console with a comma-separated string, like this:
+`cr_ania.main.refresh_descriptor("/dev/varied-app.edn", "limit-results,no-search")`
+
+Now try: `cr_ania.main.refresh_descriptor("/dev/varied-app.edn", "limit-products,simple-score,no-search")`
+
+And lastly, `cr_ania.main.refresh_descriptor("/dev/varied-app.edn", "simple-score")`
+
+#### Overriding variations
+
+Depending on your variations, some may override others.  The application of
+variations specified in your string is from left to right.  Consider:
+
+`cr_ania.main.refresh_descriptor("/dev/varied-app.edn", "limit-products,limit-results")`
+
+Both of these change the data and formatting of the results within the table -
+in the case of `limit-results`, the table is replaced with an unordered list.
+Since `limit-results` is the rightmost variation, it overrides all other variations
+that touch similar areas within the application.
+
+### Reporting actions to the server
+
+CR-ania ships with the ability to report application activity back to the server,
+via a logging back channel.  Currently, there are two forms of logging:
+
+ * out logging - report everything that emerges on the master out channel (all user interactions/all app changes)
+ * time-delta logging - report *only* application differences every N milliseconds
+
+One may also select what portions of the application should be reported back.
+Currently, you can only report back the value of cells.  Here is an example
+of filtering the logging back channel output: [varied-app logging](https://github.com/relevance/cr-ocs/blob/master/resources/public/dev/varied-app.edn#L37).
+
+Logging has an impact on performance.  To lessen that impact, the use of filtering
+the log keys, along with the use of the time-delta logger is recommended
+
+To activate logging, open up the developer console and call:
+`cr_ania.main.activate_time_logging()`.  If you'd like to use the out-logger,
+the function is simply, `activate_logging`.
+

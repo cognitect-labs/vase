@@ -1,0 +1,19 @@
+
+{:cells {:button-text "Click Me"
+         :ui-button (str "The button text is: " #crania-bind [:ui :contents 3 :contents])
+         :list [1 2 3]
+         :list-text (pr-str #crania-bind [:cells :list])}
+ :consts {:greeting "Hello,"}
+ :ui {:dtype :div
+      :contents [{:dtype :h2
+                  :contents #crania-bind [:consts :greeting]}
+                 {:dtype :h2
+                  :contents "World"}
+                 {:dtype :h5
+                  :contents #crania-bind [:cells :list-text]}
+                 {:dtype :button
+                  :contents #crania-bind [:cells :button-text]
+                  :onClick #crania-reset [[:cells :button-text] "Clicked"]}
+                 {:dtype :h5
+                  :contents #crania-bind [:cells :ui-button]}]}}
+

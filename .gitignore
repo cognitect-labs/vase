@@ -1,0 +1,61 @@
+# Project related
+my-new-payload.edn
+data/
+
+# Java related
+pom.xml
+*jar
+*.class
+
+# Leiningen
+classes/
+lib/
+native/
+checkouts/
+target/
+.lein-*
+repl-port
+.nrepl-port
+.repl
+
+# Datomic
+*.db
+
+# Python
+*.pyc
+*.pyo
+/__pycache__/
+
+# Ruby
+Gemfile.lock
+
+# Temp Files
+*.orig
+*~
+.*.swp
+.*.swo
+*.tmp
+*.bak
+
+# Editors (IntelliJ / Eclipse)
+*/.idea
+.idea
+*/.classpath
+.classpath
+*/.project
+.project
+*/.settings
+.settings
+
+# OS X
+.DS_Store
+
+# Logging
+*.log
+
+# Docs
+autodoc/
+
+# Builds
+out/
+

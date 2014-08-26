@@ -1,0 +1,43 @@
+
+{:cells {:noop ""
+         :category-id (attr-by-id "categoryinput" "value") ;; See DOM below
+         :products (cr-ania.data-processing/products #crania-bind [:cells :category-id])
+         :ratings (cr-ania.data-processing/ratings #crania-bind [:cells :category-id])
+         :columns (cr-ania.data-processing/columns #crania-bind [:cells :category-id])
+         :columns-text (pr-str #crania-bind [:cells :columns])
+         :filter (attr-by-id "filterinput" "value") ;; See DOM below
+         :filtered-products (substr-filter #crania-bind [:cells :filter] #crania-bind [:cells :products])}
+ :ui {:dtype :div
+      :contents [{:dtype :h5
+                  :contents "TVs - 28700 :: Cleaners - 33031"}
+                 {:dtype :span
+                  :contents [{:dtype :h5
+                              :contents "Category:"}
+                             {:dtype :input
+                              :id "categoryinput"
+                              :type "text"
+                              :onChange #crania-reset [[:cells :noop] ""]}
+                             {:dtype :h6
+                              :contents #crania-bind [:cells :columns-text]}]}
+                 {:dtype :button
+                  :contents "Column subset"
+                  :onClick #crania-reset [[:cells :columns] ["Versatility" "On-screen menu ease of use" "Remote ease of use"]]}
+                 {:dtype :span
+                  :contents [{:dtype :h5
+                              :contents "Filter brand:"}
+                             {:dtype :input
+                              :id "filterinput"
+                              :type "text"
+                              :onChange #crania-reset [[:cells :noop] ""]}]}
+
+                 {:dtype :table
+                  :id "selector-chart-table"
+                  :style #js {"height" "auto"
+                              "width" "740px"}
+                  :contents [{:dtype :product-header
+                              :columns #crania-bind [:cells :columns]}
+                             {:dtype :product-list
+                              :products #crania-bind [:cells :filtered-products]
+                              :ratings #crania-bind [:cells :ratings]
+                              :columns #crania-bind [:cells :columns]}]}]}}
+

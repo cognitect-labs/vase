@@ -1,0 +1,13 @@
+{:cells {:post? false
+         :text (attr-by-id "form-data" "value")
+         :post-data (post "/api/example/v1/post-form-data" #crania-bind [:cells :post?]
+                          :data #crania-bind [:cells :text])}
+  :ui {:dtype :form
+      :contents [{:dtype :input
+                  :id "form-data"
+                  :name "text"}
+                 {:dtype :input
+                  :type "button"
+                  :onClick #crania-reset [[:cells :post?] true]
+                  :value "Send"}]}}
+

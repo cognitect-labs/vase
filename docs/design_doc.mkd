@@ -1,0 +1,408 @@
+
+Design Documentation and Vision
+================================
+
+## Introduction
+
+This document describes the design of the service template and tooling system.
+
+It describes the basic service model and provides detailed documentation
+for all operations, including URIs/destinations and input/output data formats.
+
+The design for the implementation details of the system is [documented separately](impl_doc.mkd).
+
+For additional learning material and references, see the [education document](education.mkd)
+
+All testing, quality, construction, and risk assessment procedures are in the [construction document](construction.mkd)
+
+
+### Overview of existing data/product services
+
+There exists data-oriented/product services which current digital offerings and applications consume.
+
+ * TODO
+
+### Commonly used terms
+
+ * **Core Service** - The main CR-OCS container service, which hosts other prototyped APIs
+ * **API** - A service contained within the container; a hosted service within the core service
+ * **edn** - Also EDN; [Extensible Data Notation](https://github.com/edn-format/edn); a data serialization notation, like JSON
+
+
+### Goals
+
+The goal of this document is to elaborate on the constraints, trade-offs, formats,
+and general architecture of the system.  These decisions ensure the system can
+easily evolve and adapt, while achieving the target quality attributes and
+auxiliary goals.
+
+**This is a living document, it should evolve along with the system.**
+
+
+# Consumer Reports: On-demand Container Service
+
+The **Consumer Reports: On-demand Container Service** is an evolving API
+Container.  It itself is also a RESTful service, allowing one to create,
+update, and prototype running APIs that perform validation, data
+persistence/durability, and query/data retrieval tasks.  The main service
+(`cr-ocs`), is generated from a template, which may be used to allow Consumer
+Reports to generate custom (from the ground up) services where cr-ocs is
+insufficient.
+
+The APIs that cr-ocs hosts are all described in data and transacted with the
+service.  Core validation endpoints ensure the integrity and correctness of
+these application-description files (routing, schema, validation, and core-app
+configurations).
+
+The **architecture diagram** below serves as an example upon which to base a mental model.
+
+TODO Diagram
+
+The **sequence diagram** below shows the simplest usage of the container service.
+
+TODO Diagram
+
+
+## State and data management
+
+The core service and APIs are largely stateless - request identity is only
+maintained for that given request.  The core service and the hosted APIs do not
+remember anything about previous requests (beyond what was transacted into
+persistent/durable data).  Data is only transacted into persistent storage if
+it is submitted.  Routes that accept POST submissions are configured per API.
+*Please clearly document the actions of the individual APIs*.
+
+API-specific data that is persisted in the database is owned by that API.
+An API may only reference data that it owns.  Consumers of the API (other
+services, mobile apps, etc), may choose to integrate data from various APIs.
+Unifying data across APIs is a design challenge for API designers.  There is
+nothing within cr-ocs that helps or hinders unifying data.
+
+Owned data is versioned and namespaced for the given API.  Please see the
+API-specific documentation (or description files) to understand the shape,
+identifier, and target version of the data.
+
+
+## API Identity
+
+The service hosts any number of external APIs; each uniquely identified via a URI root.
+When an API is submitted for inclusion within the container, it must specify its
+unique *app-root*.  This app-root name uniquely identifies that service for the
+lifetime of the application within the container.
+
+
+## Failure and reliability
+
+The core service prevents APIs from having third-party integrations as a means
+to remove a common source of failures (and reliability issues).  The core
+service itself also doesn't integrate with any third-party systems.  At any
+point where an external integration is needed, the core service will use
+a latency and fault tolerant circuit breaker that is configurable within a
+configuration file.
+
+
+## Authorization and external requests
+
+The core service has no authorization or authentication mechanisms.  If such
+systems are desired, one should place the core service behind a system that provides
+such services externally.
+
+
+## Monitoring and logging
+
+All APIs will be logged with the core services default system log configuration.
+Additionally, the core service's platform should also provide additional
+monitoring capabilities.  No additional logging, monitoring, or reporting
+mechanisms will be in place for initial core service proof of concept.
+
+
+## Related concepts
+
+TODO
+
+
+## Input and Output formats
+
+All core service operations use _edn_ as the data exchange format.
+
+All hosted API operations use _JSON_ as the data exchange format.
+
+The description of each operation in the sections below define these formats in
+detail.
+
+
+### Default output format
+
+While some operations return specific formats, most operations use the default
+output format described here. You will see some expansion of this format for
+all requests returning an HTTP status `200`, `205`, or `400` - successful,
+partially-successful, or known-error/rejected results.  Other HTTP status codes
+may optionally return this format.  The example below is shown in JSON, the
+data exchange format for API operations.  An EDN adaption is also used for
+core service operations.
+
+```javascript
+{"request" : {"body": {original-req-payload},
+              "this_": "http://domain.com/...",
+              "help": "http://developers.domain.com/api/v3/docs/...",
+              "request_id": "hashtoken",
+              "server_received_time": "2012-01-02T01:04:05.000Z"},
+ "response" : {},
+ "errors" : {}}
+```
+
+ * The entire JSON response is known as a payload, that contains three top-level bodies: request, response, errors.
+ * Response bodies (payload.response) are either additional information if you performed a POST (like data validation or API creation) or requested information with GET
+ * Top-level properties within the response and error body follow the rule:
+   * If the request is for a single resource pool, the property is the resource.
+   * If the request contains pools of resources, the property names are the pools - the first layer/highest layer of nesting
+ * `request_id` is used for tracking purposes and is pulled out from the HTTP header or generated upon receiving the request
+ * A help property must appear with all error properties and is encouraged in response properties; ie: payload.errors.somedata.help. It is the URL to entity/request/error documentation.
+ * All errors in the payload must contain their unique error code and help
+   * The error code is only unique within the error tree for that resource
+ * The body property in request may be an empty object on GET requests if there are no query parameters.
+ * There may be some partial information processed, even if the endpoint rejected some erroneous payload data.  You may choose to ignore the partial data and resubmit the entire (corrected) payload again.
+   * Please see the HTTP status codes below for more information
+
+
+### Formats and conventions
+
+ * Timestamps and dates are always Zulu/GMT ISO-8601 format strings like, `"2014-01-02T01:04:05.000Z"`
+ * Dollars amounts / price information is always given in cents as an integer.  Ten dollars is `1000`
+   * If you pass in a decimal, 228.00, it will be converted to the integer cents form, 22800
+ * All property names are lowercase words separated with underscore, like `snake_case`
+ * Model ID always identifies a given item, integer (numeric type)
+ * User ID always identifies a given user, string - confirm
+   * The User ID should not appear in URLs or be needlessly exposed
+   * The User ID potentially could be some hash in the future
+ * `...` in this document means "repeat what was done before." It is used in the example input and output.
+
+
+## Response status codes and payload navigation
+
+All HTTP operations return an HTTP status code. The core service and hosted APIs
+use the following HTTP status codes and each of them drive the navigation of the
+response payload.
+
+ * 200 - Success. The response body should have a value and the errors body should be empty.
+ * 205 - Partial process / Partial success; Error body should be inspected and the request should be resubmitted for pull process / full success.  There are syntactic/semantic errors in the input (malformed, data missing, invalid values, not existing ids, ...)
+ * 303 - Redirect on creation POST.
+ * 307 - Redirect on an alias POST.
+ * 400 - The request was rejected.  There are syntactic/semantic errors in the input (malformed, data missing, invalid values, not existing ids, ...). The errors body should have a value and the response body normally is empty but might contain additional info (e.g. partial input processing, ...).
+ * 403 - A request came through without a service API key in the header and was not on the internal whitelist.
+ * 404 - The requested resource is not found. The errors body might contain a description for the "not found" error.
+ * 500 - A system error. The errors body might contain a description of the internal error/errors that occurred.
+
+
+### Examples navigating the payload
+
+TODO
+
+
+## Service data description formats
+
+Below are the formats and conventions for the data descriptions files used to
+describe and create APIs within the container/core service.  The data exchange
+format is edn.
+
+### Base description
+
+An API describes its various components (routes, schema, etc) within a hashmap,
+keyed with the applications URI app-route, whose value is also a map containing
+the versioned components.  See the example below:
+
+```clojure
+{:example-app
+  {:norms {:example/base-schema ...}
+   :v1 {:routes ...
+        :schemas ...
+        ...}}}
+```
+
+In the example above, we've described a new API called, `example-app`, that has
+a specified version, `v1`.  It also specifies all possible database schemas,
+`:norms`, that a version may use.  The component details for version `v1` of
+`example-app` follow.
+
+### Routing
+
+Routing is described in a hashmap, keyed by `:routes`, whose value is a vector
+of nested route-verb pairs.  See the example below:
+
+```clojure
+{:example-app
+  {:v1
+    {:routes ["/" {:get #cr-ocs/respond {:name :example-app/home
+                                         :data "Home page"}}
+              ["/about" {:get #cr-ocs/redirect {:name :example-app/about
+                                                :url "http://www.google.com"}}]
+              ["/check/:age" {:post #cr-ocs/validate {:name :example-app/age-check
+                                                      :url-params [age]
+                                                      :params [name address] ;; extracted from query string and POST body (form data, json, or edn)
+                                                      :properties [[TODO]]}}]]
+     :forward-headers ["crrequest-id"]}}}
+```
+
+This configuration would produce the URLs:
+
+ * _/api/example-app/v1/_
+ * _/api/example-app/v1/about_
+ * _/api/example-app/v1/check_
+
+All endpoints would forward the header `crrequest-id` from every request, to
+every response.  This may be used to forward API key credentials in headers,
+or other system information.  To **trace a reqestion**, use the special header
+found in this example, `crrequest-id`.
+
+#### Route-verb pairs
+
+The *route-verb pairs* are vectors describing the route and various HTTP verb
+actions.  Actions are described using *tagged-literals*, which which provide
+domain encoding for the *action-map*, and also provide a mechanism for easily
+extending and modifying the system.
+
+All route-verb pairs appear within the vector containing the root path ("/").
+That is, routing is nested based on URL hierarchy.  For more information,
+please see the [Pedestal routing documentation](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md)
+
+#### Actions
+
+Action (or action literals) are always verbs.  Here are the available actions:
+
+ * `#cr-ocs/respond` - Return a static response, optionally setting headers and the HTTP status code
+   * Action map may contain: `{:name :keyword, :data "a body string", :status 200, :headers {}}`
+ * `#cr-ocs/redirect` - Redirect the request with an HTTP 302 status; You can optionally set 303 status and additional headers
+   * Action map may contain: `{:name :keyword, :url "http://domain.com", :status 302, :headers {}, :params [bindname]}`
+ * `#cr-ocs/validate` - Validate a POST body or query string data
+   * Action map may contain: `{:name :keyword, :properties [... prop-vecs ...], :params [bindname]}`
+ * `#cr-ocs/query` - Consume a POST body, URL parameters, or query string data and run a Datomic query
+   * Action map may contain: `{:name :keyword, :params [... bindname ...], :query <legal datomic query>}`
+ * `#cr-ocs/transact` - Consume a POST body, URL parameters, or query string data, and transact data into the DB
+   * Action map may contain: `{:name :keyword, :properties [... whitelisted key ...]}`
+
+#### Action-maps
+
+Action-maps are hashmaps that contain Action-specific data.  All action-maps
+require a `:name` for the given action, a keyword.  This name is used in logging and URL
+generation, and thus should be a namespaced keyword.
+
+All additional action-map data is optional.  The keys in the action map are
+always nouns.  The details of each action map follow.
+
+**Respond**
+
+Details TODO
+
+**Redirect**
+
+Details TODO
+
+**Validate**
+
+Details TODO
+
+**Query**
+
+Details TODO
+
+**Transact**
+
+Details TODO
+
+
+### Norms and schemas
+
+An API uses a top-level key, `:norms` to specify all acceptable/avaible API
+schema datoms.  These are called *norms* because they're transacted with
+Datomic in an idempotent manner.
+
+The norms are captured as a map, with namespaced-keyword keys, and map values
+that hold the schema transactions, or `txes`.  For example:
+
+```clojure
+{:norms {:example-app/base-schema
+           {:txes [[{:db/id #db/id [:db.part/db]
+                     :db/ident :something/title
+                     :db/valueType :db.type/string
+                     :db/cardinality :db.cardinality/one
+                     :db/index false
+                     :db/doc "A simple title"
+                     :db.install/_attribute :db.part/db}
+                     ...]]}
+           ;; End :example-app/base-schema
+         ...}
+ :v1 {:routes [[ ... ]]
+      :schemas [:example-app/base-schema ...]}
+```
+
+Each API *version* specifies which of these schema segments it uses, captured
+as a vector of keywords (the norm keys).  This ensures the data is modeled
+appropriately per API version when queries run or data is transacted.
+
+Schema norms can also be described using a short-hand schema-transaction literal.
+Schema-transaction literals describe the ident, cardinality, type, optional
+qualifier (unique, identity, index, fulltext), and a doc string.  The optional qualifiers
+describe attributes that contain `:unique` values, that the DB should `:index`,
+or that allow `:fulltext` search.  `:fulltext` also implies `:index`. You can
+also say an entity's unique `:identity` can be determined by an attribute.
+
+The schema above using the short form would look like:
+
+```clojure
+{:norms {:example-app/base-schema
+           {:txes [#cr-ocs/short-schema-tx [[:something/title :one :string "A simple title"]]]}
+           ;; End :example-app/base-schema
+         ...}
+ :v1 {:routes [[ ... ]]
+      :schemas [:example-app/base-schema ...]}
+```
+
+
+# Operations
+
+This section describes the specific operations exposed by the CR-OCS core service.
+
+## Service operations
+
+These operations are about creating, updating, inspecting/querying and
+removing hosted APIs within the container service itself.
+
+### Create a new service
+
+_POST /api_
+
+Create/Upsert an API within the core service/container, given an edn payload
+that contains a full API descriptor, the API/app-name you wish to upsert
+(which also must appear in the descriptor), and the API version you wish to
+activate.  Returns Content-Type *application/edn*.
+
+#### Input format
+
+```clojure
+{:descriptor {... full-descriptor-map ...}
+ :app-name :example
+ :version [:v2]}
+```
+
+#### Output format
+
+```clojure
+{:added [:v2]}
+```
+
+### List all registered/active endpoints
+
+_GET /api_
+
+List all the registered/active routes within the container.  Optionally filter
+the list with the `f` query-arg.  Optionally set the separator between route
+names with the `sep` query-arg (`<br/>` is the default).  Optionally set
+the return format to edn (a vector containing the string results) with
+the `edn` query-arg set.
+
+
+## Configuration validation
+
+These operations about validating and checking the integrity and correctness
+of an API configuration (or any data-oriented description files)
+

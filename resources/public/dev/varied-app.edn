@@ -1,0 +1,40 @@
+
+{:cells {:noop ""
+         :category-id "28700"                               ;; TVs
+         :products (cr-ania.data-processing/products #crania-bind [:cells :category-id])
+         :ratings (cr-ania.data-processing/ratings #crania-bind [:cells :category-id])
+         :filter (attr-by-id "filterinput" "value")
+         :filtered-products (substr-filter #crania-bind [:cells :filter] #crania-bind [:cells :products])
+         :rating-columns ["Versatility" "On-screen menu ease of use" "Remote ease of use"]}
+ :ui {:dtype :div
+      :contents [{:dtype :span
+                  :id "crania-search"
+                  :contents [{:dtype :h5
+                              :contents "Filter brand:"}
+                             {:dtype :input
+                              :id "filterinput"
+                              :type "text"
+                              :onChange #crania-reset [[:cells :noop] ""]}]}
+                 {:dtype :table
+                  :id "selector-chart-table"
+                  :style #js {"height" "auto"
+                              "width" "740px"}
+                  :contents [{:dtype :product-header
+                              :columns #crania-bind [:cells :rating-columns]}
+                             {:dtype :product-list
+                              :products #crania-bind [:cells :filtered-products]
+                              :ratings #crania-bind [:cells :ratings]
+                              :columns #crania-bind [:cells :rating-columns]}]}]}
+ :variations {:limit-results [[[] :assoc-in [:cells :products-src] (cr-ania.data-processing/products #crania-bind [:cells :category-id])]
+                              [[] :assoc-in [:cells :products] (take 10 #crania-bind [:cells :products-src])]
+
+                              [["#selector-chart-table"] :reset nil]
+                              [["div>"] :conj {:dtype :unordered-list
+                                                 :source #crania-bind [:cells :products]
+                                                 :key :name}]]
+              :limit-products [[[] :assoc-in [:cells :filtered-products] (take 10 #crania-bind [:cells :products])]]
+              :no-search [[["#crania-search"] :reset nil]]
+              :simple-score [[[] :assoc-in [:cells :ratings-src] (cr-ania.data-processing/ratings #crania-bind [:cells :category-id])]
+                              [[] :assoc-in [:cells :ratings] (cr-ania.data-processing/mask-score #crania-bind [:cells :ratings-src])]]}
+ :crania {:log-only [:filter :filtered-products]}}
+

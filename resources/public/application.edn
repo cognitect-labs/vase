@@ -1,0 +1,27 @@
+
+{:cells {:noop ""
+         :category-id "28700" ;; TVs
+         :products (cr-ania.data-processing/products #crania-bind [:cells :category-id])
+         :ratings (cr-ania.data-processing/ratings #crania-bind [:cells :category-id])
+         :filter (attr-by-id "filterinput" "value")
+         :filtered-products (substr-filter #crania-bind [:cells :filter] #crania-bind [:cells :products])
+         :rating-columns ["Versatility" "On-screen menu ease of use" "Remote ease of use"]}
+ :ui {:dtype :div
+      :contents [{:dtype :span
+                  :contents [{:dtype :h5
+                              :contents "Filter brand:"}
+                             {:dtype :input
+                              :id "filterinput"
+                              :type "text"
+                              :onChange #crania-reset [[:cells :noop] ""]}]}
+                 {:dtype :table
+                  :id "selector-chart-table"
+                  :style #js {"height" "auto"
+                              "width" "740px"}
+                  :contents [{:dtype :product-header
+                              :columns #crania-bind [:cells :rating-columns]}
+                             {:dtype :product-list
+                              :products #crania-bind [:cells :filtered-products]
+                              :ratings #crania-bind [:cells :ratings]
+                              :columns #crania-bind [:cells :rating-columns]}]}]}}
+

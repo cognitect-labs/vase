@@ -1,0 +1,11 @@
+{:db-uri "datomic:mem://cr-ocs"
+ :service-port 8080
+ :http-app-root "/"
+ :enable-upsert true
+ :http-upsert true
+ :transact-upsert true
+ :initial-descriptor "test_descriptor.edn"
+ :initial-version [:example :v1]
+ :test-trials 36
+ }
+

@@ -1,0 +1,65 @@
+
+{:app-name :example
+ :version [:v2]
+ :descriptor {:example ;; API name // app-root
+
+ ;; Idempotent Schema Datoms (norms)
+ ;; --------------------------------
+ {:norms {:example/base-schema
+            ;; Supports full/long Datomic schemas
+          {:txes [[{:db/id #db/id[:db.part/db]
+                    :db/ident :company/name
+                    :db/unique :db.unique/value
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db.install/_attribute :db.part/db}]]}
+            ;; End :example/base-schema
+
+          :example/user-schema
+            ;; Also supports schema dependencies
+            {:requires [:example/base-schema]
+             ;; and supports short/basic schema definitions
+             :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "A Users unique identifier"]
+                                             [:user/userEmail :one :string :unique "The users email"]
+                                             ;; :fulltext also implies :index
+                                             [:user/userBio :one :string :fulltext "A short blurb about the user"]]]}
+          :example/loan-schema
+            {:requires [:example/base-schema :example/user-schema]
+             :txes [#cr-ocs/short-schema-tx [[:loanOffer/loanId :one :long :unique "The unique offer ID"]
+                                             [:loanOffer/fees :one :long :index "All of the loan fees"]
+                                             [:loanOffer/notes :many :string "Notes about the loan"]
+                                             [:user/loanOffers :many :ref "The collection of loan offers"]]]}}
+
+  ;; API Versions
+  ;; ------------
+  :v1 {:routes [["/hello" {:get #cr-ocs/respond {:name :example-v1/simple-response
+                                                 :body "Hello World"}}]
+                ["/redirect-to-google" {:get #cr-ocs/redirect {:name :example-v1/r-page, :url "http://www.google.com"}}]
+                ["/redirect-to-param" {:get #cr-ocs/redirect {:name :example-v1/ar-page
+                                                              :params [someurl]
+                                                              :url someurl}}]
+                ["/capture-s/:url-thing" {:get #cr-ocs/respond {:name :example-v1/url-param-example
+                                                                :url-params [url-thing]
+                                                                :body url-thing}}]
+                ;;TODO Validation is being paused for the time being
+                ;; Validation happens on the entire `param` map
+                ;["/validate/person" {:post #cr-ocs/validate {:name :example-v1/test-page
+                ;                                             ;:properties [[:name [validators/hard-presence]]
+                ;                                             ;             [:age  [(validators/from-predicate preds/non-neg-integer? "Age needs to be non-negative")
+                ;                                             ;                     (validators/from-predicate > 21 "You're not allowed to drink")]]]}}]
+                ;; Just use datomic queries
+                ["/person" {:get #cr-ocs/query {:name :example-v1/q-page
+                                                :params [fname lname]
+                                                :query [:find ?e
+                                                        :in $ ?fname ?lname
+                                                        :where  [[?e :user/firstName ?fname]
+                                                                 [?e :user/lastName ?lname]]]}}]
+                ["/db" {:get #cr-ocs/query {:name :example-v1/db-page
+                                            :params []
+                                            :query [:find ?e ?v :where [?e :db/ident ?v]]}}]]
+       :schemas [:example/user-schema :example/loan-schema]
+       :forward-headers ["crrequest-id"]}
+  :v2 {:routes [["/hello" {:get #cr-ocs/respond {:name :example-v2/hello
+                                                 :enforce-format true
+                                                 :body "Another Hello World Route"}}]]}}}}
+
