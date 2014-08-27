@@ -159,6 +159,7 @@
               whitelist# (apply-whitelist payload# ~props)]
           (util/response
             (util/payload req# "/doc"
-                          {:response (map #(vector (:e %) (:a %) (:v %))
-                                          (:tx-data @(cdb/transact! (massage-data whitelist#))))}))))]))
+                          {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
+                                                        (:tx-data @(cdb/transact! (massage-data whitelist#))))
+                                      :whitelist whitelist#}}))))]))
 
