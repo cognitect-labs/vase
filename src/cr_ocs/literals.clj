@@ -2,7 +2,8 @@
   (:require [clojure.walk :as walk]
             [themis.core  :as themis]
             [cr-ocs.util  :as util]
-            [cr-ocs.db    :as cdb])
+            [cr-ocs.db    :as cdb]
+            [io.pedestal.http.route.definition :as definition])
   (:import (java.net URLDecoder)))
 
 ;; TODO: All these literals should be Types/Records that support print-method
@@ -55,28 +56,42 @@
 ;; Routing/Action literals
 ;; -----------------------
 
+(defrecord RespondAction [name params edn-coerce body status headers enforce-format]
+  definition/ExpandableVerbAction
+  (expand-verb-action [_]
+    (let [params (or params [])
+          edn-coerce (or edn-coerce [])
+          response-attrs (cond-> {}
+                                 status (assoc :status status)
+                                 headers (assoc :headers headers))]
+      {:route-name name
+       :handler `(fn [req#]
+                   (let [{:keys ~params :as params#} (merge
+                                                      (decode-map (:path-params req#))
+                                                      (:params req#)
+                                                      (:json-params req#)
+                                                      (:edn-params req#))
+                         {:keys ~edn-coerce :as coercions#} (reduce (fn [cmap# k#]
+                                                                      (if (params# k#)
+                                                                        (assoc cmap# k# (try
+                                                                                          (util/read-edn (params# k#))
+                                                                                          (catch Exception e#
+                                                                                            (params# k#))))
+                                                                        cmap#))
+                                                                    {}
+                                                                    ~(mapv keyword edn-coerce))
+                         resp# (if ~enforce-format
+                                 (util/response (util/payload req# "/doc" ~body))
+                                 {:status 200 :headers {} :body ~(or body "")})]
+                     (util/deep-merge resp# ~response-attrs)))
+       :interceptors []})))
+
 (defn respond [form]
   {:pre [(map? form)]}
-  `[~(:name form)
-    (fn [req#]
-      (let [{:keys ~(get form :params []) :as params#} (merge
-                                                         (decode-map (:path-params req#))
-                                                         (:params req#)
-                                                         (:json-params req#)
-                                                         (:edn-params req#))
-            {:keys ~(get form :edn-coerce []) :as coercions#} (reduce (fn [cmap# k#]
-                                                                        (if (params# k#)
-                                                                          (assoc cmap# k# (try
-                                                                                            (util/read-edn (params# k#))
-                                                                                            (catch Exception e#
-                                                                                              (params# k#))))
-                                                                          cmap#))
-                                                                      {}
-                                                                      ~(mapv keyword (get form :edn-coerce {})))
-            resp# (if ~(:enforce-format form)
-                     (util/response (util/payload req# "/doc" ~(:body form)))
-                     {:status 200 :headers {} :body ~(get form :body "")})]
-        (util/deep-merge resp# ~(select-keys form [:status :headers]))))])
+  (map->RespondAction form))
+
+(defmethod print-method RespondAction [t ^java.io.Writer w]
+  (.write w (str "#cr-ocs/respond" (into {} t)))) 
 
 (defn redirect [form]
   {:pre [(map? form) (:url form)]}
