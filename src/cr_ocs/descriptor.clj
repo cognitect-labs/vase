@@ -1,6 +1,8 @@
 (ns cr-ocs.descriptor
   (:require [io.rkn.conformity :as conformity]
+            [io.pedestal.http.body-params :as body-params]
             [cr-ocs.interceptor :as interceptor]
+            [cr-ocs.literals]
             [cr-ocs.db :as cdb]))
 
 (defn route-vecs
@@ -11,7 +13,9 @@
   (into [(str "/" (name app-name) "/" (name version))
          ^:interceptors [(interceptor/forward-headers-interceptor
                           (keyword (name app-name) (name version))
-                          (get-in descriptor [app-name version :forward-headers] []))]]
+                          (get-in descriptor [app-name version :forward-headers] []))
+                         (body-params/body-params
+                           (body-params/default-parser-map :edn-options {:readers *data-readers*}))]]
    (get-in descriptor [app-name version :routes]) ))
 
 (defn versions

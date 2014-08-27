@@ -2,7 +2,6 @@
   (:require [clojure.string :as cstr]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.http.route :as route]
-            [io.pedestal.http.body-params :as body-params]
             [io.pedestal.http.route.definition :refer [defroutes expand-routes]]
             [io.pedestal.log :as log]
             [ring.util.response :as ring-resp]
@@ -23,14 +22,6 @@
   (ring-resp/response (format "Clojure %s - served from %s"
                               (clojure-version)
                               (route/url-for ::clj-ver))))
-
-;; TODO: DO NOT DO THIS IN PRODUCTION
-;;       This is for concept only
-(defn log-backchannel
-  [request]
-  (log/info :msg "Backchannel update"
-            :client (:params request))
-  (ring-resp/response "logged"))
 
 (defn health-check
   [request]
@@ -64,32 +55,38 @@
   "Append an API given an EDN descriptor payload.
   This will also transact schema updates to the DB."
   [request]
-  (let [{:keys [descriptor app-name version] :as payload} (:edn-params request)
-        descriptor-str (extract-descriptor-str (:body-string request))
+  (let [body-string (slurp (:body request))
+        {:keys [descriptor app-name version] :as payload} (util/read-edn body-string)
+        metad-desc (with-meta descriptor
+                              {:cr-ocs/src (extract-descriptor-str body-string)})
         versions (if (vector? version) version [version])]
     (doseq [v versions]
-      (bash-from-descriptor! (with-meta descriptor {:cr-ocs/src descriptor-str})
-                            app-name v))
+      (bash-from-descriptor! metad-desc app-name v))
     (bootstrap/edn-response {:added versions})))
 
 (def desc (util/edn-resource (get config :intial-descriptor "sample_descriptor.edn")))
 
 (def master-routes `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
                                                              interceptor/attach-request-id
-                                                             interceptor/byte-array-body
-                                                             (body-params/body-params
-                                                               (body-params/default-parser-map :edn-options {:readers *data-readers*}))
                                                              ;; In the future, html-body should be json-body
                                                              bootstrap/html-body]
                      ["/about" {:get clj-ver}]
-                     ["/log" {:post log-backchannel}]
-                     ["/api" ~(merge {:get `show-routes}
-                                     (if (config :http-upsert) {:post `append-api} nil))
-                      ^:interceptors [bootstrap/json-body
-                                      interceptor/json-error-ring-response]]])
+                     ^::api-root ["/api" ~(merge {:get `show-routes}
+                                                 (if (config :http-upsert) {:post `append-api} nil))
+                                  ^:interceptors [bootstrap/json-body
+                                                  interceptor/json-error-ring-response]]])
+
+(defn append-routes-to-api-root
+  [master-routes route-vecs]
+  (let [api-root-indices (keep-indexed #(when (-> (meta %2)
+                                                  ::api-root)
+                                          %1) master-routes)]
+    (reduce (fn [acc-routes index] (update-in acc-routes [index] conj route-vecs))
+            master-routes
+            api-root-indices)))
 
 (defn construct-routes [route-vecs]
-  (vec (expand-routes `[[~(update-in master-routes [5] conj route-vecs)]])))
+  (vec (expand-routes `[[~(append-routes-to-api-root master-routes route-vecs)]])))
 
 ;; TODO: Consider making routes an atom and avoiding alter-var-root
 (def routes (construct-routes (apply descriptor/route-vecs (cons desc (config :initial-version)))))
@@ -128,9 +125,9 @@
   Returning the route-seq if no errors occured"
   [descriptor-map app-name version]
   (descriptor/ensure-conforms descriptor-map app-name version)
-  (some->>
-    (bash-routes! (descriptor/route-vecs descriptor-map app-name version))
-    (transact-upsert descriptor-map)))
+  (some->> (descriptor/route-vecs descriptor-map app-name version)
+           bash-routes!
+           (transact-upsert descriptor-map)))
 
 ;; Transact the initial version of the API
 (apply bash-from-descriptor! (cons desc (config :initial-version)))

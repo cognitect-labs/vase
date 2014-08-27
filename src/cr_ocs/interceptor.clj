@@ -8,21 +8,6 @@
 ; :query-string :content-type :edn-params :path-info :uri :url-for :context-path :server-name :headers :servlet-request :content-length :received-time :server-port :character-encoding
 ; :servlet-response :io.pedestal.http.impl.servlet-interceptor/async-supported? :body :servlet-context :request-id)
 
-;; TODO This is only temp until the literals are Types/Records that support print-method
-(defon-request byte-array-body
-  "Capture the body of a request in a byte array to support
-  cloning its contents many times/for many purposes;
-  This uses the byte array to restore the `:body` input stream,
-  attaches `:body-array` and `:body-string`
-  NOTE: `:body` Will now just be a ByteArrayInputStream, not a ServletInputStream"
-  [req]
-  (let [body-string (slurp (:body req) :encoding (or (:character-encoding req) "UTF-8"))
-        body-array (.getBytes body-string)]
-    (assoc req
-           :body (java.io.ByteArrayInputStream. body-array)
-           :body-array body-array
-           :body-string body-string)))
-
 (defon-request attach-received-time
   "Attaches a timestamp to every request."
   [req]

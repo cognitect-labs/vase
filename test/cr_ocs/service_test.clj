@@ -39,14 +39,13 @@
   (is (=
        (selected-headers #(helper/GET % :headers {"crrequest-id" "yes"})
                          "/api/example/v1/hello"
-                         ["Content-Type" "crrequest-id"]) 
+                         ["Content-Type" "crrequest-id"])
        {"Content-Type" "text/html;charset=UTF-8"
         "crrequest-id" "yes"}))
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "crrequest-id"]))))
 
 (def known-route-names
   [:cr-ocs.service/health-check :cr-ocs.service/clj-ver
-   :cr-ocs.service/log-backchannel
    :cr-ocs.service/append-api :cr-ocs.service/show-routes
    :example-v2/hello
    :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
