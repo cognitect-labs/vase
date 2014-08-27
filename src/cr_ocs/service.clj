@@ -64,7 +64,7 @@
       (bash-from-descriptor! metad-desc app-name v))
     (bootstrap/edn-response {:added versions})))
 
-(def desc (util/edn-resource (get config :intial-descriptor "sample_descriptor.edn")))
+(def desc (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn")))
 
 (def master-routes `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
                                                              interceptor/attach-request-id
