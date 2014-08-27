@@ -93,7 +93,15 @@
                                                         :query [:find ?e
                                                                 :in $ [?emails ...]
                                                                 :where
-                                                                [?e :user/userEmail ?emails]]}}]]
+                                                                [?e :user/userEmail ?emails]]}}]
+                ["/fogus-and-someone" {:get #cr-ocs/query {:name :example-v1/fogussomeone-page
+                                                           :params [someone]
+                                                           :constants ["mefogus@gmail.com"]
+                                                           :query [:find ?e
+                                                                   :in $ ?someone ?fogus
+                                                                   :where
+                                                                   [(list ?someone ?fogus) [?emails ...]]
+                                                                   [?e :user/userEmail ?emails]]}}]]
        :schemas [:example/user-schema :example/loan-schema]
        :forward-headers ["crrequest-id"]}
   :v2 {:routes [["/hello" {:get #cr-ocs/respond {:name :example-v2/hello

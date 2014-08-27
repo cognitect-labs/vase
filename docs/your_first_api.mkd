@@ -638,8 +638,11 @@ data set, for example, *Give me all users whose email is in `["jane@domain.com",
 
 In Datomic this is called a "parameterized in/or query," and it's achieved by
 binding the names with the `:in` clause.  To do this, we supply additional
-constant data to the CR-ocs query with the `:constants` option.  An example
-can illustrate - observe our last change to the schema below:
+constant data to the CR-ocs query with the `:constants` option.
+This can also be used with parameter binding (covered above), in which case parameters
+are passed in to the query before the constants.
+
+An example of simple constants follows - observe our last change to the schema below:
 
 ```clojure
 {
