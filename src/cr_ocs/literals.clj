@@ -3,7 +3,8 @@
             [themis.core  :as themis]
             [cr-ocs.util  :as util]
             [cr-ocs.db    :as cdb]
-            [io.pedestal.http.route.definition :as definition])
+            [io.pedestal.http.route.definition :as definition]
+            [io.pedestal.log :as log])
   (:import (java.net URLDecoder)))
 
 ;; TODO: All these literals should be Types/Records that support print-method
@@ -122,6 +123,7 @@
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#cr-ocs/redirect" (into {} t))))
 
+;; TODO: Come back and write Validate for real
 (defn validate [form]
   {:pre [(map? form)]}
   `[~(:name form)
@@ -137,32 +139,40 @@
                         "/doc"
                         (themis/unfold-result (themis/validation params# rule-vec#))))))])
 
+
+
+(defrecord QueryAction [name params query edn-coerce constants]
+  definition/ExpandableVerbAction
+  (expand-verb-action [_]
+    (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
+          coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
+      {:route-name name
+       :handler `(fn [req#]
+                   (let [args# (merge
+                                (:path-params req#)
+                                (:params req#)
+                                (:json-params req#)
+                                (:edn-params req#))
+                         vals# (map (fn [k#]
+                                      (let [in-val# (get args# k#)]
+                                        (if (contains? ~coercions k#)
+                                          (try
+                                            (util/read-edn in-val#)
+                                            (catch Exception e#
+                                              in-val#))
+                                          in-val#)))
+                                    ~variables) 
+                         packet# (cdb/q '~query (concat vals# ~constants))]
+                     (util/response
+                      (util/payload req# "/doc"
+                                    {:response packet#}))))})))
+
 (defn query [form]
-  {:pre [(map? form)]}
-  (let [variables (vec (map #(-> % name keyword) (:params form)))
-        query     (:query form)
-        coercions (set (map #(-> % name keyword) (:edn-coerce form)))
-        constants (:constants form)]
-    `[~(:name form)
-      (fn [req#]
-        (let [args# (merge
-                     (:path-params req#)
-                     (:params req#)
-                     (:json-params req#)
-                     (:edn-params req#))
-              vals# (map (fn [k#]
-                           (let [in-val# (get args# k#)]
-                             (if (contains? ~coercions k#)
-                               (try
-                                 (util/read-edn in-val#)
-                                 (catch Exception e#
-                                   in-val#))
-                               in-val#)))
-                         ~variables)
-              packet# (cdb/q '~query (concat vals# ~constants))]
-          (util/response
-            (util/payload req# "/doc"
-                          {:response packet#}))))]))
+  {:pre [(map? form) (:query form)]}
+  (map->QueryAction form))
+
+(defmethod print-method QueryAction [t ^java.io.Writer w]
+  (.write w (str "#cr-ocs/query" (into {} t))))
 
 (defn process-lookup-ref [[str-attr val]]
   [(keyword str-attr) val])
