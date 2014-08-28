@@ -91,21 +91,36 @@
   (map->RespondAction form))
 
 (defmethod print-method RespondAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/respond" (into {} t)))) 
+  (.write w (str "#cr-ocs/respond" (into {} t))))
+
+(defrecord RedirectAction [name params body status headers url]
+  definition/ExpandableVerbAction
+  (expand-verb-action [_]
+    (let [params (or params [])
+          url (or url "")
+          response-attrs (cond-> {}
+                                 status (assoc :status status)
+                                 headers (assoc :headers headers)
+                                 body (assoc :body body))]
+      {:route-name name
+       :handler `(fn [req#]
+                   (let [{:keys ~params :as params#} (merge
+                                                       (decode-map (:path-params req#))
+                                                       (:params req#)
+                                                       (:json-params req#)
+                                                       (:edn-params req#))]
+                     (util/deep-merge {:status 302
+                                       :headers {"Location" ~url}
+                                       :body ""}
+                                      ~response-attrs)))
+       :interceptors []})))
 
 (defn redirect [form]
   {:pre [(map? form) (:url form)]}
-  `[~(:name form)
-    (fn [req#]
-      (let [ {:keys ~(get form :params []) :as params#} (merge
-                                                         (decode-map (:path-params req#))
-                                                         (:params req#)
-                                                         (:json-params req#)
-                                                         (:edn-params req#))]
-        (util/deep-merge {:status 302
-                          :headers {"Location" ~(:url form)}
-                          :body ""}
-                         ~(dissoc form :url :name))))])
+  (map->RedirectAction form))
+
+(defmethod print-method RedirectAction [t ^java.io.Writer w]
+  (.write w (str "#cr-ocs/redirect" (into {} t))))
 
 (defn validate [form]
   {:pre [(map? form)]}
