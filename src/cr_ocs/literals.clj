@@ -190,16 +190,20 @@
 (defn apply-whitelist [data wl-keys]
   (map #(select-keys % wl-keys) data))
 
+(defrecord TransactAction [name properties]
+  definition/ExpandableVerbAction
+  (expand-verb-action [_]
+    {:route-name name
+     :handler `(fn [req#]
+                 (let [payload# (get-in req# [:json-params :payload])
+                       whitelist# (apply-whitelist payload# ~properties)]
+                   (util/response
+                    (util/payload req# "/doc"
+                                  {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
+                                                                (:tx-data @(cdb/transact! (massage-data whitelist#))))
+                                              :whitelist whitelist#}}))))}))
+
 (defn transact [form]
   {:pre [(map? form)]}
-  (let [props (:properties form)]
-    `[~(:name form)
-      (fn [req#]
-        (let [payload# (get-in req# [:json-params :payload])
-              whitelist# (apply-whitelist payload# ~props)]
-          (util/response
-            (util/payload req# "/doc"
-                          {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
-                                                        (:tx-data @(cdb/transact! (massage-data whitelist#))))
-                                      :whitelist whitelist#}}))))]))
+  (map->TransactAction form))
 
