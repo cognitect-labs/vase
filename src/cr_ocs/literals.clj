@@ -1,6 +1,8 @@
 (ns cr-ocs.literals
   (:require [clojure.walk :as walk]
             [themis.core  :as themis]
+            [themis.predicates :as preds]
+            [themis.validators :as validators]
             [cr-ocs.util  :as util]
             [cr-ocs.db    :as cdb]
             [io.pedestal.http.route.definition :as definition]
@@ -57,7 +59,7 @@
 ;; Routing/Action literals
 ;; -----------------------
 
-(defrecord RespondAction [name params edn-coerce body status headers enforce-format]
+(defrecord RespondAction [name params edn-coerce body status headers enforce-format doc]
   definition/ExpandableVerbAction
   (expand-verb-action [_]
     (let [params (or params [])
@@ -82,13 +84,15 @@
                                                                     {}
                                                                     ~(mapv keyword edn-coerce))
                          resp# (if ~enforce-format
-                                 (util/response (util/payload req# "/doc" ~body))
+                                 (util/response (util/payload req# (or ~doc "") ~body))
                                  {:status 200 :headers {} :body ~(or body "")})]
                      (util/deep-merge resp# ~response-attrs)))
        :interceptors []})))
 
 (defn respond [form]
-  {:pre [(map? form)]}
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
   (map->RespondAction form))
 
 (defmethod print-method RespondAction [t ^java.io.Writer w]
@@ -117,31 +121,49 @@
        :interceptors []})))
 
 (defn redirect [form]
-  {:pre [(map? form) (:url form)]}
+  {:pre [(map? form)
+         (:url form)
+         (:name form)
+         (-> form :name keyword?)]}
   (map->RedirectAction form))
 
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#cr-ocs/redirect" (into {} t))))
 
-;; TODO: Come back and write Validate for real
+(defrecord ValidateAction [name params properties doc]
+  definition/ExpandableVerbAction
+  (expand-verb-action [_]
+    (let [params (or params [])
+          rule-vec (walk/postwalk
+                    (fn [form] (if (symbol? form)
+                                 (util/fully-qualify-symbol (the-ns 'cr-ocs.literals)
+                                                            form)
+                                 form))
+                    (or properties []))]
+      {:route-name name
+       :handler `(fn [req#]
+                   (let [{:keys ~params :as params#} (merge
+                                                      (decode-map (:path-params req#))
+                                                      (:params req#)
+                                                      (:json-params req#)
+                                                      (:edn-params req#))]
+                     (println params#
+                              ~rule-vec)
+                     (util/response
+                      (util/payload req#
+                                    (or ~doc "")
+                                    (themis/unfold-result (themis/validation params# ~rule-vec))))))})))
+
 (defn validate [form]
-  {:pre [(map? form)]}
-  `[~(:name form)
-    (fn [req#]
-      (let [{:keys ~(get form :params []) :as params#} (merge
-                                                         (decode-map (:path-params req#))
-                                                         (:params req#)
-                                                         (:json-params req#)
-                                                         (:edn-params req#))
-            rule-vec# ~(get form :properties [])]
-        (util/response
-          (util/payload req#
-                        "/doc"
-                        (themis/unfold-result (themis/validation params# rule-vec#))))))])
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
+  (map->ValidateAction form))
 
+(defmethod print-method ValidateAction [t ^java.io.Writer w]
+  (.write w (str "#cr-ocs/validate" (into {} t))))
 
-
-(defrecord QueryAction [name params query edn-coerce constants]
+(defrecord QueryAction [name params query edn-coerce constants doc]
   definition/ExpandableVerbAction
   (expand-verb-action [_]
     (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
@@ -161,14 +183,18 @@
                                             (catch Exception e#
                                               in-val#))
                                           in-val#)))
-                                    ~variables) 
+                                    ~variables)
                          packet# (cdb/q '~query (concat vals# ~constants))]
                      (util/response
-                      (util/payload req# "/doc"
+                      (util/payload req# (or ~doc "")
                                     {:response packet#}))))})))
 
 (defn query [form]
-  {:pre [(map? form) (:query form)]}
+  {:pre [(map? form)
+         (:query form)
+         (-> form :query vector?)
+         (:name form)
+         (-> form :name keyword?)]}
   (map->QueryAction form))
 
 (defmethod print-method QueryAction [t ^java.io.Writer w]
@@ -190,7 +216,7 @@
 (defn apply-whitelist [data wl-keys]
   (map #(select-keys % wl-keys) data))
 
-(defrecord TransactAction [name properties]
+(defrecord TransactAction [name properties doc]
   definition/ExpandableVerbAction
   (expand-verb-action [_]
     {:route-name name
@@ -198,12 +224,17 @@
                  (let [payload# (get-in req# [:json-params :payload])
                        whitelist# (apply-whitelist payload# ~properties)]
                    (util/response
-                    (util/payload req# "/doc"
+                    (util/payload req# (or ~doc "")
                                   {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
                                                                 (:tx-data @(cdb/transact! (massage-data whitelist#))))
                                               :whitelist whitelist#}}))))}))
 
 (defn transact [form]
-  {:pre [(map? form)]}
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
   (map->TransactAction form))
+
+(defmethod print-method TransactAction [t ^java.io.Writer w]
+  (.write w (str "#cr-ocs/transact" (into {} t))))
 

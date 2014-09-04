@@ -30,11 +30,6 @@
        (selected-headers helper/GET "/about" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
 
-(deftest respond-literal
-  (is (=
-       (:body (helper/GET "/api/example/v1/hello"))
-       "Hello World")))
-
 (deftest request-tracing-test
   (is (=
        (selected-headers #(helper/GET % :headers {"crrequest-id" "yes"})
@@ -50,6 +45,7 @@
    :example-v2/hello
    :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
    :example-v1/url-param-example
+   :example-v1/validate-page
    :example-v1/db-page
    :example-v1/users-page :example-v1/user-id-page
    :example-v1/user-create :example-v1/user-page

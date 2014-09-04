@@ -42,12 +42,11 @@
                                                                 :params [url-thing]
                                                                 :edn-coerce [url-thing] ;; parse a param as an edn string
                                                                 :body (str "You said: " url-thing " which is a " (type url-thing))}}]
-                ;;TODO Validation is being paused for the time being
                 ;; Validation happens on the entire `param` map
-                                        ;["/validate/person" {:post #cr-ocs/validate {:name :example-v1/test-page
-                                        ;                                             ;:properties [[:name [validators/hard-presence]]
-                                        ;                                             ;             [:age  [(validators/from-predicate preds/non-neg-integer? "Age needs to be non-negative")
-                                        ;                                             ;                     (validators/from-predicate > 21 "You're not allowed to drink")]]]}}]
+                ["/validate" {:post #cr-ocs/validate {:name :example-v1/validate-page
+                                                      :properties [[:name [validators/hard-presence]]
+                                                                   [:age  [(validators/from-predicate preds/non-neg-integer? "Age needs to be non-negative")
+                                                                           (validators/from-predicate (fnil > 0) 21 "You're not allowed to drink")]]]}}]
                 ;; Just use datomic queries
                 ["/db" {:get #cr-ocs/query {:name :example-v1/db-page
                                             :params []

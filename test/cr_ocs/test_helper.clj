@@ -69,3 +69,12 @@
                                  (:headers opts))
                  :body (util/write-edn payload))))
 
+(defn response-data
+  "Return the parsed payload data from a cr-ocs api http response."
+  ([response] (response-data response util/read-json))
+  ([response reader]
+     (-> response
+         :body
+         reader
+         :response)))
+
