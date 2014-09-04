@@ -40,17 +40,17 @@
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "crrequest-id"]))))
 
 (def known-route-names
-  [:cr-ocs.service/health-check :cr-ocs.service/clj-ver
-   :cr-ocs.service/append-api :cr-ocs.service/show-routes
-   :example-v2/hello
-   :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
-   :example-v1/url-param-example
-   :example-v1/validate-page
-   :example-v1/db-page
-   :example-v1/users-page :example-v1/user-id-page
-   :example-v1/user-create :example-v1/user-page
-   :example-v1/fogus-page :example-v1/foguspaul-page
-   :example-v1/fogussomeone-page])
+  #{:cr-ocs.service/health-check :cr-ocs.service/clj-ver
+    :cr-ocs.service/append-api :cr-ocs.service/show-routes
+    :example-v2/hello
+    :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
+    :example-v1/url-param-example
+    :example-v1/validate-page
+    :example-v1/db-page
+    :example-v1/users-page :example-v1/user-id-page
+    :example-v1/user-create :example-v1/user-page
+    :example-v1/fogus-page :example-v1/foguspaul-page
+    :example-v1/fogussomeone-page})
 
 (deftest uniquely-add-routes-test
   (is
@@ -64,12 +64,12 @@
           test-routes (if (fn? test-routes) (test-routes) test-routes)]
        (mapv :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v2) test-routes))
       (=
-       (mapv :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v2) test-routes))
+       (set (map :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v2) test-routes)))
        known-route-names))))
 
 (deftest bash-routes-test
   (let [_ (service/bash-routes! (descriptor/route-vecs service/desc :example :v2))
-        observed-routes (mapv :route-name (if (fn? service/routes) (service/routes) service/routes))]
+        observed-routes (set (map :route-name (if (fn? service/routes) (service/routes) service/routes)))]
     (is (= observed-routes known-route-names))
     (is (= (get-in (util/read-json (:body (response-for (helper/service (assoc service/service
                                                                           :io.pedestal.http/routes

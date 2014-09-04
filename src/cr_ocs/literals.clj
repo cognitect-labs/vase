@@ -147,8 +147,6 @@
                                                       (:params req#)
                                                       (:json-params req#)
                                                       (:edn-params req#))]
-                     (println params#
-                              ~rule-vec)
                      (util/response
                       (util/payload req#
                                     (or ~doc "")
