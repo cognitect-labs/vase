@@ -3,12 +3,13 @@
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
             [cr-ocs.service :as cserv]
+            [cr-ocs]
             [cr-ocs.util :as util]
             [cr-ocs.db :as cdb]
             [cr-ocs.config :refer [config]]
             [datomic.api :as d]))
 
-(def service-map cserv/service)
+(def base-service-map cserv/service)
 
 (defn test-with-fresh-db
   [f]
@@ -22,9 +23,9 @@
 (defn service
   "This generates a testable service for use with io.pedestal.test/response-for."
   ([]
-   (service service-map))
+     (service base-service-map))
   ([serv-map]
-     (apply cserv/bash-from-descriptor! (cons cserv/desc (config :initial-version)))
+     (cr-ocs/init-descriptor-routes! :master-routes cserv/master-routes)
      (::bootstrap/service-fn (bootstrap/create-servlet serv-map))))
 
 ;; This is only to make ad-hoc/repl testing easier.  Servlets are not immutable

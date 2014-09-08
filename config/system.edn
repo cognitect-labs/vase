@@ -7,5 +7,7 @@
  :initial-descriptor "sample_descriptor.edn"
  :initial-version [:example :v1]
  :test-trials 36
- }
+ ;; These are scoped for use within the parsing of your descriptor
+ ;:extension-namespaces {cr-ocs.extensions ext}
+}
 

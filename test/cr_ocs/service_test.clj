@@ -4,7 +4,9 @@
             [cr-ocs.test-helper :as helper]
             [cr-ocs.service :as service]
             [cr-ocs.descriptor :as descriptor]
-            [cr-ocs.util :as util]))
+            [cr-ocs.util :as util]
+            [cr-ocs.config :refer [config]]
+            [cr-ocs]))
 
 (defn selected-headers
   "Return a map with selected-keys out of the headers of a request to url"
@@ -55,29 +57,33 @@
 (deftest uniquely-add-routes-test
   (is
     (let [test-routes (:io.pedestal.http/routes service/service)
-          test-routes (if (fn? test-routes) (test-routes) test-routes)]
+          test-routes (if (fn? test-routes) (test-routes) test-routes)
+          route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v1)]
       (=
        (map :route-name test-routes)
-       (map :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v1) test-routes)))))
+       (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
+                                                    route-vecs
+                                                    @service/routes)))))
   (is
-    (let [test-routes (:io.pedestal.http/routes service/service)
-          test-routes (if (fn? test-routes) (test-routes) test-routes)]
-       (mapv :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v2) test-routes))
-      (=
-       (set (map :route-name (service/uniquely-add-routes (descriptor/route-vecs service/desc :example :v2) test-routes)))
-       known-route-names))))
+   (let [test-routes (:io.pedestal.http/routes service/service)
+         test-routes (if (fn? test-routes) (test-routes) test-routes)
+         route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)]
+     (=
+      (set (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
+                                                        route-vecs
+                                                        @service/routes)))
+      known-route-names))))
 
 (deftest bash-routes-test
-  (let [_ (service/bash-routes! (descriptor/route-vecs service/desc :example :v2))
-        observed-routes (set (map :route-name (if (fn? service/routes) (service/routes) service/routes)))]
+  (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)
+        _ (cr-ocs/bash-routes! service/routes route-vecs)
+        observed-routes (set (map :route-name @service/routes))]
     (is (= observed-routes known-route-names))
     (is (= (get-in (util/read-json (:body (response-for (helper/service (assoc service/service
                                                                           :io.pedestal.http/routes
-                                                                          #(deref #'service/routes)))
+                                                                          #(deref service/routes)))
                                                         :get "/api/example/v2/hello"))) [:response :payload])
-           "Another Hello World Route")))
-  ;; reset and confirm the op works
-  (is (boolean (service/reset-routes!))))
+           "Another Hello World Route"))))
 
 (deftest bash-http-descriptor-test
   (is
@@ -88,14 +94,13 @@
         post-response (helper/POST "/api" :body (slurp "config/sample_payload.edn") :headers {"Content-Type" "application/edn"})
         new-api-resp (response-for (helper/service (assoc service/service
                                                      :io.pedestal.http/routes
-                                                     #(deref #'service/routes)))
+                                                     #(deref service/routes)))
                                    :get "/api/example/v2/hello")]
     (is (= (:body post-response) "{:added [:v2]}"))
     (is (= (select-keys (:headers new-api-resp) ["Content-Type"])
            {"Content-Type" "application/json;charset=UTF-8"}))
     (is (= (select-keys (util/read-json (:body new-api-resp)) [:response :errors])
-           {:response {:payload "Another Hello World Route"} :errors {}})))
-  (is (boolean (service/reset-routes!))))
+           {:response {:payload "Another Hello World Route"} :errors {}}))))
 
 ;;TODO Make this work when we re-introduce validators
 ;(helper/POST "/api/example/v1/validate/person" {:name "paul" :age "55"})
