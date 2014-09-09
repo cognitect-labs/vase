@@ -6,6 +6,7 @@
             [cr-ocs.util  :as util]
             [cr-ocs.db    :as cdb]
             [io.pedestal.http.route.definition :as definition]
+            [io.pedestal.impl.interceptor :refer [interceptor]]
             [io.pedestal.log :as log])
   (:import (java.net URLDecoder)))
 
@@ -67,27 +68,28 @@
           response-attrs (cond-> {}
                                  status (assoc :status status)
                                  headers (assoc :headers headers))]
-      {:route-name name
-       :handler `(fn [req#]
-                   (let [{:keys ~params :as params#} (merge
-                                                      (decode-map (:path-params req#))
-                                                      (:params req#)
-                                                      (:json-params req#)
-                                                      (:edn-params req#))
-                         {:keys ~edn-coerce :as coercions#} (reduce (fn [cmap# k#]
-                                                                      (if (params# k#)
-                                                                        (assoc cmap# k# (try
-                                                                                          (util/read-edn (params# k#))
-                                                                                          (catch Exception e#
-                                                                                            (params# k#))))
-                                                                        cmap#))
-                                                                    {}
-                                                                    ~(mapv keyword edn-coerce))
-                         resp# (if ~enforce-format
-                                 (util/response (util/payload req# (or ~doc "") ~body))
-                                 {:status 200 :headers {} :body ~(or body "")})]
-                     (util/deep-merge resp# ~response-attrs)))
-       :interceptors []})))
+      {:handler (with-meta (interceptor :name name
+                                        :enter (eval `(fn [context#]
+                                                        (let [req# (:request context#)
+                                                              {:keys ~params :as params#} (merge
+                                                                                           (decode-map (:path-params req#))
+                                                                                           (:params req#)
+                                                                                           (:json-params req#)
+                                                                                           (:edn-params req#))
+                                                              {:keys ~edn-coerce :as coercions#} (reduce (fn [cmap# k#]
+                                                                                                           (if (params# k#)
+                                                                                                             (assoc cmap# k# (try
+                                                                                                                               (util/read-edn (params# k#))
+                                                                                                                               (catch Exception e#
+                                                                                                                                 (params# k#))))
+                                                                                                             cmap#))
+                                                                                                         {}
+                                                                                                         ~(mapv keyword edn-coerce))
+                                                              resp# (if ~enforce-format
+                                                                      (util/response (util/payload req# (or ~doc "") ~body))
+                                                                      {:status 200 :headers {} :body ~(or body "")})]
+                                                          (assoc context# :response (util/deep-merge resp# ~response-attrs))))))
+                  {:action-literal :respond})})))
 
 (defn respond [form]
   {:pre [(map? form)
@@ -107,18 +109,22 @@
                                  status (assoc :status status)
                                  headers (assoc :headers headers)
                                  body (assoc :body body))]
-      {:route-name name
-       :handler `(fn [req#]
-                   (let [{:keys ~params :as params#} (merge
-                                                       (decode-map (:path-params req#))
-                                                       (:params req#)
-                                                       (:json-params req#)
-                                                       (:edn-params req#))]
-                     (util/deep-merge {:status 302
-                                       :headers {"Location" ~url}
-                                       :body ""}
-                                      ~response-attrs)))
-       :interceptors []})))
+      {:handler (with-meta
+                  (interceptor :name name
+                               :enter
+                               (eval `(fn [context#]
+                                        (let [req# (:request context#)
+                                              {:keys ~params :as params#} (merge
+                                                                           (decode-map (:path-params req#))
+                                                                           (:params req#)
+                                                                           (:json-params req#)
+                                                                           (:edn-params req#))]
+                                          (assoc context#
+                                            :response (util/deep-merge {:status 302
+                                                                        :headers {"Location" ~url}
+                                                                        :body ""}
+                                                                       ~response-attrs))))))
+                  {:action-literal :redirect})})))
 
 (defn redirect [form]
   {:pre [(map? form)
@@ -140,17 +146,22 @@
                                                             form)
                                  form))
                     (or properties []))]
-      {:route-name name
-       :handler `(fn [req#]
-                   (let [{:keys ~params :as params#} (merge
-                                                      (decode-map (:path-params req#))
-                                                      (:params req#)
-                                                      (:json-params req#)
-                                                      (:edn-params req#))]
-                     (util/response
-                      (util/payload req#
-                                    (or ~doc "")
-                                    (themis/unfold-result (themis/validation params# ~rule-vec))))))})))
+      {:handler (with-meta
+                  (interceptor :name name
+                               :enter
+                               (eval `(fn [context#]
+                                        (let [req# (:request context#)
+                                              {:keys ~params :as params#} (merge
+                                                                           (decode-map (:path-params req#))
+                                                                           (:params req#)
+                                                                           (:json-params req#)
+                                                                           (:edn-params req#))]
+                                          (assoc context#
+                                            :response (util/response
+                                                       (util/payload req#
+                                                                     (or ~doc "")
+                                                                     (themis/unfold-result (themis/validation params# ~rule-vec)))))))))
+                  {:action-literal :validate})})))
 
 (defn validate [form]
   {:pre [(map? form)
@@ -166,26 +177,30 @@
   (expand-verb-action [_]
     (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
           coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
-      {:route-name name
-       :handler `(fn [req#]
-                   (let [args# (merge
-                                (:path-params req#)
-                                (:params req#)
-                                (:json-params req#)
-                                (:edn-params req#))
-                         vals# (map (fn [k#]
-                                      (let [in-val# (get args# k#)]
-                                        (if (contains? ~coercions k#)
-                                          (try
-                                            (util/read-edn in-val#)
-                                            (catch Exception e#
-                                              in-val#))
-                                          in-val#)))
-                                    ~variables)
-                         packet# (cdb/q '~query (concat vals# ~constants))]
-                     (util/response
-                      (util/payload req# (or ~doc "")
-                                    {:response packet#}))))})))
+      {:handler (with-meta
+                  (interceptor :name name
+                               :enter (eval `(fn [context#]
+                                               (let [req# (:request context#)
+                                                     args# (merge
+                                                            (:path-params req#)
+                                                            (:params req#)
+                                                            (:json-params req#)
+                                                            (:edn-params req#))
+                                                     vals# (map (fn [k#]
+                                                                  (let [in-val# (get args# k#)]
+                                                                    (if (contains? ~coercions k#)
+                                                                      (try
+                                                                        (util/read-edn in-val#)
+                                                                        (catch Exception e#
+                                                                          in-val#))
+                                                                      in-val#)))
+                                                                ~variables)
+                                                     packet# (cdb/q '~query (concat vals# ~constants))]
+                                                 (assoc context#
+                                                   :response (util/response
+                                                              (util/payload req# (or ~doc "")
+                                                                            {:response packet#})))))))
+                  {:action-literal :query})})))
 
 (defn query [form]
   {:pre [(map? form)
@@ -217,15 +232,21 @@
 (defrecord TransactAction [name properties doc]
   definition/ExpandableVerbAction
   (expand-verb-action [_]
-    {:route-name name
-     :handler `(fn [req#]
-                 (let [payload# (get-in req# [:json-params :payload])
-                       whitelist# (apply-whitelist payload# ~properties)]
-                   (util/response
-                    (util/payload req# (or ~doc "")
-                                  {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
-                                                                (:tx-data @(cdb/transact! (massage-data whitelist#))))
-                                              :whitelist whitelist#}}))))}))
+    {:handler (with-meta
+                (interceptor
+                 :name name
+                 :enter (eval
+                         `(fn [context#]
+                            (let [req# (:request context#)
+                                  payload# (get-in req# [:json-params :payload])
+                                  whitelist# (apply-whitelist payload# ~properties)]
+                              (assoc context#
+                                :response (util/response
+                                           (util/payload req# (or ~doc "")
+                                                         {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
+                                                                                       (:tx-data @(cdb/transact! (massage-data whitelist#))))
+                                                                     :whitelist whitelist#}})))))))
+                {:action-literal :transact})}))
 
 (defn transact [form]
   {:pre [(map? form)
