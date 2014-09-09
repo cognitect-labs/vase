@@ -20,13 +20,28 @@
     (reset! cdb/conn (cdb/conn-database uri))
     (f)))
 
+(defn refresh-service-map
+  ([]
+   (refresh-service-map base-service-map))
+  ([serv-map]
+   (let [routes-atom (cr-ocs/init-descriptor-routes!
+                       :master-routes cserv/master-routes)]
+     (assoc serv-map
+            :io.pedestal.http/routes
+              ;(if (config :enable-upsert) #(deref routes-atom) @routes-atom)
+              #(deref routes-atom)
+            :routes-atom routes-atom))))
+
+(defn service-fn [serv-map]
+  (::bootstrap/service-fn (bootstrap/create-servlet (dissoc serv-map :routes-atom))))
+
 (defn service
   "This generates a testable service for use with io.pedestal.test/response-for."
   ([]
      (service base-service-map))
   ([serv-map]
-     (cr-ocs/init-descriptor-routes! :master-routes cserv/master-routes)
-     (::bootstrap/service-fn (bootstrap/create-servlet serv-map))))
+   (let [new-map (refresh-service-map serv-map)]
+     (service-fn new-map))))
 
 ;; This is only to make ad-hoc/repl testing easier.  Servlets are not immutable
 ;; and should be generated per request to prevent any test pollution

@@ -66,6 +66,14 @@
              (assoc context
                     :response (response-for-exception exception)))))
 
+(defn bind-routes
+  ""
+  [routes-atom]
+  (interceptor/interceptor
+    :name ::bind-routes
+    :enter (fn [context]
+             (assoc-in context [:request :routes-atom] routes-atom))))
+
 (defn conditional-handlers
   "Gvien a keyword name and any variable predicate and handler function pairs,
   return an interceptor that will apply the handler paired to the first truthy

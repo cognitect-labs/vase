@@ -77,8 +77,9 @@
   "Return a list of all active routes.
   Optionally filter the list with the query param, `f`, which is a fuzzy match
   string value"
-  [routes request]
-  (let [paths (map (juxt :method :path) @routes)
+  [request]
+  (let [routes (:routes-atom request)
+        paths (map (juxt :method :path) @routes)
         {:keys [f sep edn] :or {f "" sep "<br/>" edn false}} (:query-params request)
         sep (str sep " ")
         results (filter #(.contains ^String (second %) f) paths)]
@@ -97,18 +98,16 @@
                             remove-words))]
   (cstr/trim (subs trimmed-body 1 (dec (count trimmed-body))))))
 
-
-;; TODO: Figure out what to do with append-api and show-routes
-;; TODO: LOOK HERE FIRST
 (defn append-api
   "Append an API given an EDN descriptor payload.
   This will also transact schema updates to the DB."
-  [routes request]
+  [request]
   (let [body-string (slurp (:body request))
         {:keys [descriptor app-name version] :as payload} (util/read-edn body-string)
         metad-desc (with-meta descriptor
                               {:cr-ocs/src (extract-descriptor-str body-string)})
-        versions (if (vector? version) version [version])]
+        versions (if (vector? version) version [version])
+        routes (:routes-atom request)]
     (doseq [v versions]
       (bash-from-descriptor! routes metad-desc app-name v))
     (bootstrap/edn-response {:added versions})))
@@ -116,7 +115,7 @@
 (defn maybe-enable-http-upsert
   [master-routes routes]
   (if-let [new-verbs (when (config :http-upsert)
-                       `{:post [:cr-ocs/append-api (fn [req#] (append-api ~routes req#))]})]
+                       `{:post [:cr-ocs/append-api (fn [req#] (append-api req#))]})]
     (update-api-roots master-routes
                       (fn [root _]
                         (let [verbs-index (keep-indexed #(when (map? %2) %1) root)]
@@ -133,20 +132,22 @@
      for response generation (attach-received-time, attach-request-id)"
   [& args]
   (let [{:keys [routes-atom master-routes descriptor initial-version]
-         :or {routes-atom (atom [])
+         :or {routes-atom (atom nil)
+              master-routes `["/" ^:interceptors [interceptor/attach-received-time
+                                                  interceptor/attach-request-id
+                                                  ;; In the future, html-body should be json-body
+                                                  bootstrap/html-body]
+                              ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes `(fn [req#] (cr-ocs/show-routes req#))]}
+                                                 ^:interceptors [bootstrap/json-body
+                                                                 interceptor/json-error-ring-response]]]
               descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
               initial-version (config :initial-version)}} args
-        master-routes (or master-routes `["/" ^:interceptors [interceptor/attach-received-time
-                                                              interceptor/attach-request-id
-                                                              ;; In the future, html-body should be json-body
-                                                              bootstrap/html-body]
-                                          ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes (fn [request#] (show-routes ~routes-atom request#))]}
-                                                             ^:interceptors [bootstrap/json-body
-                                                                             interceptor/json-error-ring-response]]])
         master-routes (maybe-enable-http-upsert master-routes routes-atom)]
+    ;; Reset the atom to the initial state
+    (reset! routes-atom nil)
     ;; Setup the meta on the routes
     (alter-meta! routes-atom assoc :master-routes master-routes :descriptor descriptor)
-    ;; Ensure all symbols are available for the literals at read-time
+    ;; Ensure all symbols are available for the literals at descriptor-read-time
     (force-into-literals!)
     ;; Transact the initial version of the API
     ;; TODO: Once bash-from-descriptor! includes transaction info in its meta, it should be added routes
