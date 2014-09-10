@@ -27,7 +27,7 @@
 (deftest about-page-test
   (is (.contains
         (:body (helper/GET "/about"))
-        "Clojure 1.6"))
+        "Clojure 1.7"))
   (is (=
        (selected-headers helper/GET "/about" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
@@ -85,6 +85,17 @@
                    [:response :payload])
            "Another Hello World Route"))))
 
+(deftest bash-descriptor-test
+  (let [serv-map (helper/refresh-service-map)
+        serv (helper/service-fn serv-map)
+        routes-atom (:routes-atom serv-map)
+        descriptor (:descriptor (meta service/routes))
+        pre-condition (response-for serv :get "/api/example/v2/hello")
+        _ (cr-ocs/bash-from-descriptor! routes-atom descriptor :example :v2)
+        post-condition (response-for serv :get "/api/example/v2/hello")]
+    (is (= (:status pre-condition) 404))
+    (is (= (:status post-condition) 200))))
+
 ;; TODO This needs to use a stateful service
 (deftest bash-http-descriptor-test
   (let [serv-map (helper/refresh-service-map)
@@ -94,12 +105,12 @@
      (= (:body (response-for serv :get "/api?f=v2"))
         ""))
     (let [ ;; Add V2
-          pre-modified-routes @(:routes-atom serv-map)
+          pre-modified-routes (:body (response-for serv :get "/api"))
           post-response (response-for serv :post "/api" :body (slurp "config/sample_payload.edn") :headers {"Content-Type" "application/edn"})
-          post-modified-routes @(:routes-atom serv-map)
+          post-modified-routes (:body (response-for serv :get "/api"))
           new-api-resp (response-for serv :get "/api/example/v2/hello")]
       (is (= (:body post-response) "{:added [:v2]}"))
-      (is (< (count pre-modified-routes) (count post-modified-routes)))
+      (is (not= pre-modified-routes post-modified-routes))
       (is (= (select-keys (:headers new-api-resp) ["Content-Type"])
              {"Content-Type" "application/json;charset=UTF-8"}))
       (is (= (select-keys (util/read-json (:body new-api-resp)) [:response :errors])

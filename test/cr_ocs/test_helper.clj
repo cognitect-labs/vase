@@ -2,6 +2,7 @@
   (:require [io.pedestal.test :refer [response-for]]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
+            [cr-ocs.interceptor :as interceptor]
             [cr-ocs.service :as cserv]
             [cr-ocs]
             [cr-ocs.util :as util]
@@ -10,6 +11,18 @@
             [datomic.api :as d]))
 
 (def base-service-map cserv/service)
+
+(defn make-master-routes
+  [routes-atom]
+  `["/" {:get cserv/health-check} ^:interceptors [interceptor/attach-received-time
+                                            interceptor/attach-request-id
+                                            ;; In the future, html-body should be json-body
+                                            bootstrap/html-body
+                                            ~(interceptor/bind-routes routes-atom)]
+    ["/about" {:get cserv/clj-ver}]
+    ^:cr-ocs/api-root ["/api" {:get cr-ocs/show-routes}
+                       ^:interceptors [bootstrap/json-body
+                                       interceptor/json-error-ring-response]]])
 
 (defn test-with-fresh-db
   [f]
@@ -24,8 +37,10 @@
   ([]
    (refresh-service-map base-service-map))
   ([serv-map]
-   (let [routes-atom (cr-ocs/init-descriptor-routes!
-                       :master-routes cserv/master-routes)]
+     (let [routes-atom (atom nil)
+           routes-atom (cr-ocs/init-descriptor-routes!
+                        :master-routes (make-master-routes routes-atom)
+                        :routes-atom routes-atom)]
      (assoc serv-map
             :io.pedestal.http/routes
               ;(if (config :enable-upsert) #(deref routes-atom) @routes-atom)

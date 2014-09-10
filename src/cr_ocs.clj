@@ -115,7 +115,7 @@
 (defn maybe-enable-http-upsert
   [master-routes routes]
   (if-let [new-verbs (when (config :http-upsert)
-                       `{:post [:cr-ocs/append-api (fn [req#] (append-api req#))]})]
+                       `{:post [:cr-ocs/append-api append-api]})]
     (update-api-roots master-routes
                       (fn [root _]
                         (let [verbs-index (keep-indexed #(when (map? %2) %1) root)]
@@ -137,7 +137,7 @@
                                                   interceptor/attach-request-id
                                                   ;; In the future, html-body should be json-body
                                                   bootstrap/html-body]
-                              ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes `(fn [req#] (cr-ocs/show-routes req#))]}
+                              ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes show-routes]}
                                                  ^:interceptors [bootstrap/json-body
                                                                  interceptor/json-error-ring-response]]]
               descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
