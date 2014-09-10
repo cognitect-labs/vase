@@ -2,7 +2,11 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [cr-ocs.test-helper :as helper]
-            [cr-ocs.db :as cdb]))
+            [cr-ocs.db :as cdb]
+            [cr-ocs.util :as util]
+            [cr-ocs.descriptor :as desc]
+            [cr-ocs.config :refer [config]]
+            [datomic.api :as d]))
 
 (use-fixtures :each helper/test-with-fresh-db)
 
@@ -25,3 +29,29 @@
     (is (seq (helper/response-data special-get)))
     (is (= (count (helper/response-data special-get)) 2))))
 
+(deftest schema-query
+  (let [descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
+        ddb (desc/descriptor-facts descriptor)
+        res (d/q '[:find ?schema-name :in $ :where
+                   [_ ::desc/schema ?schema]
+                   [?schema ::desc/name ?schema-name]] ddb)
+        res-length (count res)]
+    (is (seq res))
+    (is (= (count (remove #(-> % str (.startsWith "blah")) res)) res-length))))
+
+(deftest route-query
+  (let [descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
+        ddb (desc/descriptor-facts descriptor)
+        post-res (d/q '[:find ?route :in $ :where
+                        [_ ::desc/route ?route]
+                        [?route ::desc/method :post]
+                        [?route ::desc/action-literal :query]] ddb)
+        get-res (d/q '[:find ?route :in $ :where
+                       [_ ::desc/route ?route]
+                       [?route ::desc/method :get]
+                       [?route ::desc/action-literal :query]] ddb)
+        action-literals (map first (d/q '[:find ?literal :in $ :where
+                                          [_ ::desc/action-literal ?literal]] ddb))]
+    (is (= #{:transact :query :respond :redirect :validate} (set action-literals)))
+    (is (empty? post-res))
+    (is (seq get-res))))
