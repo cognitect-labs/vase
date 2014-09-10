@@ -55,3 +55,17 @@
     (is (= #{:transact :query :respond :redirect :validate} (set action-literals)))
     (is (empty? post-res))
     (is (seq get-res))))
+
+(deftest all-route-queries-that-use-X-schema
+  (let [descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
+        ddb (desc/descriptor-facts descriptor)
+        results (d/q '[:find ?path :in $ ?schema-name :where
+                       [?api ::desc/schema ?schema]
+                       [?schema ::desc/name ?schema-name]
+                       [?api ::desc/route ?route]
+                       [?route ::desc/path ?path]] ddb :example/user-schema)]
+    (is (= #{["/fogus-and-paul"] ["/capture-s/:url-thing"] ["/users"] ["/user"]
+             ["/fogus-and-someone"] ["/redirect-to-google"]
+             ["/redirect-to-param"] ["/fogus"] ["/db"] ["/users/:id"]
+             ["/validate"] ["/hello"]} results))))
+

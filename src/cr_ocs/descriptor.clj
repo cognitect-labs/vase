@@ -4,7 +4,8 @@
             [io.pedestal.http.route.definition :as route]
             [cr-ocs.interceptor :as interceptor]
             [cr-ocs.literals]
-            [cr-ocs.db :as cdb]))
+            [cr-ocs.db :as cdb]
+            [datomic.api :as d]))
 
 (defn route-vecs
   "Given a descriptor map, an app-name keyword, and a version keyword,
@@ -43,22 +44,27 @@
    (let [api-schema (get-in descriptor [app-name version :schemas])]
      (conformity/ensure-conforms db-conn (norms descriptor app-name) api-schema))))
 
-(def ^:dynamic descriptor-entity nil)
+(def ^:dynamic *descriptor-entity* nil)
 
-(def ^:dynamic schema-entity nil)
+(def ^:dynamic *schema-entity* nil)
 
-(def ^:dynamic api-entity nil)
+(def ^:dynamic *api-entity* nil)
 
-(def ^:dynamic route-entity nil)
+(def ^:dynamic *route-entity* nil)
+
+;; Dynamic var used in post-processing that holds only realized, inert
+;; facts.
+
+(def ^:dynamic *realized-facts* nil)
 
 (defn- schema-facts
   [schema-entries]
   (doall
    (mapcat
     (fn [[schema-name schema-data]]
-      (binding [schema-entity (cdb/temp-id)]
-        [[descriptor-entity ::schema schema-entity]
-         [schema-entity ::name schema-name]]))
+      (binding [*schema-entity* (cdb/temp-id)]
+        [[*descriptor-entity* ::schema *schema-entity*]
+         [*schema-entity* ::name schema-name]]))
      schema-entries)))
 
 (defn- route-facts
@@ -66,7 +72,7 @@
   (let [route-table (route/expand-routes [route-spec])]
     (doall (mapcat
             (fn [entry]
-              (binding [route-entity (cdb/temp-id)]
+              (binding [*route-entity* (cdb/temp-id)]
                 (let [{name :route-name
                        :keys [path method]} entry
                        action-literal (-> entry
@@ -74,21 +80,37 @@
                                           last
                                           meta
                                           :action-literal)]
-                  [[api-entity ::route route-entity]
-                   [route-entity ::name name]
-                   [route-entity ::path path]
-                   [route-entity ::method method]
-                   [route-entity ::action-literal action-literal]])))
+                  [[*api-entity* ::route *route-entity*]
+                   [*route-entity* ::name name]
+                   [*route-entity* ::path path]
+                   [*route-entity* ::method method]
+                   [*route-entity* ::action-literal action-literal]])))
             route-table))))
+
+(defn resolve-schema-entity
+  [schema-name]
+  (ffirst (d/q '[:find ?schema-entity :in $ ?schema-name
+                 :where
+                 [_ ::schema ?schema-entity]
+                 [?schema-entity ::name ?schema-name]]
+               *realized-facts*
+               schema-name)))
+
+(defn- api-schema-facts
+  [schema-vec]
+  (let [current-api-entity *api-entity*]
+    (doall (for [schema-name schema-vec]
+             (delay [current-api-entity ::schema (resolve-schema-entity schema-name)])))))
 
 (defn- api-facts
   "Return a pseudo-datomic DB of [e a v] tuples describing qualities of api entries from a descriptor."
   [api-entries]
   (doall (mapcat (fn [[k v]]
-                   (binding [api-entity (cdb/temp-id)]
-                     (concat [[descriptor-entity ::api api-entity]
-                              [api-entity ::name k]]
-                             (route-facts (:routes v))))) api-entries)))
+                   (binding [*api-entity* (cdb/temp-id)]
+                     (concat [[*descriptor-entity* ::api *api-entity*]
+                              [*api-entity* ::name k]]
+                             (route-facts (:routes v))
+                             (api-schema-facts (:schemas v))))) api-entries)))
 
 (defn- norm-facts
   "Return a pseudo-datomic DB of [e a v] tuples describing qualities of descriptor-val's norms."
@@ -101,7 +123,12 @@
   [descriptor]
   (let [[k v] (first descriptor)]
     (when (and k v)
-      (binding [descriptor-entity (cdb/temp-id)]
-        (concat [[descriptor-entity ::name k]]
-                (norm-facts v)
-                (api-facts (remove (fn [[k v]] (= k :norms)) v)))))))
+      (binding [*descriptor-entity* (cdb/temp-id)]
+        (let [heterogeneous-facts (concat [[*descriptor-entity* ::name k]]
+                                          (norm-facts v)
+                                          (api-facts (remove (fn [[k v]] (= k :norms)) v)))
+              {realized false
+               delayed true} (group-by delay? heterogeneous-facts)]
+          (binding [*realized-facts* realized]
+            (concat realized (doall (map deref delayed)))))))))
+
