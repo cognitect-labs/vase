@@ -44,7 +44,7 @@
 (def known-route-names
   #{:cr-ocs.service/health-check :cr-ocs.service/clj-ver
     :cr-ocs/append-api :cr-ocs/show-routes
-    :example-v2/hello
+    #_:example-v2/hello
     :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
     :example-v1/url-param-example
     :example-v1/validate-page
@@ -54,7 +54,7 @@
     :example-v1/fogus-page :example-v1/foguspaul-page
     :example-v1/fogussomeone-page})
 
-#_(deftest uniquely-add-routes-test
+(deftest uniquely-add-routes-test
   ;; TODO: This test needs to be patched
   (is
     (let [test-routes (:io.pedestal.http/routes service/service)
@@ -88,17 +88,18 @@
 ;; TODO This needs to use a stateful service
 (deftest bash-http-descriptor-test
   (let [serv-map (helper/refresh-service-map)
-        serv (helper/service-fn serv-map)
-        _ (prn (map :path (deref (:routes-atom serv-map))))
-        ]
+        serv (helper/service-fn serv-map)]
     (is
-      ;; There is no v2 route to start
-      (= (:body (response-for serv :get "/api"))
-         ""))
-    #_(let [ ;; Add V2
+     ;; There is no v2 route to start
+     (= (:body (response-for serv :get "/api?f=v2"))
+        ""))
+    (let [ ;; Add V2
+          pre-modified-routes @(:routes-atom serv-map)
           post-response (response-for serv :post "/api" :body (slurp "config/sample_payload.edn") :headers {"Content-Type" "application/edn"})
+          post-modified-routes @(:routes-atom serv-map)
           new-api-resp (response-for serv :get "/api/example/v2/hello")]
       (is (= (:body post-response) "{:added [:v2]}"))
+      (is (< (count pre-modified-routes) (count post-modified-routes)))
       (is (= (select-keys (:headers new-api-resp) ["Content-Type"])
              {"Content-Type" "application/json;charset=UTF-8"}))
       (is (= (select-keys (util/read-json (:body new-api-resp)) [:response :errors])

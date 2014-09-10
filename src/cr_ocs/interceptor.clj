@@ -1,5 +1,5 @@
 (ns cr-ocs.interceptor
-  (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor]]
+  (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor definterceptorfn]]
             [io.pedestal.log :as log]
             [clojure.stacktrace :as ctrace]
             [clj-time.core :as clj-time]
@@ -66,7 +66,7 @@
              (assoc context
                     :response (response-for-exception exception)))))
 
-(defn bind-routes
+(definterceptorfn bind-routes
   ""
   [routes-atom]
   (interceptor/interceptor

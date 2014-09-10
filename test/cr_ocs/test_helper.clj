@@ -29,7 +29,7 @@
      (assoc serv-map
             :io.pedestal.http/routes
               ;(if (config :enable-upsert) #(deref routes-atom) @routes-atom)
-              #(deref routes-atom)
+            #(deref routes-atom)
             :routes-atom routes-atom))))
 
 (defn service-fn [serv-map]

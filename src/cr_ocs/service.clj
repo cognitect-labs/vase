@@ -24,9 +24,9 @@
                                                              interceptor/attach-request-id
                                                              ;; In the future, html-body should be json-body
                                                              bootstrap/html-body
-                                                             ~(interceptor/bind-routes routes)]
+                                                             (interceptor/bind-routes routes)]
                      ["/about" {:get clj-ver}]
-                     ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes `(fn [req#] (cr-ocs/show-routes req#))]}
+                     ^:cr-ocs/api-root ["/api" {:get cr-ocs/show-routes}
                                         ^:interceptors [bootstrap/json-body
                                                         interceptor/json-error-ring-response]]])
 

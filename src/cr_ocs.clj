@@ -105,7 +105,7 @@
   (let [body-string (slurp (:body request))
         {:keys [descriptor app-name version] :as payload} (util/read-edn body-string)
         metad-desc (with-meta descriptor
-                              {:cr-ocs/src (extract-descriptor-str body-string)})
+                     {:cr-ocs/src (extract-descriptor-str body-string)})
         versions (if (vector? version) version [version])
         routes (:routes-atom request)]
     (doseq [v versions]
