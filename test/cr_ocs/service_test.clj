@@ -44,7 +44,7 @@
 (def known-route-names
   #{:cr-ocs.service/health-check :cr-ocs.service/clj-ver
     :cr-ocs/append-api :cr-ocs/show-routes
-    #_:example-v2/hello
+    :example-v2/hello
     :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
     :example-v1/url-param-example
     :example-v1/validate-page
@@ -65,7 +65,7 @@
        (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
                                                     route-vecs
                                                     @service/routes)))))
-  (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v1)]
+  (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)]
     (is
       (=
        (set (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
