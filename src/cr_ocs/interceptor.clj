@@ -1,5 +1,5 @@
 (ns cr-ocs.interceptor
-  (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor]]
+  (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor definterceptorfn]]
             [io.pedestal.log :as log]
             [clojure.stacktrace :as ctrace]
             [clj-time.core :as clj-time]
@@ -65,6 +65,14 @@
     :error (fn [{:keys [servlet-response] :as context} exception]
              (assoc context
                     :response (response-for-exception exception)))))
+
+(definterceptorfn bind-routes
+  ""
+  [routes-atom]
+  (interceptor/interceptor
+    :name ::bind-routes
+    :enter (fn [context]
+             (assoc-in context [:request :routes-atom] routes-atom))))
 
 (defn conditional-handlers
   "Gvien a keyword name and any variable predicate and handler function pairs,

@@ -26,13 +26,14 @@
     (*deep-merge-fn* vals)))
 
 (defn fully-qualify-symbol
-  [ns sym]
-  (if-let [ns-alias? (namespace sym)]
-    (let [ns-aliases (ns-aliases ns)]
-      (if-let [fqns (ns-aliases (symbol ns-alias?))]
-        (symbol (name (ns-name fqns)) (name sym))
-        sym))
-    sym))
+  ([sym] (fully-qualify-symbol *ns* sym))
+  ([ns sym]
+     (if-let [ns-alias? (namespace sym)]
+       (let [ns-aliases (ns-aliases ns)]
+         (if-let [fqns (ns-aliases (symbol ns-alias?))]
+           (symbol (name (ns-name fqns)) (name sym))
+           sym))
+       sym)))
 
 (defn short-hash []
   (subs (DatatypeConverter/printBase64Binary (byte-array 8 (.byteValue ^Long (long (rand 100))))) 0 11))

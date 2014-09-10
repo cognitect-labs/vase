@@ -24,3 +24,4 @@
          post1 post2 special-get)
     (is (seq (helper/response-data special-get)))
     (is (= (count (helper/response-data special-get)) 2))))
+

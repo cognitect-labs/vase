@@ -1,6 +1,8 @@
 # Project related
 my-new-payload.edn
 data/
+/datomic/
+/resources/public/ratings/
 
 # Java related
 pom.xml

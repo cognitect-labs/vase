@@ -2,13 +2,27 @@
   (:require [io.pedestal.test :refer [response-for]]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
+            [cr-ocs.interceptor :as interceptor]
             [cr-ocs.service :as cserv]
+            [cr-ocs]
             [cr-ocs.util :as util]
             [cr-ocs.db :as cdb]
             [cr-ocs.config :refer [config]]
             [datomic.api :as d]))
 
-(def service-map cserv/service)
+(def base-service-map cserv/service)
+
+(defn make-master-routes
+  [routes-atom]
+  `["/" {:get cserv/health-check} ^:interceptors [interceptor/attach-received-time
+                                            interceptor/attach-request-id
+                                            ;; In the future, html-body should be json-body
+                                            bootstrap/html-body
+                                            ~(interceptor/bind-routes routes-atom)]
+    ["/about" {:get cserv/clj-ver}]
+    ^:cr-ocs/api-root ["/api" {:get cr-ocs/show-routes}
+                       ^:interceptors [bootstrap/json-body
+                                       interceptor/json-error-ring-response]]])
 
 (defn test-with-fresh-db
   [f]
@@ -19,13 +33,30 @@
     (reset! cdb/conn (cdb/conn-database uri))
     (f)))
 
+(defn refresh-service-map
+  ([]
+   (refresh-service-map base-service-map))
+  ([serv-map]
+     (let [routes-atom (atom nil)
+           routes-atom (cr-ocs/init-descriptor-routes!
+                        :master-routes (make-master-routes routes-atom)
+                        :routes-atom routes-atom)]
+     (assoc serv-map
+            :io.pedestal.http/routes
+              ;(if (config :enable-upsert) #(deref routes-atom) @routes-atom)
+            #(deref routes-atom)
+            :routes-atom routes-atom))))
+
+(defn service-fn [serv-map]
+  (::bootstrap/service-fn (bootstrap/create-servlet (dissoc serv-map :routes-atom))))
+
 (defn service
   "This generates a testable service for use with io.pedestal.test/response-for."
   ([]
-   (service service-map))
+     (service base-service-map))
   ([serv-map]
-     (apply cserv/bash-from-descriptor! (cons cserv/desc (config :initial-version)))
-     (::bootstrap/service-fn (bootstrap/create-servlet serv-map))))
+   (let [new-map (refresh-service-map serv-map)]
+     (service-fn new-map))))
 
 ;; This is only to make ad-hoc/repl testing easier.  Servlets are not immutable
 ;; and should be generated per request to prevent any test pollution
