@@ -57,15 +57,27 @@
 
 (def ^:dynamic *realized-facts* nil)
 
+(defn- resolve-schema-entity
+  [schema-name]
+  (ffirst (d/q '[:find ?schema-entity :in $ ?schema-name
+                 :where
+                 [_ ::schema ?schema-entity]
+                 [?schema-entity ::name ?schema-name]]
+               *realized-facts*
+               schema-name)))
+
 (defn- schema-facts
   [schema-entries]
   (doall
    (mapcat
     (fn [[schema-name schema-data]]
       (binding [*schema-entity* (cdb/temp-id)]
-        [[*descriptor-entity* ::schema *schema-entity*]
-         [*schema-entity* ::name schema-name]]))
-     schema-entries)))
+        (let [current-schema-entity *schema-entity*]
+          (concat [[*descriptor-entity* ::schema *schema-entity*]
+                   [*schema-entity* ::name schema-name]]
+                  (for [dependency (:requires schema-data)]
+                    (delay [current-schema-entity ::requires (resolve-schema-entity dependency)]))))))
+    schema-entries)))
 
 (defn- route-facts
   [route-spec]
@@ -86,15 +98,6 @@
                    [*route-entity* ::method method]
                    [*route-entity* ::action-literal action-literal]])))
             route-table))))
-
-(defn resolve-schema-entity
-  [schema-name]
-  (ffirst (d/q '[:find ?schema-entity :in $ ?schema-name
-                 :where
-                 [_ ::schema ?schema-entity]
-                 [?schema-entity ::name ?schema-name]]
-               *realized-facts*
-               schema-name)))
 
 (defn- api-schema-facts
   [schema-vec]
