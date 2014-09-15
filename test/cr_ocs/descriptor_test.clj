@@ -56,15 +56,6 @@
     (is (empty? post-res))
     (is (seq get-res))))
 
-(def schema-dependency-rules
-  '[[(schema-dep? ?ent1 ?ent2)
-     [?ent1 ::desc/schema ?ent2]]
-    [(schema-dep? ?ent1 ?ent2)
-     [?ent1 ::desc/requires ?ent2]]
-    [(schema-dep? ?ent1 ?ent2)
-     [schema-dep? ?ent1 ?ent3]
-     [schema-dep? ?ent3 ?ent2]]])
-
 (deftest all-route-queries-that-use-X-schema
   (let [descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
         ddb (desc/descriptor-facts descriptor)
@@ -73,12 +64,12 @@
                            [schema-dep? ?api ?schema]
                            [?api ::desc/route ?route]
                            [?route ::desc/path ?path]]
-        results (d/q dependents-query ddb schema-dependency-rules :example/user-schema)]
+        results (d/q dependents-query ddb desc/schema-dependency-rules :example/user-schema)]
     (is (= #{["/fogus-and-paul"] ["/capture-s/:url-thing"] ["/users"] ["/user"]
              ["/fogus-and-someone"] ["/redirect-to-google"]
              ["/redirect-to-param"] ["/fogus"] ["/db"] ["/users/:id"]
              ["/validate"] ["/hello"]} results))
-    (let [results (d/q dependents-query ddb schema-dependency-rules :example/base-schema)]
+    (let [results (d/q dependents-query ddb desc/schema-dependency-rules :example/base-schema)]
       (is (= #{["/fogus-and-paul"] ["/capture-s/:url-thing"] ["/users"] ["/user"]
                ["/fogus-and-someone"] ["/redirect-to-google"]
                ["/redirect-to-param"] ["/fogus"] ["/db"] ["/users/:id"]

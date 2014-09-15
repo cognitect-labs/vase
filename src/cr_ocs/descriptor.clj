@@ -135,3 +135,17 @@
           (binding [*realized-facts* realized]
             (concat realized (doall (map deref delayed)))))))))
 
+;; Datomic support for above schema
+
+(def schema-dependency-rules
+  "Schema dependency rules:
+
+  (schema-dep? ?a ?b) holds when ?a has a direct or transitive schema
+  dependency on ?b" 
+  '[[(schema-dep? ?ent1 ?ent2)
+     [?ent1 ::schema ?ent2]]
+    [(schema-dep? ?ent1 ?ent2)
+     [?ent1 ::requires ?ent2]]
+    [(schema-dep? ?ent1 ?ent2)
+     [schema-dep? ?ent1 ?ent3]
+     [schema-dep? ?ent3 ?ent2]]])
