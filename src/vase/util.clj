@@ -1,4 +1,4 @@
-(ns cr-ocs.util
+(ns vase.util
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as cstr]
@@ -54,7 +54,7 @@
                                   (apply hash-map args))
                            string)]
     (if (instance? clojure.lang.IObj e)
-      (with-meta e {:cr-ocs/src string})
+      (with-meta e {:vase/src string})
       e)))
 
 (defn edn-resource

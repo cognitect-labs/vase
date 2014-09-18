@@ -1,12 +1,12 @@
-(ns cr-ocs.service
+(ns vase.service
   (:require [clojure.string :as cstr]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.http.route :as route]
             [io.pedestal.log :as log]
             [ring.util.response :as ring-resp]
-            [cr-ocs.interceptor :as interceptor]
-            [cr-ocs.config :refer [config]]
-            [cr-ocs]))
+            [vase.interceptor :as interceptor]
+            [vase.config :refer [config]]
+            [vase]))
 
 (defn clj-ver
   [request]
@@ -26,13 +26,13 @@
                                                              bootstrap/html-body
                                                              (interceptor/bind-routes routes)]
                      ["/about" {:get clj-ver}]
-                     ^:cr-ocs/api-root ["/api" {:get cr-ocs/show-routes}
+                     ^:vase/api-root ["/api" {:get vase/show-routes}
                                         ^:interceptors [bootstrap/json-body
                                                         interceptor/json-error-ring-response]]])
 
-(cr-ocs/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
+(vase/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
 
-;; Consumed by cr-ocs.server/create-server
+;; Consumed by vase.server/create-server
 ;; See bootstrap/default-interceptors for additional options you can configure
 (def service {:env :prod
               ;; You can bring your own non-default interceptors. Make

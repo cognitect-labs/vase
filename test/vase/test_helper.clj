@@ -1,13 +1,13 @@
-(ns cr-ocs.test-helper
+(ns vase.test-helper
   (:require [io.pedestal.test :refer [response-for]]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
-            [cr-ocs.interceptor :as interceptor]
-            [cr-ocs.service :as cserv]
-            [cr-ocs]
-            [cr-ocs.util :as util]
-            [cr-ocs.db :as cdb]
-            [cr-ocs.config :refer [config]]
+            [vase.interceptor :as interceptor]
+            [vase.service :as cserv]
+            [vase]
+            [vase.util :as util]
+            [vase.db :as cdb]
+            [vase.config :refer [config]]
             [datomic.api :as d]))
 
 (def base-service-map cserv/service)
@@ -20,7 +20,7 @@
                                             bootstrap/html-body
                                             ~(interceptor/bind-routes routes-atom)]
     ["/about" {:get cserv/clj-ver}]
-    ^:cr-ocs/api-root ["/api" {:get cr-ocs/show-routes}
+    ^:vase/api-root ["/api" {:get vase/show-routes}
                        ^:interceptors [bootstrap/json-body
                                        interceptor/json-error-ring-response]]])
 
@@ -38,7 +38,7 @@
    (refresh-service-map base-service-map))
   ([serv-map]
      (let [routes-atom (atom nil)
-           routes-atom (cr-ocs/init-descriptor-routes!
+           routes-atom (vase/init-descriptor-routes!
                         :master-routes (make-master-routes routes-atom)
                         :routes-atom routes-atom)]
      (assoc serv-map
@@ -101,7 +101,7 @@
                  :body (util/write-edn payload))))
 
 (defn response-data
-  "Return the parsed payload data from a cr-ocs api http response."
+  "Return the parsed payload data from a vase api http response."
   ([response] (response-data response util/read-json))
   ([response reader]
      (-> response

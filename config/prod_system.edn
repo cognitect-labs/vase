@@ -1,4 +1,4 @@
-{:db-uri "datomic:dev://localhost:4334/cr-ocs"
+{:db-uri "datomic:dev://localhost:4334/vase"
  :service-port 8080
  :http-app-root "/"
  :enable-upsert true

@@ -1,10 +1,10 @@
-(ns cr-ocs.literals
+(ns vase.literals
   (:require [clojure.walk :as walk]
             [themis.core  :as themis]
             [themis.predicates :as preds]
             [themis.validators :as validators]
-            [cr-ocs.util  :as util]
-            [cr-ocs.db    :as cdb]
+            [vase.util  :as util]
+            [vase.db    :as cdb]
             [io.pedestal.http.route.definition :as definition]
             [io.pedestal.impl.interceptor :refer [interceptor]]
             [io.pedestal.log :as log])
@@ -100,7 +100,7 @@
   (map->RespondAction form))
 
 (defmethod print-method RespondAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/respond" (into {} t))))
+  (.write w (str "#vase/respond" (into {} t))))
 
 (defrecord RedirectAction [name params body status headers url]
   definition/ExpandableVerbAction
@@ -137,7 +137,7 @@
   (map->RedirectAction form))
 
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/redirect" (into {} t))))
+  (.write w (str "#vase/redirect" (into {} t))))
 
 (defrecord ValidateAction [name params properties doc]
   definition/ExpandableVerbAction
@@ -145,7 +145,7 @@
     (let [params (or params [])
           rule-vec (walk/postwalk
                     (fn [form] (if (symbol? form)
-                                 (util/fully-qualify-symbol (the-ns 'cr-ocs.literals)
+                                 (util/fully-qualify-symbol (the-ns 'vase.literals)
                                                             form)
                                  form))
                     (or properties []))]
@@ -174,7 +174,7 @@
   (map->ValidateAction form))
 
 (defmethod print-method ValidateAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/validate" (into {} t))))
+  (.write w (str "#vase/validate" (into {} t))))
 
 (defrecord QueryAction [name params query edn-coerce constants doc]
   definition/ExpandableVerbAction
@@ -216,7 +216,7 @@
   (map->QueryAction form))
 
 (defmethod print-method QueryAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/query" (into {} t))))
+  (.write w (str "#vase/query" (into {} t))))
 
 (defn process-lookup-ref [[str-attr val]]
   [(keyword str-attr) val])
@@ -261,5 +261,5 @@
   (map->TransactAction form))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
-  (.write w (str "#cr-ocs/transact" (into {} t))))
+  (.write w (str "#vase/transact" (into {} t))))
 

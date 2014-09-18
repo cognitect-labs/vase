@@ -1,11 +1,11 @@
-(ns cr-ocs.descriptor-test
+(ns vase.descriptor-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
-            [cr-ocs.test-helper :as helper]
-            [cr-ocs.db :as cdb]
-            [cr-ocs.util :as util]
-            [cr-ocs.descriptor :as desc]
-            [cr-ocs.config :refer [config]]
+            [vase.test-helper :as helper]
+            [vase.db :as cdb]
+            [vase.util :as util]
+            [vase.descriptor :as desc]
+            [vase.config :refer [config]]
             [datomic.api :as d]))
 
 (use-fixtures :each helper/test-with-fresh-db)

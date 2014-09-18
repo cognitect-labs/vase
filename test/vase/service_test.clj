@@ -1,12 +1,12 @@
-(ns cr-ocs.service-test
+(ns vase.service-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
-            [cr-ocs.test-helper :as helper]
-            [cr-ocs.service :as service]
-            [cr-ocs.descriptor :as descriptor]
-            [cr-ocs.util :as util]
-            [cr-ocs.config :refer [config]]
-            [cr-ocs]))
+            [vase.test-helper :as helper]
+            [vase.service :as service]
+            [vase.descriptor :as descriptor]
+            [vase.util :as util]
+            [vase.config :refer [config]]
+            [vase]))
 
 (defn selected-headers
   "Return a map with selected-keys out of the headers of a request to url"
@@ -42,8 +42,8 @@
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "crrequest-id"]))))
 
 (def known-route-names
-  #{:cr-ocs.service/health-check :cr-ocs.service/clj-ver
-    :cr-ocs/append-api :cr-ocs/show-routes
+  #{:vase.service/health-check :vase.service/clj-ver
+    :vase/append-api :vase/show-routes
     :example-v2/hello
     :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
     :example-v1/url-param-example
@@ -62,13 +62,13 @@
           route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v1)]
       (=
        (map :route-name test-routes)
-       (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
+       (map :route-name (vase/uniquely-add-routes (:master-routes (meta service/routes))
                                                     route-vecs
                                                     @service/routes)))))
   (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)]
     (is
       (=
-       (set (map :route-name (cr-ocs/uniquely-add-routes (:master-routes (meta service/routes))
+       (set (map :route-name (vase/uniquely-add-routes (:master-routes (meta service/routes))
                                                          route-vecs
                                                          @service/routes)))
        known-route-names))))
@@ -77,7 +77,7 @@
   (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)
         serv-map (helper/refresh-service-map)
         serv-fn (helper/service-fn serv-map)
-        _ (cr-ocs/bash-routes! (:routes-atom serv-map) route-vecs)
+        _ (vase/bash-routes! (:routes-atom serv-map) route-vecs)
         observed-routes (set (map :route-name (deref (:routes-atom serv-map))))]
     (is (= observed-routes known-route-names))
     (is (= (get-in (util/read-json (:body
@@ -91,7 +91,7 @@
         routes-atom (:routes-atom serv-map)
         descriptor (:descriptor (meta service/routes))
         pre-condition (response-for serv :get "/api/example/v2/hello")
-        _ (cr-ocs/bash-from-descriptor! routes-atom descriptor :example :v2)
+        _ (vase/bash-from-descriptor! routes-atom descriptor :example :v2)
         post-condition (response-for serv :get "/api/example/v2/hello")]
     (is (= (:status pre-condition) 404))
     (is (= (:status post-condition) 200))))

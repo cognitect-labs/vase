@@ -1,10 +1,10 @@
-(ns cr-ocs.descriptor
+(ns vase.descriptor
   (:require [io.rkn.conformity :as conformity]
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.http.route.definition :as route]
-            [cr-ocs.interceptor :as interceptor]
-            [cr-ocs.literals]
-            [cr-ocs.db :as cdb]
+            [vase.interceptor :as interceptor]
+            [vase.literals]
+            [vase.db :as cdb]
             [datomic.api :as d]))
 
 (defn route-vecs

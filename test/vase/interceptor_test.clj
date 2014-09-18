@@ -1,12 +1,12 @@
-(ns cr-ocs.interceptor-test
+(ns vase.interceptor-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [io.pedestal.http :as service]
             [io.pedestal.http.route :as proute]
             [io.pedestal.http.route.definition :refer [defroutes]]
             [ring.util.response :as ring-resp]
-            [cr-ocs.test-helper :as helper]
-            [cr-ocs.interceptor :as interceptor]))
+            [vase.test-helper :as helper]
+            [vase.interceptor :as interceptor]))
 
 ;; We're going to build custom routes to test the interceptors in isolation
 ;;  from the core application

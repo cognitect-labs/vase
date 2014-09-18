@@ -1,7 +1,7 @@
-(ns cr-ocs.server
+(ns vase.server
   (:gen-class) ; for -main method in uberjar
   (:require [io.pedestal.http :as server]
-            [cr-ocs.service :as service]))
+            [vase.service :as service]))
 
 (defonce runnable-service (server/create-server service/service))
 

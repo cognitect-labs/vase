@@ -1,9 +1,9 @@
-(ns cr-ocs.db
+(ns vase.db
   (:require [datomic.api :as d]
             [io.rkn.conformity :as c]
-            [cr-ocs.config :refer [config]]
+            [vase.config :refer [config]]
             ;; Here to make sure the helpers are available to users/descriptors
-            [cr-ocs.query-helpers]))
+            [vase.query-helpers]))
 
 (def norms (clojure.edn/read-string {:readers *data-readers*}
                                     (slurp (clojure.java.io/resource "schema.edn"))))
@@ -14,7 +14,7 @@
   [uri]
   (d/create-database uri)
   (doto (d/connect uri)
-    (c/ensure-conforms norms [:cr-ocs/base-schema])))
+    (c/ensure-conforms norms [:vase/base-schema])))
 
 (def uri (config :db-uri))
 (def conn (atom (conn-database uri)))

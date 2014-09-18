@@ -1,8 +1,8 @@
-(ns cr-ocs.literals-test
+(ns vase.literals-test
   (:require [clojure.test :refer :all]
-            [cr-ocs.literals :as lit]
+            [vase.literals :as lit]
             [io.pedestal.test :refer :all]
-            [cr-ocs.test-helper :as helper]))
+            [vase.test-helper :as helper]))
 
 (deftest test-data-massging
   "This test ensures that data received can be transformed into a form

@@ -1,19 +1,19 @@
-{:attr-substitutions {;#cr-ocs/regex "categoryCommonModelAttributesByGroup" nil
-                      ;#cr-ocs/regex "commonModelAttributes" "product"
-                      ;#cr-ocs/regex "wetdryVacuums" nil
-                      ;#cr-ocs/regex "uprightVacuumCleaners" nil
-                      #cr-ocs/regex "connection" nil
-                      #cr-ocs/regex "[i I]mage" nil
-                      #cr-ocs/regex "[w W]idth" nil
-                      #cr-ocs/regex "[h H]eight" nil
-                      #cr-ocs/regex "[w W]idget" nil
-                      #cr-ocs/regex "[h H]eader" nil
-                      #cr-ocs/regex "[s S]ort" nil
-                      #cr-ocs/regex "[p P]resentation" nil
-                      #cr-ocs/regex "Group" nil}
- :type-substitutions {#cr-ocs/regex "[d D]ate$" :date
-                      #cr-ocs/regex "^is" :boolean}
- :attr-post-process  {#cr-ocs/regex "^base." ""}}
+{:attr-substitutions {;#vase/regex "categoryCommonModelAttributesByGroup" nil
+                      ;#vase/regex "commonModelAttributes" "product"
+                      ;#vase/regex "wetdryVacuums" nil
+                      ;#vase/regex "uprightVacuumCleaners" nil
+                      #vase/regex "connection" nil
+                      #vase/regex "[i I]mage" nil
+                      #vase/regex "[w W]idth" nil
+                      #vase/regex "[h H]eight" nil
+                      #vase/regex "[w W]idget" nil
+                      #vase/regex "[h H]eader" nil
+                      #vase/regex "[s S]ort" nil
+                      #vase/regex "[p P]resentation" nil
+                      #vase/regex "Group" nil}
+ :type-substitutions {#vase/regex "[d D]ate$" :date
+                      #vase/regex "^is" :boolean}
+ :attr-post-process  {#vase/regex "^base." ""}}
 
 
 

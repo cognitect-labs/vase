@@ -1,20 +1,20 @@
-(ns cr-ocs
+(ns vase
   (:require [clojure.string :as cstr]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.http.route.definition :refer [expand-routes]]
             [themis.validators :as validators]
             [themis.predicates :as preds]
             [ring.util.response :as ring-resp]
-            [cr-ocs.descriptor :as descriptor]
-            [cr-ocs.util :as util]
-            [cr-ocs.config :refer [config]]
-            [cr-ocs.literals]
-            [cr-ocs.db :as cdb]
-            [cr-ocs.interceptor :as interceptor]))
+            [vase.descriptor :as descriptor]
+            [vase.util :as util]
+            [vase.config :refer [config]]
+            [vase.literals]
+            [vase.db :as cdb]
+            [vase.interceptor :as interceptor]))
 
 (defn update-api-roots
   [master-routes f args]
-  (let [api-root-indices (keep-indexed #(when (:cr-ocs/api-root (meta %2))
+  (let [api-root-indices (keep-indexed #(when (:vase/api-root (meta %2))
                                           %1)
                                        master-routes)]
     (reduce (fn [acc-routes index] (update-in acc-routes [index] f args))
@@ -49,8 +49,8 @@
   (when (config :transact-upsert)
     (cdb/transact!
       [{:db/id (cdb/temp-id)
-        :cr-ocs/descriptor (get (meta descriptor) :cr-ocs/src ":not-found")
-        :cr-ocs/routes (pr-str route-seq)}]))
+        :vase/descriptor (get (meta descriptor) :vase/src ":not-found")
+        :vase/routes (pr-str route-seq)}]))
   route-seq)
 
   ;; TODO: this should attach something about the transaction as meta to routes
@@ -68,7 +68,7 @@
   ([] (force-into-literals! (config :extension-namespaces)))
   ([ext-nses]
    (let [current-ns (ns-name *ns*)]
-     (in-ns 'cr-ocs.literals)
+     (in-ns 'vase.literals)
      (doseq [[namesp nsalias] ext-nses]
        (require `[~namesp :as ~nsalias]))
      (in-ns current-ns))))
@@ -105,7 +105,7 @@
   (let [body-string (slurp (:body request))
         {:keys [descriptor app-name version] :as payload} (util/read-edn body-string)
         metad-desc (with-meta descriptor
-                     {:cr-ocs/src (extract-descriptor-str body-string)})
+                     {:vase/src (extract-descriptor-str body-string)})
         versions (if (vector? version) version [version])
         routes (:routes-atom request)]
     (doseq [v versions]
@@ -115,7 +115,7 @@
 (defn maybe-enable-http-upsert
   [master-routes routes]
   (if-let [new-verbs (when (config :http-upsert)
-                       `{:post [:cr-ocs/append-api append-api]})]
+                       `{:post [:vase/append-api append-api]})]
     (update-api-roots master-routes
                       (fn [root _]
                         (let [verbs-index (keep-indexed #(when (map? %2) %1) root)]
@@ -137,7 +137,7 @@
                                                   interceptor/attach-request-id
                                                   ;; In the future, html-body should be json-body
                                                   bootstrap/html-body]
-                              ^:cr-ocs/api-root ["/api" {:get [:cr-ocs/show-routes show-routes]}
+                              ^:vase/api-root ["/api" {:get [:vase/show-routes show-routes]}
                                                  ^:interceptors [bootstrap/json-body
                                                                  interceptor/json-error-ring-response]]]
               descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))

@@ -1,12 +1,12 @@
-{:cr-ocs/base-schema
+{:vase/base-schema
  {:txes [[{:db/id #db/id[:db.part/db]
-           :db/ident :cr-ocs/descriptor
+           :db/ident :vase/descriptor
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
            :db/doc "The Descriptor seen at time/transaction t"
            :db.install/_attribute :db.part/db}
           {:db/id #db/id[:db.part/db]
-           :db/ident :cr-ocs/routes
+           :db/ident :vase/routes
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
            :db/doc "The prn'd route-seq seen at time/transaction t"

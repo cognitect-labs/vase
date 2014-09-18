@@ -1,9 +1,9 @@
-(ns cr-ocs.interceptor
+(ns vase.interceptor
   (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor definterceptorfn]]
             [io.pedestal.log :as log]
             [clojure.stacktrace :as ctrace]
             [clj-time.core :as clj-time]
-            [cr-ocs.util :as util]))
+            [vase.util :as util]))
 ;(:remote-addr :scheme :servlet-path :path-params :io.pedestal.http.impl.servlet-interceptor/protocol :servlet :request-method
 ; :query-string :content-type :edn-params :path-info :uri :url-for :context-path :server-name :headers :servlet-request :content-length :received-time :server-port :character-encoding
 ; :servlet-response :io.pedestal.http.impl.servlet-interceptor/async-supported? :body :servlet-context :request-id)
