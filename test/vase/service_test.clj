@@ -24,10 +24,7 @@
        (selected-headers helper/GET "/" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
 
-(deftest about-page-test
-  (is (.contains
-        (:body (helper/GET "/about"))
-        "Clojure 1.7"))
+(deftest about-page-test 
   (is (=
        (selected-headers helper/GET "/about" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
