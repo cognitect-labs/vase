@@ -1,4 +1,0 @@
-
-Implementation - a guided tour
-==============================
-
