@@ -24,19 +24,19 @@
        (selected-headers helper/GET "/" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
 
-(deftest about-page-test 
+(deftest about-page-test
   (is (=
        (selected-headers helper/GET "/about" ["Content-Type"])
        {"Content-Type" "text/html;charset=UTF-8"})))
 
 (deftest request-tracing-test
   (is (=
-       (selected-headers #(helper/GET % :headers {"crrequest-id" "yes"})
+       (selected-headers #(helper/GET % :headers {"vaserequest-id" "yes"})
                          "/api/example/v1/hello"
-                         ["Content-Type" "crrequest-id"])
+                         ["Content-Type" "vaserequest-id"])
        {"Content-Type" "text/html;charset=UTF-8"
-        "crrequest-id" "yes"}))
-  (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "crrequest-id"]))))
+        "vaserequest-id" "yes"}))
+  (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "vaserequest-id"]))))
 
 (def known-route-names
   #{:vase.service/health-check :vase.service/clj-ver

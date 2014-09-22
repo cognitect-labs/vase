@@ -58,7 +58,7 @@
                                             :params []
                                             :query [:find ?e ?v :where [?e :db/ident ?v]]}}]]
        :schemas [:example/user-schema :example/loan-schema]
-       :forward-headers ["crrequest-id"]}
+       :forward-headers ["vaserequest-id"]}
   :v2 {:routes [["/hello" {:get #vase/respond {:name :example-v2/hello
                                                  :enforce-format true
                                                  :body "Another Hello World Route"}}]]}}}}

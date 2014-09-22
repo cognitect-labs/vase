@@ -185,7 +185,7 @@ forward some HTTP request headers with every response.
                  :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
                                                                 :body "General User and Item Information"}}]]
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -194,7 +194,7 @@ forward some HTTP request headers with every response.
 Since our API is only about providing operations for user details and accounts,
 we only need to depend on/declare the user schema.  Above we're saying that
 version *v1* of our *accounts* API uses the *user-schema*, and to forward the
-*crrequest-id* header from every request to every response.  This HTTP header
+*vaserequest-id* header from every request to every response.  This HTTP header
 is used to trace and debug requests to the service (and is automatically added
 if it's not sent in).  APIs can depend on any number of schemas.  You should
 feel free to grow and evolved your normalized schema `:norms` and add
@@ -254,7 +254,7 @@ Here's an example with a URL parameter:
                                                                            :params [your-name]
                                                                            :body your-name}}]]
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -292,7 +292,7 @@ Here's an example were we'll return a JSON response for all of our expected quer
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -331,7 +331,7 @@ You can also force string bodies conform to that format.  Let's update our old
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -397,7 +397,7 @@ Clojure's `(str ...)` function.
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -446,7 +446,7 @@ to the system descriptor:
                                                                    :user/email]}}]]
 
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -551,7 +551,7 @@ queries.  Observe the following addition to the system descriptor:
                                                                [?e :user/email ?email]]}}]]
 
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -619,7 +619,7 @@ Observe our next change to the descriptor below:
                                                                   [?e :user/userId ?id]]}}]]
 
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -699,7 +699,7 @@ An example of simple constants follows - observe our last change to the schema b
                                                                   [?e :user/email ?email]]}}]]
 
                       :schemas [:accounts/user-schema]
-                      :forward-headers ["crrequest-id"]}}}
+                      :forward-headers ["vaserequest-id"]}}}
   :app-name :accounts
   :version [:v1]
 }
