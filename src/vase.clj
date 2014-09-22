@@ -140,7 +140,7 @@
                               ^:vase/api-root ["/api" {:get [:vase/show-routes show-routes]}
                                                  ^:interceptors [bootstrap/json-body
                                                                  interceptor/json-error-ring-response]]]
-              descriptor (util/edn-resource (get config :initial-descriptor "sample_descriptor.edn"))
+              descriptor (util/edn-resource (vase.config/get-key :initial-descriptor "You must specify an :initial-descriptor in your config file"))
               initial-version (config :initial-version)}} args
         master-routes (maybe-enable-http-upsert master-routes routes-atom)]
     ;; Reset the atom to the initial state

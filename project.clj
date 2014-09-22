@@ -5,20 +5,16 @@
                  [org.clojure/clojure "1.6.0"]
 
                  ;; Datomic
-                 [com.datomic/datomic-pro "0.9.4894" :exclusions [[com.fasterxml.jackson.core/jackson-core]
-                                                                  [org.slf4j/slf4j-nop]
-                                                                  [commons-codec]
-                                                                  [org.jboss.logging/jboss-logging]
-                                                                  [org.jgroups/jgroups]]]
+                 [com.datomic/datomic-free "0.9.4899" :exclusions [[com.fasterxml.jackson.core/jackson-core]]]
                  [io.rkn/conformity "0.3.0" :exclusions [com.datomic/datomic-free]]
 
-                 [cheshire "5.3.1"]
-
-                 ;; Deployment
-                 [org.jboss.logging/jboss-logging "3.1.2.GA"]
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.3.0"]
-                 [ohpauleez/themis "0.1.1"]]
+                 [ohpauleez/themis "0.1.1"]
+
+                 ;; Cleanup
+                 [com.fasterxml.jackson.core/jackson-core "2.3.2"]
+                 [cheshire "5.3.1" :exclusions [[com.fasterxml.jackson.core/jackson-core]]]]
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["config"
                                     "resources"
