@@ -18,12 +18,12 @@
   If there's a 'request_id' header, it will use that value, otherwise it will
   generate a short hash"
   [req]
-  (let [req-id (get-in req [:headers "crrequest-id"] (util/short-hash))]
+  (let [req-id (get-in req [:headers "vaserequest-id"] (util/short-hash))]
     (-> req
         (assoc :request-id req-id)
         ;; just in case someone goes looking in the headers...
         ;; This is also a special case for "forward-headers"
-        (assoc-in [:headers "crrequest-id"] req-id))))
+        (assoc-in [:headers "vaserequest-id"] req-id))))
 
 (defn forward-headers-interceptor
   "Given an interceptor name and list of headers to forward,

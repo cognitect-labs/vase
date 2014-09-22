@@ -4,16 +4,12 @@ Design Documentation and Vision
 
 ## Introduction
 
-This document describes the design of the service template and tooling system.
+This document describes the design of the service template and tooling system - Vase.
 
 It describes the basic service model and provides detailed documentation
 for all operations, including URIs/destinations and input/output data formats.
 
-The design for the implementation details of the system is [documented separately](impl_doc.mkd).
-
-For additional learning material and references, see the [education document](education.mkd)
-
-All testing, quality, construction, and risk assessment procedures are in the [construction document](construction.mkd)
+The design for the implementation details of the system is [documented separately - (CURRENTLY HIDDEN)](impl_doc.mkd).
 
 
 ### Overview of existing data/product services
@@ -24,7 +20,7 @@ There exists data-oriented/product services which current digital offerings and 
 
 ### Commonly used terms
 
- * **Core Service** - The main CR-OCS container service, which hosts other prototyped APIs
+ * **Core Service** - The main Vase container service, which hosts other prototyped APIs
  * **API** - A service contained within the container; a hosted service within the core service
  * **edn** - Also EDN; [Extensible Data Notation](https://github.com/edn-format/edn); a data serialization notation, like JSON
 
@@ -39,17 +35,15 @@ auxiliary goals.
 **This is a living document, it should evolve along with the system.**
 
 
-# Consumer Reports: On-demand Container Service
+# Vase: An On-demand Container Service on top of Pedestal
 
-The **Consumer Reports: On-demand Container Service** is an evolving API
-Container.  It itself is also a RESTful service, allowing one to create,
-update, and prototype running APIs that perform validation, data
-persistence/durability, and query/data retrieval tasks.  The main service
-(`cr-ocs`), is generated from a template, which may be used to allow Consumer
-Reports to generate custom (from the ground up) services where cr-ocs is
-insufficient.
+**Vase** is an evolving API Container.  It itself is also a RESTful service,
+allowing one to create, update, and prototype running APIs that perform
+validation, data persistence/durability, and query/data retrieval tasks.  The
+main service (`vase`), is a clean addition to Pedestal, allowing developers
+to fallback on using Pedestal directly when Vase is insufficient.
 
-The APIs that cr-ocs hosts are all described in data and transacted with the
+The APIs that vase hosts are all described in data and transacted with the
 service.  Core validation endpoints ensure the integrity and correctness of
 these application-description files (routing, schema, validation, and core-app
 configurations).
@@ -76,7 +70,7 @@ API-specific data that is persisted in the database is owned by that API.
 An API may only reference data that it owns.  Consumers of the API (other
 services, mobile apps, etc), may choose to integrate data from various APIs.
 Unifying data across APIs is a design challenge for API designers.  There is
-nothing within cr-ocs that helps or hinders unifying data.
+nothing within vase that helps or hinders unifying data.
 
 Owned data is versioned and namespaced for the given API.  Please see the
 API-specific documentation (or description files) to understand the shape,
@@ -232,15 +226,15 @@ of nested route-verb pairs.  See the example below:
 ```clojure
 {:example-app
   {:v1
-    {:routes ["/" {:get #cr-ocs/respond {:name :example-app/home
+    {:routes ["/" {:get #vase/respond {:name :example-app/home
                                          :data "Home page"}}
-              ["/about" {:get #cr-ocs/redirect {:name :example-app/about
+              ["/about" {:get #vase/redirect {:name :example-app/about
                                                 :url "http://www.google.com"}}]
-              ["/check/:age" {:post #cr-ocs/validate {:name :example-app/age-check
+              ["/check/:age" {:post #vase/validate {:name :example-app/age-check
                                                       :url-params [age]
                                                       :params [name address] ;; extracted from query string and POST body (form data, json, or edn)
                                                       :properties [[TODO]]}}]]
-     :forward-headers ["crrequest-id"]}}}
+     :forward-headers ["vaserequest-id"]}}}
 ```
 
 This configuration would produce the URLs:
@@ -249,10 +243,10 @@ This configuration would produce the URLs:
  * _/api/example-app/v1/about_
  * _/api/example-app/v1/check_
 
-All endpoints would forward the header `crrequest-id` from every request, to
+All endpoints would forward the header `vaserequest-id` from every request, to
 every response.  This may be used to forward API key credentials in headers,
 or other system information.  To **trace a reqestion**, use the special header
-found in this example, `crrequest-id`.
+found in this example, `vaserequest-id`.
 
 #### Route-verb pairs
 
@@ -269,15 +263,15 @@ please see the [Pedestal routing documentation](https://github.com/pedestal/pede
 
 Action (or action literals) are always verbs.  Here are the available actions:
 
- * `#cr-ocs/respond` - Return a static response, optionally setting headers and the HTTP status code
+ * `#vase/respond` - Return a static response, optionally setting headers and the HTTP status code
    * Action map may contain: `{:name :keyword, :data "a body string", :status 200, :headers {}}`
- * `#cr-ocs/redirect` - Redirect the request with an HTTP 302 status; You can optionally set 303 status and additional headers
+ * `#vase/redirect` - Redirect the request with an HTTP 302 status; You can optionally set 303 status and additional headers
    * Action map may contain: `{:name :keyword, :url "http://domain.com", :status 302, :headers {}, :params [bindname]}`
- * `#cr-ocs/validate` - Validate a POST body or query string data
+ * `#vase/validate` - Validate a POST body or query string data
    * Action map may contain: `{:name :keyword, :properties [... prop-vecs ...], :params [bindname]}`
- * `#cr-ocs/query` - Consume a POST body, URL parameters, or query string data and run a Datomic query
+ * `#vase/query` - Consume a POST body, URL parameters, or query string data and run a Datomic query
    * Action map may contain: `{:name :keyword, :params [... bindname ...], :query <legal datomic query>}`
- * `#cr-ocs/transact` - Consume a POST body, URL parameters, or query string data, and transact data into the DB
+ * `#vase/transact` - Consume a POST body, URL parameters, or query string data, and transact data into the DB
    * Action map may contain: `{:name :keyword, :properties [... whitelisted key ...]}`
 
 #### Action-maps
@@ -350,7 +344,7 @@ The schema above using the short form would look like:
 
 ```clojure
 {:norms {:example-app/base-schema
-           {:txes [#cr-ocs/short-schema-tx [[:something/title :one :string "A simple title"]]]}
+           {:txes [#vase/short-schema-tx [[:something/title :one :string "A simple title"]]]}
            ;; End :example-app/base-schema
          ...}
  :v1 {:routes [[ ... ]]
@@ -360,7 +354,7 @@ The schema above using the short form would look like:
 
 # Operations
 
-This section describes the specific operations exposed by the CR-OCS core service.
+This section describes the specific operations exposed by the Vase core service.
 
 ## Service operations
 
