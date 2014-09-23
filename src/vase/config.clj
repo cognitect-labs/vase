@@ -4,9 +4,18 @@
 
 (def path (System/getProperty "crocsconfig" nil))
 (log/info :msg (str "Config is: " (or path "DEFAULT")))
-(def config (if path
-              (util/edn-file path)
-              (util/edn-resource "system.edn")))
+
+;; The purpose of this fn is to hide the implementation details of config reading.
+;; This allows changing the config system painlessly (Perhaps to Confil or something new)
+(defn read-config
+  ([] (read-config nil))
+  ([path]
+   (if path
+     (util/edn-file path)
+     (util/edn-resource "system.edn"))))
+
+;; `config` should always be map-like
+(def config (read-config path))
 (log/info :msg (str "Descriptor is: " (config :initial-descriptor)))
 
 (defn get-key
