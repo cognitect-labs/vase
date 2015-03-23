@@ -1,5 +1,5 @@
-(defproject
-  :description "Consumer Reports On-demand Container Service"
+(defproject com.cognitect/vase "0.1.0-SNAPSHOT"
+  :description "Vase Container Service"
   :url "https://github.com/relevance/vase"
   :dependencies [;; Platform
                  [org.clojure/clojure "1.6.0"]
@@ -22,7 +22,8 @@
 
                    :dependencies [[org.clojure/tools.trace "0.7.6"]
                                   [org.clojure/tools.namespace "0.2.4"]
-                                  [org.clojure/test.check "0.5.9"]]}
+                                  [org.clojure/test.check "0.5.9"]
+                                  [io.pedestal/pedestal.jetty "0.3.0"]]}
              :test {:dependencies [[io.pedestal/pedestal.jetty "0.3.0"]
                                    [org.slf4j/jul-to-slf4j "1.7.7"]
                                    [org.slf4j/jcl-over-slf4j "1.7.7"]
