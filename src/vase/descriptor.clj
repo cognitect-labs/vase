@@ -4,7 +4,6 @@
             [io.pedestal.http.route.definition :as route]
             [vase.interceptor :as interceptor]
             [vase.literals]
-            [vase.db :as cdb]
             [datomic.api :as d]))
 
 (defn route-vecs
@@ -34,15 +33,10 @@
   (get-in descriptor [app-name :norms]))
 
 (defn ensure-conforms
-  "Given a descriptor map, app-name, version, and optionally a DB connection,
-  Idempotentally transact the APIs active schema norms.
-  If no DB/Datomic connection is passed, it will use the service's root
-  connection."
-  ([descriptor app-name version]
-   (ensure-conforms descriptor app-name version @cdb/conn))
-  ([descriptor app-name version db-conn]
-   (let [api-schema (get-in descriptor [app-name version :schemas])]
-     (conformity/ensure-conforms db-conn (norms descriptor app-name) api-schema))))
+  "Given a descriptor map, app-name, version and db connection, idempotentally transact the APIs active schema norms."
+  [descriptor app-name version db-conn]
+  (let [api-schema (get-in descriptor [app-name version :schemas])]
+    (conformity/ensure-conforms db-conn (norms descriptor app-name) api-schema)))
 
 (def ^:dynamic *descriptor-entity* nil)
 
@@ -71,7 +65,7 @@
   (doall
    (mapcat
     (fn [[schema-name schema-data]]
-      (binding [*schema-entity* (cdb/temp-id)]
+      (binding [*schema-entity* (d/tempid :db.part/user)]
         (let [current-schema-entity *schema-entity*]
           (concat [[*descriptor-entity* ::schema *schema-entity*]
                    [*schema-entity* ::name schema-name]]
@@ -84,7 +78,7 @@
   (let [route-table (route/expand-routes [route-spec])]
     (doall (mapcat
             (fn [entry]
-              (binding [*route-entity* (cdb/temp-id)]
+              (binding [*route-entity* (d/tempid :db.part/user)]
                 (let [{name :route-name
                        :keys [path method]} entry
                        action-literal (-> entry
@@ -109,7 +103,7 @@
   "Return a pseudo-datomic DB of [e a v] tuples describing qualities of api entries from a descriptor."
   [api-entries]
   (doall (mapcat (fn [[k v]]
-                   (binding [*api-entity* (cdb/temp-id)]
+                   (binding [*api-entity* (d/tempid :db.part/user)]
                      (concat [[*descriptor-entity* ::api *api-entity*]
                               [*api-entity* ::name k]]
                              (route-facts (:routes v))
@@ -126,7 +120,7 @@
   [descriptor]
   (let [[k v] (first descriptor)]
     (when (and k v)
-      (binding [*descriptor-entity* (cdb/temp-id)]
+      (binding [*descriptor-entity* (d/tempid :db.part/user)]
         (let [heterogeneous-facts (concat [[*descriptor-entity* ::name k]]
                                           (norm-facts v)
                                           (api-facts (remove (fn [[k v]] (= k :norms)) v)))

@@ -1,13 +1,16 @@
 (ns vase.literals
   (:require [clojure.walk :as walk]
             [themis.core  :as themis]
+            ;; Even though preds and validators are not referenced in
+            ;; this file, code from validators is eval'ed in this
+            ;; context.
             [themis.predicates :as preds]
             [themis.validators :as validators]
             [vase.util  :as util]
-            [vase.db    :as cdb]
             [io.pedestal.http.route.definition :as definition]
             [io.pedestal.impl.interceptor :refer [interceptor]]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [datomic.api :as d])
   (:import (java.net URLDecoder)))
 
 ;; TODO: All these literals should be Types/Records that support print-method
@@ -37,7 +40,7 @@
   (let [doc-string (last s-vec)
         [ident card kind opt-toggle] (butlast s-vec)]
     (if (contains? accepted-schema-toggles opt-toggle)
-      (merge {:db/id (cdb/temp-id :db.part/db)
+      (merge {:db/id (d/tempid :db.part/db)
               :db/ident ident
               :db/valueType (keyword "db.type" (name kind))
               :db/cardinality (keyword "db.cardinality" (name card))
@@ -200,7 +203,9 @@
                                                                   in-val#))
                                                               in-val#)))
                                                         ~variables)
-                                             packet# (cdb/q '~query (concat vals# ~constants))]
+                                             vase-ctx# (:vase-context-atom req#)
+                                             db# (d/db (:conn (deref vase-ctx#)))
+                                             packet# (apply d/q '~query db# (concat vals# ~constants))]
                                          (assoc context#
                                            :response (util/response
                                                       (util/payload req# (or ~doc "")
@@ -224,7 +229,7 @@
 (defn process-id [entity-data]
   (let [id (:db/id entity-data)]
     (cond (vector? id) (assoc entity-data :db/id (process-lookup-ref id))
-          (nil? id) (assoc entity-data :db/id (cdb/temp-id))
+          (nil? id) (assoc entity-data :db/id (d/tempid :db.part/user))
           :default entity-data)))
 
 (defn massage-data [data]
@@ -245,12 +250,14 @@
                  `(fn [context#]
                     (let [req# (:request context#)
                           payload# (get-in req# [:json-params :payload])
-                          whitelist# (apply-whitelist payload# ~properties)]
+                          whitelist# (apply-whitelist payload# ~properties)
+                          vase-ctx# @(:vase-context-atom req#)
+                          conn# (:conn vase-ctx#)]
                       (assoc context#
                         :response (util/response
                                    (util/payload req# (or ~doc "")
                                                  {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
-                                                                               (:tx-data @(cdb/transact! (massage-data whitelist#))))
+                                                                               (:tx-data @(d/transact conn# (massage-data whitelist#))))
                                                              :whitelist whitelist#}})))))))
         {:action-literal :transact}))))
 

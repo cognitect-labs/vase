@@ -66,13 +66,13 @@
              (assoc context
                     :response (response-for-exception exception)))))
 
-(definterceptorfn bind-routes
+(definterceptorfn bind-vase-context
   ""
-  [routes-atom]
+  [vase-context-atom]
   (interceptor/interceptor
-    :name ::bind-routes
+    :name ::bind-context
     :enter (fn [context]
-             (assoc-in context [:request :routes-atom] routes-atom))))
+             (assoc-in context [:request :vase-context-atom] vase-context-atom))))
 
 (defn conditional-handlers
   "Gvien a keyword name and any variable predicate and handler function pairs,

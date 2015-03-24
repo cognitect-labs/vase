@@ -1,61 +1,61 @@
 (ns vase.service
-  (:require [clojure.string :as cstr]
+  (:import [java.util UUID])
+  (:require [io.pedestal.test :refer [response-for]]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.http.route :as route]
             [io.pedestal.log :as log]
             [ring.util.response :as ring-resp]
             [vase.interceptor :as interceptor]
-            [vase.config :refer [config]]
-            [vase]))
+            [vase.service :as vserv]
+            [vase]
+            [vase.util :as util]
+            [vase.config :as cfg]
+            [datomic.api :as d]))
+
+(defn unique-config
+     "Returns a unique Vase config map"
+     []
+     {:db-uri (str "datomic:mem://" (UUID/randomUUID))
+      :service-port 8080
+      :http-app-root "/"
+      :enable-upsert true
+      :http-upsert true
+      :transact-upsert true
+      :initial-descriptor "test_descriptor.edn"
+      :initial-version [:example :v1]
+      :test-trials 36})
 
 (defn clj-ver
   [request]
   (ring-resp/response (format "Clojure %s - served from %s"
                               (clojure-version)
                               (route/url-for ::clj-ver))))
-
 (defn health-check
   [request]
   (ring-resp/response "alive"))
 
-(def routes (atom nil))
+(defn make-master-routes
+  [vase-context-atom]
+  `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
+                                                  interceptor/attach-request-id
+                                                  ;; In the future, html-body should be json-body
+                                                  bootstrap/html-body
+                                                  ~(interceptor/bind-vase-context vase-context-atom)]
+    ["/about" {:get clj-ver}]
+    ^:vase/api-root ["/api" {:get vase/show-routes}
+                     ^:interceptors [bootstrap/json-body
+                                     interceptor/json-error-ring-response]]])
 
-(def master-routes `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
-                                                             interceptor/attach-request-id
-                                                             ;; In the future, html-body should be json-body
-                                                             bootstrap/html-body
-                                                             (interceptor/bind-routes routes)]
-                     ["/about" {:get clj-ver}]
-                     ^:vase/api-root ["/api" {:get vase/show-routes}
-                                        ^:interceptors [bootstrap/json-body
-                                                        interceptor/json-error-ring-response]]])
-
-(vase/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
-
-;; Consumed by vase.server/create-server
-;; See bootstrap/default-interceptors for additional options you can configure
-(def service {:env :prod
-              ;; You can bring your own non-default interceptors. Make
-              ;; sure you include routing and set it up right for
-              ;; dev-mode. If you do, many other keys for configuring
-              ;; default interceptors will be ignored.
-              ;; :bootstrap/interceptors []
-              ::bootstrap/routes (if (config :enable-upsert) #(deref routes) @routes)
-
-              ;; Uncomment next line to enable CORS support, add
-              ;; string(s) specifying scheme, host and port for
-              ;; allowed source(s):
-              ;;
-              ;; "http://localhost:8080"
-              ;;
-              ;;::bootstrap/allowed-origins ["scheme://host:port"]
-
-              ;; Root for resource interceptor that is available by default.
-              ::bootstrap/resource-path "/public"
-
-              ;; Either :jetty or :tomcat (see comments in project.clj
-              ;; to enable Tomcat)
-              ;;::bootstrap/host "localhost"
-              ::bootstrap/type :jetty
-              ::bootstrap/port (config :service-port)})
-
+(defn service-map
+  "Return a new, fully initialized service map"
+  []
+  (let [config (unique-config)
+        vase-context (atom (vase/map->VaseContext {:config config}))]
+    (swap! vase-context assoc :master-routes (make-master-routes vase-context))
+    (swap! vase-context vase/init)
+    {:env :prod
+     :vase/context vase-context ;; For testing, shouldn't need this otherwise
+     ::bootstrap/routes (if (config :enable-upsert) #(vase/routes @vase-context) (vase/routes @vase-context))
+     ::bootstrap/resource-path "/public"
+     ::bootstrap/type :jetty
+     ::bootstrap/port (cfg/get-key config :service-port)}))

@@ -1,18 +1,40 @@
 (ns vase
   (:require [clojure.string :as cstr]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [io.pedestal.http :as bootstrap]
             [io.pedestal.http.route.definition :refer [expand-routes]]
-            [themis.validators :as validators]
-            [themis.predicates :as preds]
+            [io.rkn.conformity :as c]
             [ring.util.response :as ring-resp]
+            [vase.config :as cfg]
             [vase.descriptor :as descriptor]
             [vase.util :as util]
-            [vase.config :refer [config]]
             [vase.literals]
-            [vase.db :as cdb]
+            [datomic.api :as d]
             [vase.interceptor :as interceptor]))
 
-(defn update-api-roots
+(defprotocol Context
+  "Represents a Vase runtime, complete with all the information it
+  needs to run."
+  (init [this]
+    "Return a new context (re)initialized from the this context's
+    initial descriptor.")
+  (update [this descriptor app-name versions]
+    "Return a new context with the given descriptor added. Will first
+    load all necessary schemas, then return an updated ")
+  (routes [this]
+    "Return the routing table from the context."))
+
+(def default-master-routes
+  `["/" ^:interceptors [interceptor/attach-received-time
+                        interceptor/attach-request-id
+                        ;; In the future, html-body should be json-body
+                        bootstrap/html-body]
+    ^:vase/api-root ["/api" {:get [:vase/show-routes show-routes]}
+                     ^:interceptors [bootstrap/json-body
+                                     interceptor/json-error-ring-response]]])
+
+(defn- update-api-roots
   [master-routes f args]
   (let [api-root-indices (keep-indexed #(when (:vase/api-root (meta %2))
                                           %1)
@@ -21,15 +43,37 @@
             master-routes
             api-root-indices)))
 
-;; This seems to be broken
+(declare append-api)
+
+(defn- maybe-enable-http-upsert
+  [config master-routes]
+  (if-let [new-verbs (when (cfg/get-key config :http-upsert)
+                       `{:post [:vase/append-api append-api]})]
+    (update-api-roots master-routes
+                      (fn [root _]
+                        (let [verbs-index (keep-indexed #(when (map? %2) %1) root)]
+                          (update-in root verbs-index merge new-verbs))) nil)
+    master-routes))
+
+(defn- force-into-literals!
+  [ctx]
+  (let [ext-nses (get (:config ctx) :extension-namespaces)
+        current-ns (ns-name *ns*)]
+    (in-ns 'vase.literals)
+    (doseq [[namesp nsalias] ext-nses]
+      (require `[~namesp :as ~nsalias]))
+    (in-ns current-ns))
+  ctx)
+
+;; This seems to be broken (?)
 (defn append-routes-to-api-root
   [master-routes route-vecs]
   (update-api-roots master-routes conj route-vecs))
 
-(defn construct-routes [master-routes route-vecs]
+(defn- construct-routes [master-routes route-vecs]
   (vec (expand-routes `[[~(append-routes-to-api-root master-routes route-vecs)]])))
 
-(defn uniquely-add-routes
+(defn- uniquely-add-routes
   "Builds a new sequence of route-maps, and adds back the old, unique route-maps"
   [master-routes route-vecs old-route-maps]
   (let [new-routes (construct-routes master-routes route-vecs)
@@ -39,47 +83,65 @@
                 accum
                 (conj accum rt-map))) new-routes old-route-maps)))
 
-(defn bash-routes! [routes route-vecs]
-  (swap! routes
-         (fn [current-routes]
-           (uniquely-add-routes (:master-routes (meta routes) []) route-vecs current-routes))))
-
-(defn transact-upsert [descriptor route-seq]
+(defn transact-upsert [{:keys [conn config]} descriptor route-seq]
   ;; TODO: this should attach something about the transaction as meta to route-seq
-  (when (config :transact-upsert)
-    (cdb/transact!
-      [{:db/id (cdb/temp-id)
-        :vase/descriptor (get (meta descriptor) :vase/src ":not-found")
-        :vase/routes (pr-str route-seq)}]))
+  (when (get config :transact-upsert)
+    (d/transact conn
+     [{:db/id (d/tempid :db.part/user)
+       :vase/descriptor (get (meta descriptor) :vase/src ":not-found")
+       :vase/routes (pr-str route-seq)}]))
   route-seq)
 
-  ;; TODO: this should attach something about the transaction as meta to routes
-(defn bash-from-descriptor!
-  "Given a route-atom, a descriptor map, an API/app-name keyword, and a version keyword,
-  this will first load all necessary schemas and then `bash routes`,
-  Returning the route-seq if no errors occured"
-  [routes descriptor-map app-name version]
-  (descriptor/ensure-conforms descriptor-map app-name version)
-  (some->> (descriptor/route-vecs descriptor-map app-name version)
-           (bash-routes! routes)
-           (transact-upsert descriptor-map)))
+(defn conn-database
+  "Given a Datomic URI, attempt to create the database and connect to it,
+  returning the connection."
+  [config]
+  (let [uri (:db-uri config)
+        norms (edn/read-string {:readers *data-readers*}
+                               (slurp (io/resource "vase-schema.edn")))]
+    (d/create-database uri)
+    (doto (d/connect uri)
+      (c/ensure-conforms norms [:vase/base-schema]))))
 
-(defn force-into-literals!
-  ([] (force-into-literals! (config :extension-namespaces)))
-  ([ext-nses]
-   (let [current-ns (ns-name *ns*)]
-     (in-ns 'vase.literals)
-     (doseq [[namesp nsalias] ext-nses]
-       (require `[~namesp :as ~nsalias]))
-     (in-ns current-ns))))
+(defrecord VaseContext [config conn routes master-routes descriptor]
+  Context
+  (init [ctx]
+    (let [config (or config (cfg/default-config))
+          master-routes (maybe-enable-http-upsert config (or master-routes default-master-routes))
+          descriptor (util/edn-resource (cfg/get-key config :initial-descriptor))
+          [app-name app-version] (cfg/get-key config :initial-version)]
+      (-> ctx
+          ;; Conform the database and establish the connection
+          (assoc :conn (conn-database config))
+          ;; Ensure master routes are set
+          (assoc :master-routes master-routes)
+          ;; Reset routes to the initial state
+          (assoc :routes nil)
+          ;; Ensure all symbols are available for the literals at descriptor-read-time
+          (force-into-literals!)
+          ;; Update the routes
+          (update descriptor app-name [app-version]))))
+  (update [ctx descriptor app-name versions]
+    ;; TODO: this should attach something about the transaction as meta to routes
+    (reduce (fn [ctx version]
+              (descriptor/ensure-conforms descriptor app-name version (:conn ctx))
+              (let [route-vecs (descriptor/route-vecs descriptor app-name version)
+                    new-routes (uniquely-add-routes master-routes route-vecs routes)]
+                (transact-upsert ctx new-routes descriptor)
+                (assoc ctx
+                  :routes new-routes
+                  :descriptor descriptor)))
+            ctx versions))
+  (routes [ctx] routes))
 
 (defn show-routes
   "Return a list of all active routes.
   Optionally filter the list with the query param, `f`, which is a fuzzy match
   string value"
   [request]
-  (let [routes (:routes-atom request)
-        paths (map (juxt :method :path) @routes)
+  (let [vase-context @(:vase-context-atom request)
+        routes (routes vase-context)
+        paths (map (juxt :method :path) routes)
         {:keys [f sep edn] :or {f "" sep "<br/>" edn false}} (:query-params request)
         sep (str sep " ")
         results (filter #(.contains ^String (second %) f) paths)]
@@ -91,7 +153,7 @@
 ;; TODO: This should replace with " " and then replace #"[ \t]+" - preserving newlines
 ;; Remove the following words when extracting just the descriptor map string
 (def remove-words [#":version.*\[.+\]\W" #":app-name.+:.+\W" #":descriptor\W"])
-(defn extract-descriptor-str [body]
+(defn- extract-descriptor-str [body]
   (let [trimmed-body (cstr/trim
                     (reduce (fn [acc-s rword] (cstr/replace acc-s rword ""))
                             body
@@ -107,50 +169,6 @@
         metad-desc (with-meta descriptor
                      {:vase/src (extract-descriptor-str body-string)})
         versions (if (vector? version) version [version])
-        routes (:routes-atom request)]
-    (doseq [v versions]
-      (bash-from-descriptor! routes metad-desc app-name v))
+        vase-context-atom (:vase-context-atom request)]
+    (swap! vase-context-atom update metad-desc app-name versions)
     (bootstrap/edn-response {:added versions})))
-
-(defn maybe-enable-http-upsert
-  [master-routes routes]
-  (if-let [new-verbs (when (config :http-upsert)
-                       `{:post [:vase/append-api append-api]})]
-    (update-api-roots master-routes
-                      (fn [root _]
-                        (let [verbs-index (keep-indexed #(when (map? %2) %1) root)]
-                          (update-in root verbs-index merge new-verbs))) nil)
-    master-routes))
-
-(defn init-descriptor-routes!
-  "Optionally given a io.pedestal.routes.definition/expand-routes
-  compatible vector, returns an atom which will be updated to hold the
-  current routing table sequence as new descriptors are incorporated.
-
-  Notes:
-   - If you're passing in your own master-routes, some interceptors are required
-     for response generation (attach-received-time, attach-request-id)"
-  [& args]
-  (let [{:keys [routes-atom master-routes descriptor initial-version]
-         :or {routes-atom (atom nil)
-              master-routes `["/" ^:interceptors [interceptor/attach-received-time
-                                                  interceptor/attach-request-id
-                                                  ;; In the future, html-body should be json-body
-                                                  bootstrap/html-body]
-                              ^:vase/api-root ["/api" {:get [:vase/show-routes show-routes]}
-                                                 ^:interceptors [bootstrap/json-body
-                                                                 interceptor/json-error-ring-response]]]
-              descriptor (util/edn-resource (vase.config/get-key :initial-descriptor "You must specify an :initial-descriptor in your config file"))
-              initial-version (config :initial-version)}} args
-        master-routes (maybe-enable-http-upsert master-routes routes-atom)]
-    ;; Reset the atom to the initial state
-    (reset! routes-atom nil)
-    ;; Setup the meta on the routes
-    (alter-meta! routes-atom assoc :master-routes master-routes :descriptor descriptor)
-    ;; Ensure all symbols are available for the literals at descriptor-read-time
-    (force-into-literals!)
-    ;; Transact the initial version of the API
-    ;; TODO: Once bash-from-descriptor! includes transaction info in its meta, it should be added routes
-    (apply bash-from-descriptor! routes-atom (cons descriptor initial-version))
-    routes-atom))
-
