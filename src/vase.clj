@@ -13,18 +13,6 @@
             [datomic.api :as d]
             [vase.interceptor :as interceptor]))
 
-(defprotocol Context
-  "Represents a Vase runtime, complete with all the information it
-  needs to run."
-  (init [this]
-    "Return a new context (re)initialized from the this context's
-    initial descriptor.")
-  (update [this descriptor app-name versions]
-    "Return a new context with the given descriptor added. Will first
-    load all necessary schemas, then return an updated ")
-  (routes [this]
-    "Return the routing table from the context."))
-
 (def default-master-routes
   `["/" ^:interceptors [interceptor/attach-received-time
                         interceptor/attach-request-id
@@ -103,36 +91,42 @@
     (doto (d/connect uri)
       (c/ensure-conforms norms [:vase/base-schema]))))
 
-(defrecord VaseContext [config conn routes master-routes descriptor]
-  Context
-  (init [ctx]
-    (let [config (or config (cfg/default-config))
-          master-routes (maybe-enable-http-upsert config (or master-routes default-master-routes))
-          descriptor (util/edn-resource (cfg/get-key config :initial-descriptor))
-          [app-name app-version] (cfg/get-key config :initial-version)]
-      (-> ctx
-          ;; Conform the database and establish the connection
-          (assoc :conn (conn-database config))
-          ;; Ensure master routes are set
-          (assoc :master-routes master-routes)
-          ;; Reset routes to the initial state
-          (assoc :routes nil)
-          ;; Ensure all symbols are available for the literals at descriptor-read-time
-          (force-into-literals!)
-          ;; Update the routes
-          (update descriptor app-name [app-version]))))
-  (update [ctx descriptor app-name versions]
-    ;; TODO: this should attach something about the transaction as meta to routes
-    (reduce (fn [ctx version]
-              (descriptor/ensure-conforms descriptor app-name version (:conn ctx))
-              (let [route-vecs (descriptor/route-vecs descriptor app-name version)
-                    new-routes (uniquely-add-routes master-routes route-vecs routes)]
-                (transact-upsert ctx new-routes descriptor)
-                (assoc ctx
-                  :routes new-routes
-                  :descriptor descriptor)))
-            ctx versions))
-  (routes [ctx] routes))
+(defrecord Context [config conn routes master-routes descriptor])
+
+(defn update
+ "Return a new context with the given descriptor added. Will first
+  load all necessary schemas, then update the routes and return an updated context"
+ [ctx descriptor app-name versions]
+ ;; TODO: this should attach something about the transaction as meta to routes
+ (reduce (fn [ctx version]
+           (descriptor/ensure-conforms descriptor app-name version (:conn ctx))
+           (let [route-vecs (descriptor/route-vecs descriptor app-name version)
+                 new-routes (uniquely-add-routes (:master-routes ctx) route-vecs (:routes ctx))]
+             (transact-upsert ctx new-routes descriptor)
+             (assoc ctx
+               :routes new-routes
+               :descriptor descriptor)))
+         ctx versions))
+
+(defn init
+ "Return a new context (re)initialized from the this context's
+  initial descriptor."
+ [ctx]
+ (let [config (or (:config ctx) (cfg/default-config))
+       master-routes (maybe-enable-http-upsert config (or (:master-routes ctx) default-master-routes))
+       descriptor (util/edn-resource (cfg/get-key config :initial-descriptor))
+       [app-name app-version] (cfg/get-key config :initial-version)]
+   (-> ctx
+       ;; Conform the database and establish the connection
+       (assoc :conn (conn-database config))
+       ;; Ensure master routes are set
+       (assoc :master-routes master-routes)
+       ;; Reset routes to the initial state
+       (assoc :routes nil)
+       ;; Ensure all symbols are available for the literals at descriptor-read-time
+       (force-into-literals!)
+       ;; Update the routes
+       (update descriptor app-name [app-version]))))
 
 (defn show-routes
   "Return a list of all active routes.
@@ -140,7 +134,7 @@
   string value"
   [request]
   (let [vase-context @(:vase-context-atom request)
-        routes (routes vase-context)
+        routes (:routes vase-context)
         paths (map (juxt :method :path) routes)
         {:keys [f sep edn] :or {f "" sep "<br/>" edn false}} (:query-params request)
         sep (str sep " ")

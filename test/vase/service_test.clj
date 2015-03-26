@@ -80,7 +80,7 @@
         descriptor (:descriptor @vase-context)
         serv-fn (helper/service service-map)
         _ (swap! vase-context vase/update descriptor :example [:v2])
-        observed-routes (set (map :route-name (vase/routes @vase-context)))]
+        observed-routes (set (map :route-name (:routes @vase-context)))]
     (is (= observed-routes known-route-names))
     (is (= (get-in (util/read-json (:body
                                      (response-for serv-fn :get "/api/example/v2/hello")))

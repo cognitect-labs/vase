@@ -50,12 +50,12 @@
   "Return a new, fully initialized service map"
   []
   (let [config (unique-config)
-        vase-context (atom (vase/map->VaseContext {:config config}))]
+        vase-context (atom (vase/map->Context {:config config}))]
     (swap! vase-context assoc :master-routes (make-master-routes vase-context))
     (swap! vase-context vase/init)
     {:env :prod
      :vase/context vase-context ;; For testing, shouldn't need this otherwise
-     ::bootstrap/routes (if (config :enable-upsert) #(vase/routes @vase-context) (vase/routes @vase-context))
+     ::bootstrap/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
      ::bootstrap/resource-path "/public"
      ::bootstrap/type :jetty
      ::bootstrap/port (cfg/get-key config :service-port)}))
