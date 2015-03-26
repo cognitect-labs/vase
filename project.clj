@@ -1,4 +1,4 @@
-(defproject com.cognitect/vase "0.1.0-SNAPSHOT"
+(defproject com.cognitect/vase-redux "0.1.0-SNAPSHOT"
   :description "Vase Container Service"
   :url "https://github.com/relevance/vase"
   :dependencies [;; Platform
