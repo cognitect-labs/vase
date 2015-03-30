@@ -109,13 +109,10 @@
          ctx versions))
 
 (defn init
- "Return a new context (re)initialized from the this context's
-  initial descriptor."
+ "Return a new, initialized context. "
  [ctx]
  (let [config (or (:config ctx) (cfg/default-config))
-       master-routes (maybe-enable-http-upsert config (or (:master-routes ctx) default-master-routes))
-       descriptor (util/edn-resource (cfg/get-key config :initial-descriptor))
-       [app-name app-version] (cfg/get-key config :initial-version)]
+       master-routes (maybe-enable-http-upsert config (or (:master-routes ctx) default-master-routes))]
    (-> ctx
        ;; Conform the database and establish the connection
        (assoc :conn (conn-database config))
@@ -124,9 +121,15 @@
        ;; Reset routes to the initial state
        (assoc :routes nil)
        ;; Ensure all symbols are available for the literals at descriptor-read-time
-       (force-into-literals!)
-       ;; Update the routes
-       (update descriptor app-name [app-version]))))
+       (force-into-literals!))))
+
+(defn load-initial-descriptor
+  "Loads the :initial-descriptor and :initial-version keys from the
+  config into the given context, returning a new context."
+  [ctx cfg]
+  (let [descriptor (util/edn-resource (cfg/get-key cfg :initial-descriptor))
+        [app-name app-version] (cfg/get-key cfg :initial-version)]
+    (update ctx descriptor app-name [app-version])))
 
 (defn show-routes
   "Return a list of all active routes.

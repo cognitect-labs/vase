@@ -53,6 +53,7 @@
         vase-context (atom (vase/map->Context {:config config}))]
     (swap! vase-context assoc :master-routes (make-master-routes vase-context))
     (swap! vase-context vase/init)
+    (swap! vase-context vase/load-initial-descriptor config)
     {:env :prod
      :vase/context vase-context ;; For testing, shouldn't need this otherwise
      ::bootstrap/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
