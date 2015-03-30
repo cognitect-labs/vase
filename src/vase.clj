@@ -1,4 +1,5 @@
 (ns vase
+  (:refer-clojure :exclude [update])
   (:require [clojure.string :as cstr]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
