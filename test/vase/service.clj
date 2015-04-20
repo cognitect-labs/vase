@@ -28,7 +28,7 @@
                      ["/about" {:get clj-ver}]
                      ^:vase/api-root ["/api" {:get vase/show-routes}
                                         ^:interceptors [bootstrap/json-body
-                                                        interceptor/json-error-ring-response]]])
+                                                        interceptor/vase-error-ring-response]]])
 
 (vase/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
 

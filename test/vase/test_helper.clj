@@ -22,7 +22,7 @@
     ["/about" {:get cserv/clj-ver}]
     ^:vase/api-root ["/api" {:get vase/show-routes}
                        ^:interceptors [bootstrap/json-body
-                                       interceptor/json-error-ring-response]]])
+                                       interceptor/vase-error-ring-response]]])
 
 (defn test-with-fresh-db
   [f]

@@ -2,7 +2,7 @@
   (:require [vase.util :as util]
             [io.pedestal.log :as log]))
 
-(def path (System/getProperty "crocsconfig" nil))
+(def path (System/getProperty "vaseconfig" nil))
 (log/info :msg (str "Config is: " (or path "DEFAULT")))
 
 ;; The purpose of this fn is to hide the implementation details of config reading.
