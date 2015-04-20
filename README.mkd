@@ -1,35 +1,16 @@
 
-Consumer Reports Data Systems: CR-ocs/CR-ane
+Vase: A container for data-driven services
 ============================================
-
-## Consumer Reports On-demand Container Service
-
-... or `cr-ocs`
 
 This system provides a data-driven way to describe and run RESTful APIs that
 are backed by a durable database (Datomic).
 
-The **Consumer Reports Annotated Extractor**, or `cr-ane`, provides a way
-to import data sets into the database for use within your APIs.
-
-
-#### Standups
-
-Stand-ups are at 9:30am, on Skype.  Call is initiated by a Cognitect employee.
-Please reach out to Paul `ohpauleez` to be roped in.
-
 
 ### Getting started
 
-If you are new to the project, please review the [CR-ocs Project Overview/I0 document](docs/i0.mkd) and its [design document](docs/design_doc.mkd).
-Cross-reference any unfamiliar terms or technologies with the [education document](docs/education.mkd)
+If you are new to the project, please review the [design document](docs/design_doc.mkd).
 
-It may be help to review the [CR-ane Project Overview/I0 document](docs/crane/i0.mkd) and its [design document](docs/crane/design_doc.mkd)
-
-If you are new to the technology stack, you may want to follow the week-long intensive [quicklearn](docs/quicklearn.mkd) guide.
-
-If you're looking to get started with CR-ocs, follow the tutorial: [Building your first API](docs/your_first_api.mkd).
-Once you're up and running, [import an existing dataset](docs/crane/using_existing_datasets.mkd) with CR-ane to enhance your system.
+If you're looking to get started with Vase, follow the tutorial: [Building your first API](docs/your_first_api.mkd).
 
 
 #### Notable system components
@@ -39,89 +20,17 @@ Once you're up and running, [import an existing dataset](docs/crane/using_existi
 
 ## Usage
 
-To start the service running on a local Jetty (port 8080), with in-memory Datomic
-
- * `lein run`
- * Or you can use: `./server.sh`
-
-To start the service in **DEV** mode on a local Jetty (port 8080), with in-memory Datomic
-
- * `lein run-dev`
- * Or you can use: `./server.sh -dev`
-
-To start the service in **PROD** mode on a local Jetty (port 8080), with Datomic Pro
-
- * `lein run-prod`
- * Or you can use: `./server.sh -prod`
- * **Please note:** that this uses the [production config file](./config/prod_system.edn)
-
-To extract schema hints with CR-ane about new data sets
-
- * `lein run-hinter`
- * Or you can use: `:server.sh -hinter`
-
-To verify import will work without importing data into an existing service:
-
- * `lein run-test-import`
- * Or you can use: `./server.sh -test-import`
-
-To import data with CR-ane into a *running* **PROD** service
-
- * `lein run-import`
- * Or you can use: `./server.sh -import`
-
-To deploy your app with Immutant ...
-
- * `lein immutant deploy` - this will automatically install the latest immutant if it's not found
-
-... to run the application on Immutant (port 8080)
-
- * `lein immutant run` - which also starts an nREPL server when in dev mode
-
-To compile the Application JS engine ...
-
- * `lein build-all`
-
-To test (server-side)
-
- * `lein test`
-
-To test backend and frontend (currently requires phantomjs; builds frontend automatically)
-
- * `lein test-all`
-
-
-#### Using the client
-
-These instructions assume you're running the server locally, on port 8080.
-
-To see the current list of routes, use a browser and browse to: [`http://127.0.0.1:8080/api`](http://127.0.0.1:8080/api)
-
-You may optionally filter the results of the list like: [`http://127.0.0.1:8080/api?f=example`](http://127.0.0.1:8080/api?f=example)
-
-You can also use the command-line client: `./client.sh`, but no filtering is possible.
-
-To update the APIs, use the command-line client to POST to */api*: `./client.sh config/sample_payload.edn`
-
-
-#### Using the Datomic Console
-
-The [Console](http://docs.datomic.com/console.html) is a great way to explore
-the DB, shape queries, or diagnose issues.  Assuming you launched a **PROD**
-server with Datomic Pro running, you can launch the Console server with:
-`./console.sh`
-
-You should then open the [Console Browse Page](http://localhost:9090/browse)
-
+TODO - need to write the "How to use this as a library" doc
 
 ## Configuration
 
-To configure logging see config/logback.xml. By default, the app logs to stdout and logs/.
+To configure logging see config/logback.xml. By default, the app logs to stdout and `logs/`.
 To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
 
 The [Datomic Schema](http://docs.datomic.com/schema.html) is located in the [resource directory](./resources/schema.edn)
 
 #### System Config
+
 There also exists an [application/service level configuration file](./config/system.edn)
 
 Use this file to:
@@ -138,22 +47,5 @@ Use this file to:
 
 #### Datomic Config
 
-Datomic is configured through its [transactor/storage conf file](./datomic/config/dev-transactor.properties)
-
-#### CR-ane Config
-CR-ane is configured using the  [application/service level configuration file](./config/system.edn).
-Its options are namespaced specific to `:crane/`, and all options are documented
-
-
-### Why are all these JARs under version control?!?!
-
-This project currently bundles Datomic Pro within the `datomic` directory, only
-to allow the system to start up and launch a transactor.
-
-Typically, the transactor would be a separate project managed by itself, and
-only the peer library would be added to the classpath or Leiningen dependencies.
-
-In the future, these two projects should be split, removing the datomic
-directory from this project, adding the peer lib dependency, and configuring
-the transactor to connect to with the available [config option](config/prod_system.edn).
+Datomic is configured through its transactor/storage conf file - that is set/determined by the user.
 
