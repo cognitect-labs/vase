@@ -9,18 +9,10 @@ This document describes the design of the service template and tooling system - 
 It describes the basic service model and provides detailed documentation
 for all operations, including URIs/destinations and input/output data formats.
 
-The design for the implementation details of the system is [documented separately - (CURRENTLY HIDDEN)](impl_doc.mkd).
-
-
-### Overview of existing data/product services
-
-There exists data-oriented/product services which current digital offerings and applications consume.
-
- * TODO
 
 ### Commonly used terms
 
- * **Core Service** - The main Vase container service, which hosts other prototyped APIs
+ * **Core Service** - The main Vase container service, which hosts other data-described APIs
  * **API** - A service contained within the container; a hosted service within the core service
  * **edn** - Also EDN; [Extensible Data Notation](https://github.com/edn-format/edn); a data serialization notation, like JSON
 
@@ -43,7 +35,7 @@ validation, data persistence/durability, and query/data retrieval tasks.  The
 main service (`vase`), is a clean addition to Pedestal, allowing developers
 to fallback on using Pedestal directly when Vase is insufficient.
 
-The APIs that vase hosts are all described in data and transacted with the
+The APIs that Vase hosts are all described in data and transacted with the
 service.  Core validation endpoints ensure the integrity and correctness of
 these application-description files (routing, schema, validation, and core-app
 configurations).
@@ -70,7 +62,7 @@ API-specific data that is persisted in the database is owned by that API.
 An API may only reference data that it owns.  Consumers of the API (other
 services, mobile apps, etc), may choose to integrate data from various APIs.
 Unifying data across APIs is a design challenge for API designers.  There is
-nothing within vase that helps or hinders unifying data.
+nothing within Vase that helps or hinders unifying data.
 
 Owned data is versioned and namespaced for the given API.  Please see the
 API-specific documentation (or description files) to understand the shape,
@@ -88,10 +80,11 @@ lifetime of the application within the container.
 ## Failure and reliability
 
 The core service prevents APIs from having third-party integrations as a means
-to remove a common source of failures (and reliability issues).  The core
+to remove a common source of failures (and reliability issues) - which is
+achieved by constraining possible actions within an API endpoint.  The core
 service itself also doesn't integrate with any third-party systems.  At any
-point where an external integration is needed, the core service will use
-a latency and fault tolerant circuit breaker that is configurable within a
+point where an external integration is needed, it is recommended that one use a
+latency and fault tolerant circuit breaker that is configurable within a
 configuration file.
 
 
@@ -99,15 +92,16 @@ configuration file.
 
 The core service has no authorization or authentication mechanisms.  If such
 systems are desired, one should place the core service behind a system that provides
-such services externally.
+such services externally.  One may also consider utilizing a ServletFilter or
+Pedestal interceptor.
 
 
 ## Monitoring and logging
 
-All APIs will be logged with the core services default system log configuration.
+All APIs will be logged with the core service's default system log configuration.
 Additionally, the core service's platform should also provide additional
 monitoring capabilities.  No additional logging, monitoring, or reporting
-mechanisms will be in place for initial core service proof of concept.
+mechanisms are currently in place for the core service.
 
 
 ## Related concepts
@@ -162,8 +156,6 @@ core service operations.
 ### Formats and conventions
 
  * Timestamps and dates are always Zulu/GMT ISO-8601 format strings like, `"2014-01-02T01:04:05.000Z"`
- * Dollars amounts / price information is always given in cents as an integer.  Ten dollars is `1000`
-   * If you pass in a decimal, 228.00, it will be converted to the integer cents form, 22800
  * All property names are lowercase words separated with underscore, like `snake_case`
  * Model ID always identifies a given item, integer (numeric type)
  * User ID always identifies a given user, string - confirm
