@@ -1,13 +1,13 @@
 Building your first API
 =======================
 
-This is a guide to get you started with the Consumer Reports On-demand Container
-Service, or `CR-ocs`.  It will help you write your first descriptor file.
+This is a guide to get you started with the Vase - the container service.
+It will help you write your first descriptor file.
 
 You should understand the [design](./design_doc.mkd) of the system and the file
 formats used before you begin.  The most important pieces:
 
- * The data exchange format with CR-ocs itself is *edn*
+ * The data exchange format with Vase itself is *edn*
  * The data exchange format of the hosted APIs is the [universal json response format](./design_doc.mkd#default-output-format), or *JSON* for short
  * An API is described in a descriptor file
  * If you plan on upserting over HTTP, it's easier to build your descriptor in
@@ -22,7 +22,7 @@ In a dedicated console/terminal window, start the service by typing the followin
 
     lein run
 
-If you don't have Leiningen installed, you can start the CR-ocs server with the `./server.sh` command instead.
+If you don't have Leiningen installed, you can start the Vase server with the `./server.sh` command instead.
 
 
 ## An accounts system
@@ -80,21 +80,21 @@ describe them.
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                                                         [:item/name :one :string "The name of an item"]
+                                                         [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}}}
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                                                         [:user/email :one :string :unique "The email address for a given user"]
+                                                         [:user/items :many :ref "The collection of items a user owns"]]]}}}}
   :app-name :accounts
   :version [:v1]
 }
 ```
 
-CR-ocs offers a shorthand for defining Datomic schema transactions with the
-literal tag `#cr-ocs/short-schema-tx`.  This tag marks a vector of vectors.
+Vase offers a shorthand for defining Datomic schema transactions with the
+literal tag `#vase/short-schema-tx`.  This tag marks a vector of vectors.
 Each subvector defines an attribute, its cardinality, its type, an
 optional qualifier (unique, index, or fulltext), and a doc string.  Attribute
 names are *namespaced* with the entity name to which they apply.
@@ -125,7 +125,7 @@ We can now begin building out an HTTP Restful API for our data model.  This will
 let third-party application and other internal services make use of our data.
 
 Routes get defined with URL strings, HTTP verbs (get, post, etc), and action
-literals.  The foundation of CR-ocs routing is based on [Pedestal's capabilities](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md),
+literals.  The foundation of Vase's routing is based on [Pedestal's capabilities](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md),
 but with care given to represent routes in an external data file (like our descriptor).
 
 Below we've added a route to our descriptor that gives some information about our API:
@@ -134,17 +134,17 @@ Below we've added a route to our descriptor that gives some information about ou
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :body "General User and Item Information"}}]]}}}
   :app-name :accounts
   :version [:v1]
@@ -157,12 +157,12 @@ route/path, and then a map of HTTP verbs to action literals.  Here we see that
 every action literal needs a unique `:name` associated with it.
 There are five action literals:
 
- * `#cr-ocs/respond` - respond with static data, optionally formatted as JSON
- * `#cr-ocs/redirect` - redirect an incoming request to a different URL
+ * `#vase/respond` - respond with static data, optionally formatted as JSON
+ * `#vase/redirect` - redirect an incoming request to a different URL
    * Not covered in this guide, please see the [sample descriptor](../config/sample_descriptor.edn) for usage.
- * `#cr-ocs/query` - respond with the results of a database query
- * `#cr-ocs/transact` - add/update data in the database
- * `#cr-ocs/validate` - validate that data conforms to a set of rules
+ * `#vase/query` - respond with the results of a database query
+ * `#vase/transact` - add/update data in the database
+ * `#vase/validate` - validate that data conforms to a set of rules
    * This action literal is currently turned off and not usable
 
 Below we've added the schemas that our API uses and tell the container to
@@ -172,17 +172,17 @@ forward some HTTP request headers with every response.
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :body "General User and Item Information"}}]]
                       :schemas [:accounts/user-schema]
                       :forward-headers ["vaserequest-id"]}}}
@@ -238,19 +238,19 @@ Here's an example with a URL parameter:
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body your-name}}]]
                       :schemas [:accounts/user-schema]
@@ -272,22 +272,22 @@ Here's an example were we'll return a JSON response for all of our expected quer
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body your-name}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
@@ -310,23 +310,23 @@ You can also force string bodies conform to that format.  Let's update our old
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body your-name}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
@@ -376,23 +376,23 @@ Clojure's `(str ...)` function.
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]]
@@ -410,7 +410,7 @@ API to meet your needs.
 
 #### Getting data in with `transact`
 
-In addition to rendering content, the CR-ocs system also provides a `#transact`
+In addition to rendering content, the Vase system also provides a `#transact`
 action allowing the storage of incomming POST data.  Observe the following addition
 to the system descriptor:
 
@@ -418,28 +418,28 @@ to the system descriptor:
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #cr-ocs/transact {:name :accounts-v1/user-create
+                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
                                                                  :properties [
                                                                    :db/id
                                                                    :user/userId
@@ -457,7 +457,7 @@ The added `#transact` literal shown above consists of a single element
 accepted in a set of incoming POST data.  The properties `:user/userId` and
 `:user/userEmail` are fairly self-explanatory, but the `:db/id` property is
 handled specially.  That is, the `:db/id` key signifies if the incoming data
-refers to existing entities in the CR-ocs database, or to new entities.  For
+refers to existing entities in the Vase database, or to new entities.  For
 example, consider the following JSON corresponding to incoming POST data:
 
 ```json
@@ -470,7 +470,7 @@ example, consider the following JSON corresponding to incoming POST data:
 ```
 
 The JSON packet above, because it does not contain a `:db/id` field refers to a
-new entity and the return value from the CR-ocs service will return its newly
+new entity and the return value from the Vase service will return its newly
 created `:db/id`.  On the other hand, the following JSON refers to an existing
 entity in the database:
 
@@ -484,7 +484,7 @@ entity in the database:
 }
 ```
 
-Because the `:db/id` field is set to a value the CR-ocs system will attempt to
+Because the `:db/id` field is set to a value the Vase system will attempt to
 resolve the entity in the database before transacting the data.  Obviously, if
 no such entity exists then a failure will occur, thus notifying the calling
 client.
@@ -507,7 +507,7 @@ unique entity in the database for the purposes of transcting associated data.
 
 #### Getting data out with `query`
 
-It makes sense that if the CR-ocs system allows the insertion of new data that
+It makes sense that if the Vase system allows the insertion of new data that
 the data availble be accessible as well.  Indeed, the `#query` action provides
 the mechanism for defining service routes that return data based on Datalog
 queries.  Observe the following addition to the system descriptor:
@@ -516,33 +516,33 @@ queries.  Observe the following addition to the system descriptor:
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #cr-ocs/transact {:name :accounts-v1/user-create
+                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
                                                                  :properties [
                                                                    :db/id
                                                                    :user/userId
                                                                    :user/email]}
-                                         :get #cr-ocs/query {:name :accounts-v1/user-page
+                                         :get #vase/query {:name :accounts-v1/user-page
                                                               :params [email]
                                                               :query
                                                               [:find ?e
@@ -576,40 +576,40 @@ Observe our next change to the descriptor below:
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #cr-ocs/transact {:name :accounts-v1/user-create
+                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
                                                                  :properties [
                                                                    :db/id
                                                                    :user/userId
                                                                    :user/email]}
-                                         :get #cr-ocs/query {:name :accounts-v1/user-page
+                                         :get #vase/query {:name :accounts-v1/user-page
                                                               :params [email]
                                                               :query
                                                               [:find ?e
                                                                :in $ ?email
                                                                :where
                                                                [?e :user/email ?email]]}}]
-                               ["/user/:id" {:get #cr-ocs/query {:name :accounts-v1/user-id-page
+                               ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
                                                                 :params [id]
                                                                 :edn-coerce [id]
                                                                 :query
@@ -627,7 +627,7 @@ Observe our next change to the descriptor below:
 
 The second route, called `/user/:id` allows the a similar information lookup, but instead supplied
 as a path parameter (e.g. http://example.com/user/id). By default the `:id` parameter would be
-a string value, but by using the `:edn-coerce` property of the `#query` action we tell CR-ocs to
+a string value, but by using the `:edn-coerce` property of the `#query` action we tell Vase to
 attempt to parse the string as a valid EDN data type.  Therefore, when clients hit the URL
 bound to that query the proper types will match (i.e. the DB expects integer IDs, not string IDs).
 
@@ -638,7 +638,7 @@ data set, for example, *Give me all users whose email is in `["jane@domain.com",
 
 In Datomic this is called a "parameterized in/or query," and it's achieved by
 binding the names with the `:in` clause.  To do this, we supply additional
-constant data to the CR-ocs query with the `:constants` option.
+constant data to the Vase query with the `:constants` option.
 This can also be used with parameter binding (covered above), in which case parameters
 are passed in to the query before the constants.
 
@@ -648,40 +648,40 @@ An example of simple constants follows - observe our last change to the schema b
 {
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
-                           :txes [#cr-ocs/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                                            [:item/name :one :string "The name of an item"]
                                                            [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
-                           :txes [#cr-ocs/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                                            [:user/email :one :string :unique "The email address for a given user"]
                                                            [:user/items :many :ref "The collection of items a user owns"]]]}}
                  ;; API Versions
                  ;; -------------
-                 :v1 {:routes [["/about" {:get #cr-ocs/respond {:name :accounts-v1/about-response
+                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
                                                                 :enforce-format true
                                                                 :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #cr-ocs/respond {:name :accounts-v1/about-yourname
+                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
                                                                            :params [your-name]
                                                                            :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #cr-ocs/respond {:name :accounts-v1/about-query
+                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
                                                                            :params [one-thing another-thing]
                                                                            :body {:first-param one-thing
                                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #cr-ocs/transact {:name :accounts-v1/user-create
+                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
                                                                  :properties [
                                                                    :db/id
                                                                    :user/userId
                                                                    :user/email]}
-                                         :get #cr-ocs/query {:name :accounts-v1/user-page
+                                         :get #vase/query {:name :accounts-v1/user-page
                                                               :params [email]
                                                               :query
                                                               [:find ?e
                                                                :in $ ?email
                                                                :where
                                                                [?e :user/email ?email]]}}]
-                               ["/user/:id" {:get #cr-ocs/query {:name :accounts-v1/user-id-page
+                               ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
                                                                 :params [id]
                                                                 :edn-coerce [id]
                                                                 :query
@@ -689,7 +689,7 @@ An example of simple constants follows - observe our last change to the schema b
                                                                   :in $ ?id
                                                                   :where
                                                                   [?e :user/userId ?id]]}}]
-                               ["/special-users" {:get #cr-ocs/query {:name :accounts-v1/user-id-page
+                               ["/special-users" {:get #vase/query {:name :accounts-v1/user-id-page
                                                                       :params []
                                                                       :constants [["jane@domain.com" "bill@domain.com"]]
                                                                 :query
