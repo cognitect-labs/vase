@@ -11,15 +11,18 @@
                  [io.rkn/conformity "0.3.4" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal
-                 [io.pedestal/pedestal.service "0.4.0"]
+                 [io.pedestal/pedestal.service "0.4.0" :exclusions [[com.fasterxml.jackson.core/jackson-core]
+                                                                    [com.fasterxml.jackson.core/jackson-databind]
+                                                                    [com.fasterxml.jackson.datatype/jackson-datatype-json-org]]]
                  [ohpauleez/themis "0.1.1"]
 
                  ;; Cleanup
                  [commons-codec "1.9"]
                  [joda-time "2.6"]
-                 [com.fasterxml.jackson.core/jackson-core "2.3.2"]
-                 [com.fasterxml.jackson.core/jackson-databind "2.3.2"]
-                 [cheshire "5.3.1" :exclusions [[com.fasterxml.jackson.core/jackson-core]]]]
+                 [com.fasterxml.jackson.core/jackson-core "2.4.4"]
+                 [com.fasterxml.jackson.core/jackson-databind "2.4.4"]
+                 [com.fasterxml.jackson.datatype/jackson-datatype-json-org "2.4.4"]
+                 [cheshire "5.4.0" :exclusions [[com.fasterxml.jackson.core/jackson-core]]]]
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["config"
                                     "resources"
