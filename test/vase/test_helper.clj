@@ -15,7 +15,6 @@
   ([] (new-service (vserv/service-map)))
   ([service-map] (::bootstrap/service-fn (bootstrap/create-servlet service-map))))
 
-
 (def ^:dynamic *current-service* nil)
 
 (defmacro with-service

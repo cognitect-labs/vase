@@ -1,5 +1,6 @@
 (ns vase.interceptor
-  (:require [io.pedestal.interceptor :as interceptor :refer [defon-request definterceptor definterceptorfn]]
+  (:require [io.pedestal.interceptor.helpers :as helpers :refer [defon-request]]
+            [io.pedestal.interceptor :as interceptor]
             [io.pedestal.log :as log]
             [clojure.stacktrace :as ctrace]
             [clj-time.core :as clj-time]
@@ -31,11 +32,11 @@
   IFF they are in the request"
   [kw-name headers]
   (interceptor/interceptor
-    :name kw-name
-    :leave (fn [context]
-             (assoc-in context [:response :headers]
-                       (merge (select-keys (get-in context [:request :headers]) headers)
-                              (get-in context [:response :headers]))))))
+    {:name kw-name
+     :leave (fn [context]
+              (assoc-in context [:response :headers]
+                        (merge (select-keys (get-in context [:request :headers]) headers)
+                               (get-in context [:response :headers]))))}))
 
 ;; Correctly handle 500s and wrap them as JSON responses
 (defn- five-hundred-response [exception]
@@ -58,21 +59,22 @@
           :exception-data (ex-data exception))
         (util/error-response 500 "Internal server error: exception")))))
 
-(definterceptor json-error-ring-response
-  "Returns a 500 JSON response for unexpected exceptions in endpoints."
+(def vase-error-ring-response
+  "Returns a 500 JSON/edn/transit response for unexpected exceptions in endpoints."
   (interceptor/interceptor
-    :name ::json-error-ring-response
-    :error (fn [{:keys [servlet-response] :as context} exception]
-             (assoc context
-                    :response (response-for-exception exception)))))
+    {:name ::json-error-ring-response
+     :error (fn [{:keys [servlet-response] :as context} exception]
+              (assoc context
+                     :response (response-for-exception exception)))}))
 
-(definterceptorfn bind-vase-context
+
+(defn bind-vase-context
   ""
   [vase-context-atom]
   (interceptor/interceptor
-    :name ::bind-context
+   {:name ::bind-context
     :enter (fn [context]
-             (assoc-in context [:request :vase-context-atom] vase-context-atom))))
+             (assoc-in context [:request :vase-context-atom] vase-context-atom))}))
 
 (defn conditional-handlers
   "Gvien a keyword name and any variable predicate and handler function pairs,
@@ -84,15 +86,15 @@
   {:pre [(even? (count pred-hands))]}
   (let [pred-hand-pairs (partition 2 pred-hands)]
     (interceptor/interceptor
-      :name name-kw
-      :enter (fn [context]
-               (or
-                 (first
-                   (keep (fn [[pred handler]] (when (pred context)
-                                             (assoc context :response
-                                                       (handler (:request context)))))
-                         pred-hand-pairs))
-                 context)))))
+      {:name name-kw
+       :enter (fn [context]
+                (or
+                  (first
+                    (keep (fn [[pred handler]] (when (pred context)
+                                                 (assoc context :response
+                                                        (handler (:request context)))))
+                          pred-hand-pairs))
+                  context))})))
 
 (defn conditional-context
   "Given a keyword name and any variable predicate and terminator function pairs,
@@ -104,12 +106,12 @@
   {:pre [(even? (count pred-terms))]}
   (let [pred-term-pairs (partition 2 pred-terms)]
     (interceptor/interceptor
-      :name name-kw
-      :enter (fn [context]
-               (or
-                 (first
-                   (keep (fn [[pred term]] (when (pred context)
-                                             (term context)))
-                         pred-term-pairs))
-                 context)))))
+      {:name name-kw
+       :enter (fn [context]
+                (or
+                  (first
+                    (keep (fn [[pred term]] (when (pred context)
+                                              (term context)))
+                          pred-term-pairs))
+                  context))})))
 

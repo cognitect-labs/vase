@@ -1,44 +1,38 @@
 Vase
 ====
 
-## Vase Container Service
+Vase: A container for data-driven services
+============================================
 
 This system provides a data-driven way to describe and run RESTful APIs that
 are backed by a durable database (Datomic).
 
 ### Getting started
 
+If you are new to the project, please review the [design document](docs/design_doc.mkd).
+
 If you're looking to get started with Vase, follow the tutorial: [Building your first API](docs/your_first_api.mkd).
+You may also want to see [how to add Vase to an existing Pedestal Service](docs/adding_vase.mkd).
 
-#### Using the client
 
-These instructions assume you're running the server locally, on port 8080.
+## Usage
 
-To see the current list of routes, use a browser and browse to: [`http://127.0.0.1:8080/api`](http://127.0.0.1:8080/api)
-
-You may optionally filter the results of the list like: [`http://127.0.0.1:8080/api?f=example`](http://127.0.0.1:8080/api?f=example)
-
-You can also use the command-line client: `./client.sh`, but no filtering is possible.
-
-To update the APIs, use the command-line client to POST to */api*: `./client.sh config/sample_payload.edn`
-
-#### Using the Datomic Console
-
-The [Console](http://docs.datomic.com/console.html) is a great way to explore
-the DB, shape queries, or diagnose issues.  Assuming you launched a **PROD**
-server with Datomic Pro running, you can launch the Console server with:
-`./console.sh`
-
-You should then open the [Console Browse Page](http://localhost:9090/browse)
+Once Vase is [added to your service](docs/adding_vase.mkd), you can begin setting
+up a `system.edn` configuration file and your initial service descriptor
+(both must be on your resource path).  The configuration file will point to
+your `:initial-descriptor`.  Please see this project's [test config](test/resources/system.edn)
+and [test descriptor](test/resources/test_descriptor.edn) as an example.
 
 ## Configuration
 
-To configure logging see config/logback.xml. By default, the app logs to stdout and logs/.
+To configure logging see config/logback.xml. By default, the app logs to stdout and `logs/`.
 To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
 
-The [Datomic Schema](http://docs.datomic.com/schema.html) is located in the [resource directory](./resources/schema.edn)
+The [Datomic Schema](http://docs.datomic.com/schema.html) used internally by Vase
+is located in the [resource directory](./resources/schema.edn).
 
 #### System Config
+
 There also exists an [application/service level configuration file](./config/system.edn)
 
 Use this file to:
@@ -52,7 +46,9 @@ Use this file to:
  * Set an initial descriptor file to load when the service starts: `:initial-descriptor` *"sample-descriptor.edn"*
    * This is a string of a JVM Resource-path file
  * Set an initial version of an API to load when the service starts: `:initial-version` *[:example :v1]*
+   * This must be a path in the initial descriptor
 
 #### Datomic Config
 
-Datomic is configured through its [transactor/storage conf file](./datomic/config/dev-transactor.properties)
+Datomic is configured through its transactor/storage conf file - that is set/determined by the user.
+

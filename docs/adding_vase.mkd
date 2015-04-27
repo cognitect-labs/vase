@@ -1,0 +1,100 @@
+Adding Vase to a Pedestal project
+=================================
+
+This document will help you add Vase to an existing Pedestal project.
+
+It assumes you created your Pedestal project with the template:
+
+```
+lein new pedestal-service my-new-service
+```
+
+### Step 1: Add the Vase dependency
+
+In your `project.clj`, add the Vase dependency information:
+
+```
+[io.pedestal/vase "0.1.0"]
+```
+
+### Step 2: Update your `service.clj`
+
+#### Add the new required namespaces to your `service.clj` ns declaration
+
+```clojure
+(ns my-new-service.service
+  (:require ;...
+            [vase.interceptor :as interceptor]
+            [vase.config :refer [config]]
+            [vase]))
+```
+
+#### Adjust your route definition
+
+The initial template will have a route definition within `service.clj`
+
+```clojure
+(defroutes routes
+  ;; Defines "/" and "/about" routes with their associated :get handlers.
+  ;; The interceptors defined after the verb map (e.g., {:get home-page}
+  ;; apply to / and its children (/about).
+  [[["/" {:get home-page}
+     ^:interceptors [(body-params/body-params) bootstrap/html-body]
+     ["/about" {:get about-page}]]]])
+```
+
+This should become...
+
+```clojure
+(def routes (atom nil))
+
+(def master-routes `["/" {:get home-page} ^:interceptors [interceptor/attach-received-time
+                                                          interceptor/attach-request-id
+                                                          bootstrap/html-body
+                                                          (interceptor/bind-routes routes)]
+                     ["/about" {:get about-page}]
+                     ^:vase/api-root ["/api" {:get vase/show-routes}
+                                       ^:interceptors [bootstrap/json-body
+                                                       interceptor/vase-error-ring-response]]])
+
+(vase/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
+```
+
+#### Update your service map
+
+Your service map should respect the live-upsert and port settings within
+the Vase configuration file, `system.edn`:
+
+```clojure
+(def service {:env :prod
+              ;; You can bring your own non-default interceptors. Make
+              ;; sure you include routing and set it up right for
+              ;; dev-mode. If you do, many other keys for configuring
+              ;; default interceptors will be ignored.
+              ;; :bootstrap/interceptors []
+              ::bootstrap/routes (if (config :enable-upsert) #(deref routes) @routes)
+
+              ;; Uncomment next line to enable CORS support, add
+              ;; string(s) specifying scheme, host and port for
+              ;; allowed source(s):
+              ;;
+              ;; "http://localhost:8080"
+              ;;
+              ;;::bootstrap/allowed-origins ["scheme://host:port"]
+
+              ;; Root for resource interceptor that is available by default.
+              ::bootstrap/resource-path "/public"
+
+              ;; Either :jetty or :tomcat (see comments in project.clj
+              ;; to enable Tomcat)
+              ;;::bootstrap/host "localhost"
+              ::bootstrap/type :jetty
+              ::bootstrap/port (config :service-port)})
+```
+
+### Step 3: Create services
+
+Your Pedestal application is now Vase-enabled.  You should now setup any
+necessary configuration files.  Once Vase is configured, you can begin
+[creating services](./your_first_api.mkd)
+

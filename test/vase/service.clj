@@ -34,17 +34,18 @@
   [request]
   (ring-resp/response "alive"))
 
+
 (defn make-master-routes
   [vase-context-atom]
   `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
-                                                  interceptor/attach-request-id
-                                                  ;; In the future, html-body should be json-body
-                                                  bootstrap/html-body
-                                                  ~(interceptor/bind-vase-context vase-context-atom)]
+                                            interceptor/attach-request-id
+                                            ;; In the future, html-body should be json-body
+                                            bootstrap/html-body
+                                            ~(interceptor/bind-vase-context vase-context-atom)]
     ["/about" {:get clj-ver}]
     ^:vase/api-root ["/api" {:get vase/show-routes}
                      ^:interceptors [bootstrap/json-body
-                                     interceptor/json-error-ring-response]]])
+                                     interceptor/vase-error-ring-response]]])
 
 (defn service-map
   "Return a new, fully initialized service map"
@@ -60,3 +61,4 @@
      ::bootstrap/resource-path "/public"
      ::bootstrap/type :jetty
      ::bootstrap/port (cfg/get-key config :service-port)}))
+

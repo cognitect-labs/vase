@@ -1,7 +1,8 @@
 Building your first API
 =======================
 
-This is a guide to get you started with Vase. It will help you write your first descriptor file.
+This is a guide to get you started with the Vase - the container service.
+It will help you write your first descriptor file.
 
 You should understand the [design](./design_doc.mkd) of the system and the file
 formats used before you begin.  The most important pieces:
@@ -16,7 +17,11 @@ It also important to note that the terms *service*, *server*, *container* are al
 
 ## Up and running
 
-You will need to have a server running with Vase installed and running.
+In a dedicated console/terminal window, start the service by typing the following command:
+
+    lein run
+
+If you don't have Leiningen installed, you can start the Vase server with the `./server.sh` command instead.
 
 ## An accounts system
 
@@ -74,13 +79,13 @@ describe them.
   :descriptor {:accounts {
                  :norms {:accounts/item-schema {
                            :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
+                                                         [:item/name :one :string "The name of an item"]
+                                                         [:item/description :one :string :fulltext "A short description of the item"]]]}
                          :accounts/user-schema {
                            :requires [:accounts/item-schema]
                            :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}}}
+                                                         [:user/email :one :string :unique "The email address for a given user"]
+                                                         [:user/items :many :ref "The collection of items a user owns"]]]}}}}
   :app-name :accounts
   :version [:v1]
 }
@@ -118,7 +123,7 @@ We can now begin building out an HTTP Restful API for our data model.  This will
 let third-party application and other internal services make use of our data.
 
 Routes get defined with URL strings, HTTP verbs (get, post, etc), and action
-literals.  The foundation of Vase routing is based on [Pedestal's capabilities](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md),
+literals.  The foundation of Vase's routing is based on [Pedestal's capabilities](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md),
 but with care given to represent routes in an external data file (like our descriptor).
 
 Below we've added a route to our descriptor that gives some information about our API:
@@ -403,7 +408,7 @@ API to meet your needs.
 
 #### Getting data in with `transact`
 
-In addition to rendering content, the vase system also provides a `#transact`
+In addition to rendering content, the Vase system also provides a `#transact`
 action allowing the storage of incomming POST data.  Observe the following addition
 to the system descriptor:
 
@@ -450,7 +455,7 @@ The added `#transact` literal shown above consists of a single element
 accepted in a set of incoming POST data.  The properties `:user/userId` and
 `:user/userEmail` are fairly self-explanatory, but the `:db/id` property is
 handled specially.  That is, the `:db/id` key signifies if the incoming data
-refers to existing entities in the vase database, or to new entities.  For
+refers to existing entities in the Vase database, or to new entities.  For
 example, consider the following JSON corresponding to incoming POST data:
 
 ```json
@@ -463,7 +468,7 @@ example, consider the following JSON corresponding to incoming POST data:
 ```
 
 The JSON packet above, because it does not contain a `:db/id` field refers to a
-new entity and the return value from the vase service will return its newly
+new entity and the return value from the Vase service will return its newly
 created `:db/id`.  On the other hand, the following JSON refers to an existing
 entity in the database:
 
@@ -477,7 +482,7 @@ entity in the database:
 }
 ```
 
-Because the `:db/id` field is set to a value the vase system will attempt to
+Because the `:db/id` field is set to a value the Vase system will attempt to
 resolve the entity in the database before transacting the data.  Obviously, if
 no such entity exists then a failure will occur, thus notifying the calling
 client.
@@ -500,7 +505,7 @@ unique entity in the database for the purposes of transcting associated data.
 
 #### Getting data out with `query`
 
-It makes sense that if the vase system allows the insertion of new data that
+It makes sense that if the Vase system allows the insertion of new data that
 the data availble be accessible as well.  Indeed, the `#query` action provides
 the mechanism for defining service routes that return data based on Datalog
 queries.  Observe the following addition to the system descriptor:
@@ -620,7 +625,7 @@ Observe our next change to the descriptor below:
 
 The second route, called `/user/:id` allows the a similar information lookup, but instead supplied
 as a path parameter (e.g. http://example.com/user/id). By default the `:id` parameter would be
-a string value, but by using the `:edn-coerce` property of the `#query` action we tell vase to
+a string value, but by using the `:edn-coerce` property of the `#query` action we tell Vase to
 attempt to parse the string as a valid EDN data type.  Therefore, when clients hit the URL
 bound to that query the proper types will match (i.e. the DB expects integer IDs, not string IDs).
 
@@ -631,7 +636,7 @@ data set, for example, *Give me all users whose email is in `["jane@domain.com",
 
 In Datomic this is called a "parameterized in/or query," and it's achieved by
 binding the names with the `:in` clause.  To do this, we supply additional
-constant data to the vase query with the `:constants` option.
+constant data to the Vase query with the `:constants` option.
 This can also be used with parameter binding (covered above), in which case parameters
 are passed in to the query before the constants.
 

@@ -8,7 +8,7 @@
             [themis.validators :as validators]
             [vase.util  :as util]
             [io.pedestal.http.route.definition :as definition]
-            [io.pedestal.impl.interceptor :refer [interceptor]]
+            [io.pedestal.interceptor :refer [interceptor]]
             [io.pedestal.log :as log]
             [datomic.api :as d])
   (:import (java.net URLDecoder)))
@@ -73,27 +73,27 @@
                                  headers (assoc :headers headers))]
       (definition/expand-verb-action
         (with-meta
-          (interceptor :name name
-                       :enter (eval `(fn [context#]
-                                       (let [req# (:request context#)
-                                             {:keys ~params :as params#} (merge
-                                                                          (decode-map (:path-params req#))
-                                                                          (:params req#)
-                                                                          (:json-params req#)
-                                                                          (:edn-params req#))
-                                             {:keys ~edn-coerce :as coercions#} (reduce (fn [cmap# k#]
-                                                                                          (if (params# k#)
-                                                                                            (assoc cmap# k# (try
-                                                                                                              (util/read-edn (params# k#))
-                                                                                                              (catch Exception e#
-                                                                                                                (params# k#))))
-                                                                                            cmap#))
-                                                                                        {}
-                                                                                        ~(mapv keyword edn-coerce))
-                                             resp# (if ~enforce-format
-                                                     (util/response (util/payload req# (or ~doc "") ~body))
-                                                     {:status 200 :headers {} :body ~(or body "")})]
-                                         (assoc context# :response (util/deep-merge resp# ~response-attrs))))))
+          (interceptor {:name name
+                        :enter (eval `(fn [context#]
+                                        (let [req# (:request context#)
+                                              {:keys ~params :as params#} (merge
+                                                                            (decode-map (:path-params req#))
+                                                                            (:params req#)
+                                                                            (:json-params req#)
+                                                                            (:edn-params req#))
+                                              {:keys ~edn-coerce :as coercions#} (reduce (fn [cmap# k#]
+                                                                                           (if (params# k#)
+                                                                                             (assoc cmap# k# (try
+                                                                                                               (util/read-edn (params# k#))
+                                                                                                               (catch Exception e#
+                                                                                                                 (params# k#))))
+                                                                                             cmap#))
+                                                                                         {}
+                                                                                         ~(mapv keyword edn-coerce))
+                                              resp# (if ~enforce-format
+                                                      (util/response (util/payload req# (or ~doc "") ~body))
+                                                      {:status 200 :headers {} :body ~(or body "")})]
+                                          (assoc context# :response (util/deep-merge resp# ~response-attrs)))))})
           {:action-literal :respond})))))
 
 (defn respond [form]
@@ -116,20 +116,20 @@
                                  body (assoc :body body))]
       (definition/expand-verb-action
         (with-meta
-          (interceptor :name name
-                       :enter
-                       (eval `(fn [context#]
-                                (let [req# (:request context#)
-                                      {:keys ~params :as params#} (merge
-                                                                   (decode-map (:path-params req#))
-                                                                   (:params req#)
-                                                                   (:json-params req#)
-                                                                   (:edn-params req#))]
-                                  (assoc context#
-                                    :response (util/deep-merge {:status 302
-                                                                :headers {"Location" ~url}
-                                                                :body ""}
-                                                               ~response-attrs))))))
+          (interceptor {:name name
+                        :enter
+                        (eval `(fn [context#]
+                                 (let [req# (:request context#)
+                                       {:keys ~params :as params#} (merge
+                                                                     (decode-map (:path-params req#))
+                                                                     (:params req#)
+                                                                     (:json-params req#)
+                                                                     (:edn-params req#))]
+                                   (assoc context#
+                                          :response (util/deep-merge {:status 302
+                                                                      :headers {"Location" ~url}
+                                                                      :body ""}
+                                                                     ~response-attrs)))))})
           {:action-literal :redirect})))))
 
 (defn redirect [form]
@@ -154,20 +154,20 @@
                     (or properties []))]
       (definition/expand-verb-action
         (with-meta
-          (interceptor :name name
-                       :enter
-                       (eval `(fn [context#]
-                                (let [req# (:request context#)
-                                      {:keys ~params :as params#} (merge
-                                                                   (decode-map (:path-params req#))
-                                                                   (:params req#)
-                                                                   (:json-params req#)
-                                                                   (:edn-params req#))]
-                                  (assoc context#
-                                    :response (util/response
-                                               (util/payload req#
-                                                             (or ~doc "")
-                                                             (themis/unfold-result (themis/validation params# ~rule-vec)))))))))
+          (interceptor {:name name
+                        :enter
+                        (eval `(fn [context#]
+                                 (let [req# (:request context#)
+                                       {:keys ~params :as params#} (merge
+                                                                     (decode-map (:path-params req#))
+                                                                     (:params req#)
+                                                                     (:json-params req#)
+                                                                     (:edn-params req#))]
+                                   (assoc context#
+                                          :response (util/response
+                                                      (util/payload req#
+                                                                    (or ~doc "")
+                                                                    (themis/unfold-result (themis/validation params# ~rule-vec))))))))})
           {:action-literal :validate})))))
 
 (defn validate [form]
@@ -186,30 +186,30 @@
           coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
       (definition/expand-verb-action
         (with-meta
-          (interceptor :name name
-                       :enter (eval `(fn [context#]
-                                       (let [req# (:request context#)
-                                             args# (merge
-                                                    (:path-params req#)
-                                                    (:params req#)
-                                                    (:json-params req#)
-                                                    (:edn-params req#))
-                                             vals# (map (fn [k#]
-                                                          (let [in-val# (get args# k#)]
-                                                            (if (contains? ~coercions k#)
-                                                              (try
-                                                                (util/read-edn in-val#)
-                                                                (catch Exception e#
-                                                                  in-val#))
-                                                              in-val#)))
-                                                        ~variables)
-                                             vase-ctx# (:vase-context-atom req#)
-                                             db# (d/db (:conn (deref vase-ctx#)))
-                                             packet# (apply d/q '~query db# (concat vals# ~constants))]
-                                         (assoc context#
-                                           :response (util/response
-                                                      (util/payload req# (or ~doc "")
-                                                                    {:response packet#})))))))
+          (interceptor {:name name
+                        :enter (eval `(fn [context#]
+                                        (let [req# (:request context#)
+                                              args# (merge
+                                                     (:path-params req#)
+                                                     (:params req#)
+                                                     (:json-params req#)
+                                                     (:edn-params req#))
+                                              vals# (map (fn [k#]
+                                                           (let [in-val# (get args# k#)]
+                                                             (if (contains? ~coercions k#)
+                                                               (try
+                                                                 (util/read-edn in-val#)
+                                                                 (catch Exception e#
+                                                                   in-val#))
+                                                               in-val#)))
+                                                         ~variables)
+                                              vase-ctx# (:vase-context-atom req#)
+                                              db# (d/db (:conn (deref vase-ctx#)))
+                                              packet# (apply d/q '~query db# (concat vals# ~constants))]
+                                          (assoc context#
+                                            :response (util/response
+                                                       (util/payload req# (or ~doc "")
+                                                                     {:response packet#}))))))})
           {:action-literal :query})))))
 
 (defn query [form]
@@ -245,20 +245,20 @@
     (definition/expand-verb-action
       (with-meta
         (interceptor
-         :name name
-         :enter (eval
-                 `(fn [context#]
-                    (let [req# (:request context#)
-                          payload# (get-in req# [:json-params :payload])
-                          whitelist# (apply-whitelist payload# ~properties)
-                          vase-ctx# @(:vase-context-atom req#)
-                          conn# (:conn vase-ctx#)]
-                      (assoc context#
-                        :response (util/response
-                                   (util/payload req# (or ~doc "")
-                                                 {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
-                                                                               (:tx-data @(d/transact conn# (massage-data whitelist#))))
-                                                             :whitelist whitelist#}})))))))
+         {:name name
+          :enter (eval
+                  `(fn [context#]
+                     (let [req# (:request context#)
+                           payload# (get-in req# [:json-params :payload])
+                           whitelist# (apply-whitelist payload# ~properties)
+                           vase-ctx# @(:vase-context-atom req#)
+                           conn# (:conn vase-ctx#)]
+                       (assoc context#
+                         :response (util/response
+                                    (util/payload req# (or ~doc "")
+                                                  {:response {:transaction (map #(vector (:e %) (:a %) (:v %))
+                                                                                (:tx-data @(d/transact conn# (massage-data whitelist#))))
+                                                              :whitelist whitelist#}}))))))})
         {:action-literal :transact}))))
 
 (defn transact [form]
