@@ -7,7 +7,7 @@
             [io.pedestal.http.route.definition :refer [expand-routes]]
             [io.rkn.conformity :as c]
             [ring.util.response :as ring-resp]
-            [vase.config :as cfg]
+            [vase.config :as conf]
             [vase.descriptor :as descriptor]
             [vase.util :as util]
             [vase.literals]
@@ -36,7 +36,7 @@
 
 (defn- maybe-enable-http-upsert
   [config master-routes]
-  (if-let [new-verbs (when (cfg/get-key config :http-upsert)
+  (if-let [new-verbs (when (conf/get-key config :http-upsert)
                        `{:post [:vase/append-api append-api]})]
     (update-api-roots master-routes
                       (fn [root _]
@@ -110,9 +110,9 @@
          ctx versions))
 
 (defn init
- "Return a new, initialized context. "
+ "Return a new, initialized Vase context."
  [ctx]
- (let [config (or (:config ctx) (cfg/default-config))
+ (let [config (or (:config ctx) (conf/default-config))
        master-routes (maybe-enable-http-upsert config (or (:master-routes ctx) default-master-routes))]
    (-> ctx
        ;; Conform the database and establish the connection
@@ -127,10 +127,12 @@
 (defn load-initial-descriptor
   "Loads the :initial-descriptor and :initial-version keys from the
   config into the given context, returning a new context."
-  [ctx cfg]
-  (let [descriptor (util/edn-resource (cfg/get-key cfg :initial-descriptor))
-        [app-name app-version] (cfg/get-key cfg :initial-version)]
-    (update ctx descriptor app-name [app-version])))
+  ([ctx]
+   (load-initial-descriptor ctx (:config ctx)))
+  ([ctx conf]
+   (let [descriptor (util/edn-resource (conf/get-key conf :initial-descriptor))
+         [app-name app-version] (conf/get-key conf :initial-version)]
+     (update ctx descriptor app-name [app-version]))))
 
 (defn show-routes
   "Return a list of all active routes.
