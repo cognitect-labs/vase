@@ -134,6 +134,11 @@
          [app-name app-version] (conf/get-key conf :initial-version)]
      (update ctx descriptor app-name [app-version]))))
 
+(defn bootstrap-vase-context! [ctx-atom master-routes]
+  (swap! ctx-atom assoc :master-routes master-routes)
+  (swap! ctx-atom init)
+  (swap! ctx-atom load-initial-descriptor))
+
 (defn show-routes
   "Return a list of all active routes.
   Optionally filter the list with the query param, `f`, which is a fuzzy match
