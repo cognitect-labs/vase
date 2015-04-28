@@ -5,7 +5,7 @@
             [vase.descriptor :as descriptor]
             [vase.util :as util]
             [vase.config :as cfg]
-            [vase.service :as service]
+            [vase.service-no-globals :as service]
             [vase]))
 
 (defn selected-headers
@@ -39,7 +39,7 @@
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "vaserequest-id"]))))
 
 (def known-route-names
-  #{:vase.service/health-check :vase.service/clj-ver
+  #{:vase.service-no-globals/health-check :vase.service-no-globals/clj-ver
     :vase/append-api :vase/show-routes
     :example-v2/hello
     :example-v1/simple-response :example-v1/r-page :example-v1/ar-page

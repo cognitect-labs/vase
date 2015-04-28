@@ -4,10 +4,10 @@
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
             [vase.interceptor :as interceptor]
-            [vase.service :as vserv]
+            [vase.service-no-globals :as vserv]
             [vase]
             [vase.util :as util]
-            [vase.config :as cfg]
+            [vase.config :as conf]
             [datomic.api :as d]))
 
 (defn new-service

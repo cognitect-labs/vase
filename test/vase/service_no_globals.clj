@@ -1,18 +1,14 @@
-(ns vase.service
+(ns vase.service-no-globals
   (:import [java.util UUID])
-  (:require [io.pedestal.test :refer [response-for]]
-            [io.pedestal.http :as bootstrap]
+  (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.log :as log]
             [ring.util.response :as ring-resp]
             [vase.interceptor :as interceptor]
-            [vase.service :as vserv]
             [vase]
-            [vase.util :as util]
+            ;[vase.util :as util]
             [vase.config :as conf]))
 
-;;TODO: This doesn't actuall test the config system
-;;       It should be updated to use the test resources config
 (defn unique-config
      "Returns a unique Vase config map"
      []
@@ -41,11 +37,11 @@
   `["/" {:get health-check} ^:interceptors [interceptor/attach-received-time
                                             interceptor/attach-request-id
                                             ;; In the future, html-body should be json-body
-                                            bootstrap/html-body
+                                            http/html-body
                                             ~(interceptor/bind-vase-context vase-context-atom)]
     ["/about" {:get clj-ver}]
     ^:vase/api-root ["/api" {:get vase/show-routes}
-                     ^:interceptors [bootstrap/json-body
+                     ^:interceptors [http/json-body
                                      interceptor/vase-error-ring-response]]])
 
 (defn service-map
@@ -53,13 +49,11 @@
   []
   (let [config (unique-config)
         vase-context (atom (vase/map->Context {:config config}))]
-    (swap! vase-context assoc :master-routes (make-master-routes vase-context))
-    (swap! vase-context vase/init)
-    (swap! vase-context vase/load-initial-descriptor)
+    (vase/bootstrap-vase-context! vase-context (make-master-routes vase-context))
     {:env :prod
      :vase/context vase-context ;; For testing, shouldn't need this otherwise
-     ::bootstrap/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
-     ::bootstrap/resource-path "/public"
-     ::bootstrap/type :jetty
-     ::bootstrap/port (conf/get-key config :service-port)}))
+     ::http/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
+     ::http/resource-path "/public"
+     ::http/type :jetty
+     ::http/port (conf/get-key config :service-port)}))
 
