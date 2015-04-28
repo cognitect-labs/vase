@@ -25,7 +25,7 @@ In your `project.clj`, add the Vase dependency information:
 (ns my-new-service.service
   (:require ;...
             [vase.interceptor :as interceptor]
-            [vase.config :refer [config]]
+            [vase.config :as conf]
             [vase]))
 ```
 
@@ -46,18 +46,20 @@ The initial template will have a route definition within `service.clj`
 This should become...
 
 ```clojure
-(def routes (atom nil))
+(def config (conf/default-config))
+(def vase-context (atom (vase/map->Context {:config config})))
 
 (def master-routes `["/" {:get home-page} ^:interceptors [interceptor/attach-received-time
                                                           interceptor/attach-request-id
                                                           bootstrap/html-body
-                                                          (interceptor/bind-routes routes)]
+                                                          (interceptor/bind-vase-context vase-context)]
                      ["/about" {:get about-page}]
                      ^:vase/api-root ["/api" {:get vase/show-routes}
                                        ^:interceptors [bootstrap/json-body
                                                        interceptor/vase-error-ring-response]]])
 
-(vase/init-descriptor-routes! :master-routes master-routes :routes-atom routes)
+;; Initialize Vase on Service Load
+(vase/bootstrap-vase-context! vase-context master-routes)
 ```
 
 #### Update your service map
@@ -72,7 +74,7 @@ the Vase configuration file, `system.edn`:
               ;; dev-mode. If you do, many other keys for configuring
               ;; default interceptors will be ignored.
               ;; :bootstrap/interceptors []
-              ::bootstrap/routes (if (config :enable-upsert) #(deref routes) @routes)
+              ::bootstrap/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
 
               ;; Uncomment next line to enable CORS support, add
               ;; string(s) specifying scheme, host and port for

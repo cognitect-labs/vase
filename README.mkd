@@ -1,5 +1,3 @@
-Vase
-====
 
 Vase: A container for data-driven services
 ============================================
