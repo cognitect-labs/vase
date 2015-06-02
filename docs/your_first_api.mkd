@@ -15,7 +15,6 @@ formats used before you begin.  The most important pieces:
 
 It also important to note that the terms *service*, *server*, *container* are all used interchangeably.
 
-
 ## Up and running
 
 In a dedicated console/terminal window, start the service by typing the following command:

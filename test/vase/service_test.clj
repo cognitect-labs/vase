@@ -2,10 +2,10 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [vase.test-helper :as helper]
-            [vase.service :as service]
             [vase.descriptor :as descriptor]
             [vase.util :as util]
-            [vase.config :refer [config]]
+            [vase.config :as cfg]
+            [vase.service-no-globals :as service]
             [vase]))
 
 (defn selected-headers
@@ -39,7 +39,7 @@
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "vaserequest-id"]))))
 
 (def known-route-names
-  #{:vase.service/health-check :vase.service/clj-ver
+  #{:vase.service-no-globals/health-check :vase.service-no-globals/clj-ver
     :vase/append-api :vase/show-routes
     :example-v2/hello
     :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
@@ -53,50 +53,55 @@
 
 (deftest uniquely-add-routes-test
   ;; TODO: This test needs to be patched
-  (is
-    (let [test-routes (:io.pedestal.http/routes service/service)
-          test-routes (if (fn? test-routes) (test-routes) test-routes)
-          route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v1)]
-      (=
-       (map :route-name test-routes)
-       (map :route-name (vase/uniquely-add-routes (:master-routes (meta service/routes))
-                                                    route-vecs
-                                                    @service/routes)))))
-  (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)]
-    (is
-      (=
-       (set (map :route-name (vase/uniquely-add-routes (:master-routes (meta service/routes))
-                                                         route-vecs
-                                                         @service/routes)))
-       known-route-names))))
+  (let [service (service/service-map)
+        test-routes (:io.pedestal.http/routes service)
+        test-routes (if (fn? test-routes) (test-routes) test-routes)
+        vase-context @(:vase/context service)
+        descriptor (:descriptor vase-context)
+        master-routes (:master-routes vase-context)
+        route-vecs-1 (descriptor/route-vecs descriptor :example :v1)
+        route-vecs-2 (descriptor/route-vecs descriptor :example :v2)]
 
-(deftest bash-routes-test
-  (let [route-vecs (descriptor/route-vecs (:descriptor (meta service/routes)) :example :v2)
-        serv-map (helper/refresh-service-map)
-        serv-fn (helper/service-fn serv-map)
-        _ (vase/bash-routes! (:routes-atom serv-map) route-vecs)
-        observed-routes (set (map :route-name (deref (:routes-atom serv-map))))]
+    (is (=
+         (map :route-name test-routes)
+         (map :route-name (@#'vase/uniquely-add-routes master-routes
+                                                       route-vecs-1
+                                                       test-routes))))
+    (is (=
+         (set (map :route-name (@#'vase/uniquely-add-routes master-routes
+                                                            route-vecs-2
+                                                            test-routes)))
+         known-route-names))))
+
+
+(deftest update-routes-test
+  (let [service-map (service/service-map)
+        vase-context (service-map :vase/context)
+        descriptor (:descriptor @vase-context)
+        serv-fn (helper/service service-map)
+        _ (swap! vase-context vase/update descriptor :example [:v2])
+        observed-routes (set (map :route-name (:routes @vase-context)))]
     (is (= observed-routes known-route-names))
     (is (= (get-in (util/read-json (:body
                                      (response-for serv-fn :get "/api/example/v2/hello")))
                    [:response :payload])
            "Another Hello World Route"))))
 
-(deftest bash-descriptor-test
-  (let [serv-map (helper/refresh-service-map)
-        serv (helper/service-fn serv-map)
-        routes-atom (:routes-atom serv-map)
-        descriptor (:descriptor (meta service/routes))
+(deftest update-descriptor-test
+  (let [serv-map (service/service-map)
+        serv (helper/service serv-map)
+        vase-context (:vase/context serv-map)
+        descriptor (:descriptor @vase-context)
         pre-condition (response-for serv :get "/api/example/v2/hello")
-        _ (vase/bash-from-descriptor! routes-atom descriptor :example :v2)
+        _ (swap! vase-context vase/update descriptor :example [:v2])
         post-condition (response-for serv :get "/api/example/v2/hello")]
     (is (= (:status pre-condition) 404))
     (is (= (:status post-condition) 200))))
 
 ;; TODO This needs to use a stateful service
-(deftest bash-http-descriptor-test
-  (let [serv-map (helper/refresh-service-map)
-        serv (helper/service-fn serv-map)]
+(deftest update-http-descriptor-test
+  (let [serv-map (service/service-map)
+        serv (helper/service serv-map)]
     (is
      ;; There is no v2 route to start
      (= (:body (response-for serv :get "/api?f=v2"))

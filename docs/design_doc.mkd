@@ -9,7 +9,6 @@ This document describes the design of the service template and tooling system - 
 It describes the basic service model and provides detailed documentation
 for all operations, including URIs/destinations and input/output data formats.
 
-
 ### Commonly used terms
 
  * **Core Service** - The main Vase container service, which hosts other data-described APIs

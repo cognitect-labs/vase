@@ -1,4 +1,4 @@
-(defproject
+(defproject com.cognitect/vase "0.1.0-SNAPSHOT"
   :description "Vase: Pedestal API Container"
   :url "https://github.com/relevance/vase"
   :dependencies [;; Platform
@@ -30,8 +30,8 @@
 
                    :dependencies [[org.clojure/tools.trace "0.7.6"]
                                   [org.clojure/tools.namespace "0.2.4"]
-                                  [org.clojure/test.check "0.5.9"]]}
-             :test {:dependencies [[io.pedestal/pedestal.jetty "0.4.0"]
+                                  [io.pedestal/pedestal.jetty "0.4.0"]]}
+             :test {:dependencies [[org.clojure/test.check "0.5.9"]
                                    ;; Logging
                                    [org.slf4j/slf4j-api "1.7.12"]
                                    [ch.qos.logback/logback-classic "1.1.3" :exclusions [[org.slf4j/slf4j-api]]]
