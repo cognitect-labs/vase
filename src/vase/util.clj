@@ -2,7 +2,8 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as cstr]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [cognitect.transit :as transit])
   (:import (java.io ByteArrayInputStream
                     FileInputStream
                     File)
@@ -36,13 +37,29 @@
        sym)))
 
 (defn short-hash []
-  (subs (DatatypeConverter/printBase64Binary (byte-array 8 (.byteValue ^Long (long (rand 100))))) 0 11))
+  (subs
+    (DatatypeConverter/printBase64Binary
+      (byte-array (loop [i 0
+                         ret (transient [])]
+                    (if (< i 8)
+                      (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
+                      (persistent! ret)))))
+    0 11))
 
 (defn str->inputstream
   ([^String text]
    (str->inputstream text "UTF-8"))
   ([^String text ^String encoding]
    (ByteArrayInputStream. (.getBytes text encoding))))
+
+(defn re-findall
+  ([matcher]
+   (loop [res (transient [])]
+     (if-let [found (re-find matcher)]
+       (recur (conj res found))
+       (persistent! res))))
+  ([regex s]
+   (re-findall (re-matcher regex s))))
 
 (def write-edn pr-str)
 
@@ -100,6 +117,13 @@
   "Writes json string given Clojure data. By default, unicode is not escaped."
   [data & args]
   (json/generate-string data (apply hash-map args)))
+
+(defn read-transit-json
+  [transit-json-str]
+  (-> transit-json-str
+      str->inputstream
+      (transit/reader :json)
+      transit/read))
 
 ;; Response Generation
 ;; -------------------
