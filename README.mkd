@@ -29,7 +29,7 @@ To configure logging see config/logback.xml. By default, the app logs to stdout 
 To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
 
 The [Datomic Schema](http://docs.datomic.com/schema.html) used internally by Vase
-is located in the [resource directory](./resources/schema.edn).
+is located in the [resource directory](./resources/vase-schema.edn).
 
 #### System Config
 
