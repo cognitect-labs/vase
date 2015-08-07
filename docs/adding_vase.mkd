@@ -14,7 +14,7 @@ lein new pedestal-service my-new-service
 In your `project.clj`, add the Vase dependency information:
 
 ```
-[io.pedestal/vase "0.1.0"]
+[com.cognitect/vase "0.1.0"]
 ```
 
 ### Step 2: Update your `service.clj`
