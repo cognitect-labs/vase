@@ -11,6 +11,10 @@
 
 (def ^:dynamic *deep-merge-fn* last)
 
+(defn map-vals
+  [f m]
+  (reduce-kv (fn [m k v] (assoc m k (f v))) m m))
+
 (defn deep-merge
   "Merge any number of values. When `vals` are maps, this performs a recursive
   merge. When `vals` are not maps, `*deep-merge-fn*` is used to choose a
@@ -185,4 +189,3 @@
   "Returns true if an exception failed due to throw-500!."
   [exception]
   (= :five-hundred-response (:reason (ex-data exception))))
-

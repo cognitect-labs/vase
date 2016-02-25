@@ -8,14 +8,14 @@
   "This test ensures that data received can be transformed into a form
    amenable to storing into datomic."
 
-  (is (= (lit/massage-data '({:db/id 1}))
-         [{:db/id 1}]))
+  (is (= (lit/process-id {:db/id 1})
+         {:db/id 1}))
 
-  (is (= (:part (:db/id (first (lit/massage-data '({})))))
+  (is (= (:part (:db/id (lit/process-id {})))
          :db.part/user))
 
-  (is (= (lit/massage-data '({:db/id ["user/age" 42]} ))
-         [{:db/id [:user/age 42]}])))
+  (is (= (lit/process-id {:db/id ["user/age" 42]})
+         {:db/id [:user/age 42]})))
 
 (deftest respond-literal
   (is (=
@@ -27,4 +27,4 @@
                               {:age 22
                                :name "paul"})]
     (is (= (:status response) 200))
-    (is (empty? (helper/response-data response))))) 
+    (is (empty? (helper/response-data response)))))
