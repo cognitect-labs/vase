@@ -2,19 +2,20 @@
   (:require [clojure.test :refer :all]
             [vase.literals :as lit]
             [io.pedestal.test :refer :all]
-            [vase.test-helper :as helper]))
+            [vase.test-helper :as helper]
+            [vase.actions :as actions]))
 
 (deftest test-data-massging
   "This test ensures that data received can be transformed into a form
    amenable to storing into datomic."
 
-  (is (= (lit/process-id {:db/id 1})
+  (is (= (actions/process-id {:db/id 1})
          {:db/id 1}))
 
-  (is (= (:part (:db/id (lit/process-id {})))
+  (is (= (:part (:db/id (actions/process-id {})))
          :db.part/user))
 
-  (is (= (lit/process-id {:db/id ["user/age" 42]})
+  (is (= (actions/process-id {:db/id ["user/age" 42]})
          {:db/id [:user/age 42]})))
 
 (deftest respond-literal
