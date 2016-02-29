@@ -244,7 +244,7 @@
   [api-root make-interceptors-fn {:keys [descriptor app-name version] :as spec}]
   (let [app-version-root   (api-base api-root spec)
         app-version-routes (table-route-vecs app-version-root descriptor app-name version make-interceptors-fn)]
-    (cons (api-description app-version-root make-interceptors-fn app-version-routes (keyword (str "describe-" (name app-name) "-" (name version)))) app-version-routes)))
+    (cons (api-description app-version-root make-interceptors-fn app-version-routes (keyword (str (name app-name) "-" (name version)) "describe")) app-version-routes)))
 
 (defn routes
   "Return a seq of route vectors for Pedestal's table routing syntax. Routes
@@ -258,4 +258,4 @@
   [api-root spec-or-specs &  {:keys [make-interceptors-fn] :or {make-interceptors-fn into} :as opts}]
   (let [specs  (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
         routes (mapcat (partial routes-for-spec api-root make-interceptors-fn) specs)]
-    (cons (api-description api-root make-interceptors-fn routes :describe-api) routes)))
+    (cons (api-description api-root make-interceptors-fn routes :describe-apis) routes)))

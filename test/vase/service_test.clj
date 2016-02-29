@@ -58,6 +58,24 @@
     :example-v1/fogus-page :example-v1/foguspaul-page
     :example-v1/fogussomeone-page})
 
+(def known-route-names-2
+  #{:vase.service-route-table/health-check :vase.service-route-table/clj-ver
+    :describe-apis :example-v1/describe
+    :example-v1/simple-response :example-v1/r-page :example-v1/ar-page
+    :example-v1/url-param-example
+    :example-v1/validate-page
+    :example-v1/db-page
+    :example-v1/users-page :example-v1/user-id-page
+    :example-v1/user-create :example-v1/user-page
+    :example-v1/fogus-page :example-v1/foguspaul-page
+    :example-v1/fogussomeone-page})
+
+(deftest all-route-names-present
+  (let [service (vase.service-route-table/service-map)
+        routes  (:io.pedestal.http/routes service)
+        route-names (set (map :route-name routes))]
+    (is (= known-route-names-2 route-names))))
+
 (deftest uniquely-add-routes-test
   ;; TODO: This test needs to be patched
   (let [service (service/service-map)
