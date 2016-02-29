@@ -4,7 +4,9 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [io.pedestal.http :as bootstrap]
+            [io.pedestal.http.body-params :as body-params]
             [io.pedestal.http.route.definition :refer [expand-routes]]
+            [io.pedestal.interceptor :as i]
             [io.rkn.conformity :as c]
             [ring.util.response :as ring-resp]
             [vase.config :as conf]
@@ -12,7 +14,8 @@
             [vase.util :as util]
             [vase.literals]
             [datomic.api :as d]
-            [vase.interceptor :as interceptor]))
+            [vase.interceptor :as interceptor]
+            [clojure.string :as str]))
 
 (def default-master-routes
   `["/" ^:interceptors [interceptor/attach-received-time
@@ -124,13 +127,19 @@
        ;; Ensure all symbols are available for the literals at descriptor-read-time
        (force-into-literals!))))
 
+(defn load-descriptor
+  "Given a resource name, loads a descriptor, using the proper readers to get
+   support for Vase literals."
+  [res]
+  (util/edn-resource res))
+
 (defn load-initial-descriptor
   "Loads the :initial-descriptor and :initial-version keys from the
   config into the given context, returning a new context."
   ([ctx]
    (load-initial-descriptor ctx (:config ctx)))
   ([ctx conf]
-   (let [descriptor (util/edn-resource (conf/get-key conf :initial-descriptor))
+   (let [descriptor (load-descriptor (conf/get-key conf :initial-descriptor))
          [app-name app-version] (conf/get-key conf :initial-version)]
      (update ctx descriptor app-name [app-version]))))
 
@@ -177,3 +186,76 @@
         vase-context-atom (:vase-context-atom request)]
     (swap! vase-context-atom update metad-desc app-name versions)
     (bootstrap/edn-response {:added versions})))
+
+
+;;
+;; New API starts here
+;;
+
+(defn describe-api
+  "Return a list of all active routes.
+  Optionally filter the list with the query param, `f`, which is a fuzzy match
+  string value"
+  [routes]
+  (i/-interceptor
+   {:enter (fn [context]
+             (let [{:keys [f sep edn] :or {f "" sep "<br/>" edn false}} (-> context :request :query-params)
+                   results                                              (mapv #(take 2 %) routes)]
+               (assoc context :response
+                      (if edn
+                        (bootstrap/edn-response results)
+                        (ring-resp/response
+                         (str/join sep (map #(str/join " " %) results)))))))}))
+
+(def common-api-interceptors
+  [interceptor/attach-received-time
+   interceptor/attach-request-id
+   bootstrap/json-body
+   interceptor/vase-error-ring-response])
+
+(defn app-interceptors
+  [descriptor app-name version]
+  (into common-api-interceptors
+        [(interceptor/forward-headers-interceptor (keyword (name app-name) (name version))
+                                                  (get-in descriptor [app-name version :forward-headers] []))
+         (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))]))
+
+(defn table-route-vecs
+  "Given a descriptor map, an app-name keyword, and a version keyword,
+   return route vectors in Pedestal's tabular format. Routes will all be
+   subordinated under `base`"
+  [base descriptor app-name version make-interceptors-fn]
+  (let [common (app-interceptors descriptor app-name version)]
+    (for [[path verb-map] (get-in descriptor [app-name version :routes])
+          [verb action]   verb-map
+          :let            [route-interceptors (make-interceptors-fn (conj common (i/-interceptor action)))]]
+      [(str base path) verb route-interceptors])))
+
+(defn- api-base
+  [base {:keys [app-name version]}]
+  (str base "/" (name app-name) "/" (name version)))
+
+(defn- api-description
+  [api-root make-interceptors-fn routes route-name]
+  [api-root :get (make-interceptors-fn (conj common-api-interceptors (describe-api routes))) :route-name route-name])
+
+(defn- routes-for-spec
+  "Return a seq of route vectors from a single specification"
+  [api-root make-interceptors-fn {:keys [descriptor app-name version] :as spec}]
+  (let [app-version-root   (api-base api-root spec)
+        app-version-routes (table-route-vecs app-version-root descriptor app-name version make-interceptors-fn)]
+    (cons (api-description app-version-root make-interceptors-fn app-version-routes (keyword (str "describe-" (name app-name) "-" (name version)))) app-version-routes)))
+
+(defn routes
+  "Return a seq of route vectors for Pedestal's table routing syntax. Routes
+   will all begin with `api-root/:app-name/:version`.
+
+   `spec-or-specs` is either a single spec (as a map) or a collection of specs.
+
+   The routes will support all the operations defined in the
+   spec. Callers should treat the format of these routes as
+   opaque. They may change in number, quantity, or layout."
+  [api-root spec-or-specs &  {:keys [make-interceptors-fn] :or {make-interceptors-fn into} :as opts}]
+  (let [specs  (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
+        routes (mapcat (partial routes-for-spec api-root make-interceptors-fn) specs)]
+    (cons (api-description api-root make-interceptors-fn routes :describe-api) routes)))

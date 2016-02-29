@@ -19,8 +19,8 @@
 
 (defmacro with-service
   "Executes all requests in the body with the same service (using a thread-local binding)"
-  [& body]
-  `(binding [*current-service* (new-service)]
+  [srv-map & body]
+  `(binding [*current-service* (new-service ~srv-map)]
      ~@body))
 
 (defn service
@@ -73,4 +73,3 @@
          :body
          reader
          :response)))
-

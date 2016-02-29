@@ -38,6 +38,13 @@
         "vaserequest-id" "yes"}))
   (is (string? (get-in (helper/GET "/api/example/v1/hello") [:headers "vaserequest-id"]))))
 
+(deftest self-describing-test
+  (helper/with-service (vase.service-route-table/service-map)
+    (is (= 200 (:status (helper/GET "/api?edn=true"))))
+    (is (= 200 (:status (helper/GET "/api"))))
+    (is (= 200 (:status (helper/GET "/api/example/v1?edn=true"))))
+    (is (= 200 (:status (helper/GET "/api/example/v1"))))))
+
 (def known-route-names
   #{:vase.service-no-globals/health-check :vase.service-no-globals/clj-ver
     :vase/append-api :vase/show-routes
@@ -120,4 +127,3 @@
 
 ;;TODO Make this work when we re-introduce validators
 ;(helper/POST "/api/example/v1/validate/person" {:name "paul" :age "55"})
-
