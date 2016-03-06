@@ -4,15 +4,14 @@
             [io.pedestal.http :as bootstrap]
             [io.pedestal.log :as log]
             [vase.interceptor :as interceptor]
-            [vase.service-no-globals :as vserv]
             [vase]
             [vase.util :as util]
-            [vase.config :as conf]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [vase.service-route-table :as srt]))
 
 (defn new-service
   "This generates a new testable service for use with io.pedestal.test/response-for."
-  ([] (new-service (vserv/service-map)))
+  ([]            (new-service (srt/service-map)))
   ([service-map] (::bootstrap/service-fn (bootstrap/create-servlet service-map))))
 
 (def ^:dynamic *current-service* nil)
