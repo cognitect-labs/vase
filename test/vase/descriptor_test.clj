@@ -5,19 +5,20 @@
             [vase.util :as util]
             [vase.descriptor :as desc]
             [vase.config :as cfg]
+            [vase.service-route-table :as srt]
             [datomic.api :as d]))
 
 (deftest exercise-descriptored-service
-  (helper/with-service (vase.service-no-globals/service-map)
+  (helper/with-service (srt/service-map)
     (let [post-response (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "mefogus@gmail.com"}]})
-          get-response (helper/GET "/api/example/v1/fogus")]
+          get-response  (helper/GET "/api/example/v1/fogus")]
       (is (= 200 (:status post-response)))
       (is (= 200 (:status get-response)))
       (is (seq (helper/response-data post-response)))
       (is (seq (helper/response-data get-response))))))
 
 (deftest exercise-constant-and-parameter-action
-  (helper/with-service (vase.service-no-globals/service-map)
+  (helper/with-service (srt/service-map)
     (let [post1 (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "mefogus@gmail.com"}]})
           post2 (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "paul.degrandis@gmail.com"}]})
           special-get (helper/GET "/api/example/v1/fogus-and-someone?someone=paul.degrandis@gmail.com")]

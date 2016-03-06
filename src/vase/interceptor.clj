@@ -54,15 +54,19 @@
         (five-hundred-response (ctrace/root-cause exception)))
       (do
         (log/error
-          :msg "Unexpected error within a pedestal route/handling."
-          :exception exception
-          :exception-data (ex-data exception))
-        (util/error-response 500 "Internal server error: exception")))))
+         :msg "Unexpected error within a pedestal route/handling."
+         :exception exception
+         :exception-data (ex-data exception))
+        (util/error-response 500
+                             (pr-str "Internal server error:"
+                                     :msg "Unexpected error within a pedestal route/handling."
+                                     :exception exception
+                                     :exception-data (ex-data exception)))))))
 
 (def vase-error-ring-response
   "Returns a 500 JSON/edn/transit response for unexpected exceptions in endpoints."
   (interceptor/interceptor
-    {:name ::json-error-ring-response
+    {:name ::vase-error-ring-response
      :error (fn [{:keys [servlet-response] :as context} exception]
               (assoc context
                      :response (response-for-exception exception)))}))
@@ -113,4 +117,3 @@
                                               (term context)))
                           pred-term-pairs))
                   context))})))
-

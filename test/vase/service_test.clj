@@ -71,8 +71,8 @@
     :example-v1/fogussomeone-page})
 
 (deftest all-route-names-present
-  (let [service (vase.service-route-table/service-map)
-        routes  (:io.pedestal.http/routes service)
+  (let [service     (vase.service-route-table/service-map)
+        routes      (:io.pedestal.http/routes service)
         route-names (set (map :route-name routes))]
     (is (= known-route-names-2 route-names))))
 

@@ -62,8 +62,7 @@
 
 (defn bind-db
   [req-sym db-sym forms]
-  `(let [vase-ctx# (:vase-context-atom ~req-sym)
-         ~db-sym   (d/db (:conn (deref vase-ctx#)))]
+  `(let [~db-sym (:db ~req-sym)]
      ~forms))
 
 (defn bind-query-results
@@ -115,7 +114,7 @@
 
 (defn perform-transaction
   [req-sym args-sym tx-result-sym forms]
-  `(let [conn#          (-> ~req-sym :vase-context-atom deref :conn)
+  `(let [conn#          (-> ~req-sym :conn)
          tx-result#     (d/transact conn# (mapv process-id ~args-sym))
          ~tx-result-sym (map (juxt :e :a :v) (:tx-data @tx-result#))]
      ~forms))

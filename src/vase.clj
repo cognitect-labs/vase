@@ -15,7 +15,8 @@
             [vase.literals]
             [datomic.api :as d]
             [vase.interceptor :as interceptor]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [vase.db :as db]))
 
 (def default-master-routes
   `["/" ^:interceptors [interceptor/attach-received-time
@@ -84,16 +85,18 @@
        :vase/routes (pr-str route-seq)}]))
   route-seq)
 
-(defn conn-database
+(defn connect-database
   "Given a Datomic URI, attempt to create the database and connect to it,
   returning the connection."
-  [config]
-  (let [uri (:db-uri config)
-        norms (edn/read-string {:readers *data-readers*}
-                               (slurp (io/resource "vase-schema.edn")))]
+  [uri]
+  (let [norms (util/edn-resource "vase-schema.edn")]
     (d/create-database uri)
     (doto (d/connect uri)
       (c/ensure-conforms norms [:vase/base-schema]))))
+
+(defn ensure-schema
+  [conn norms]
+  (c/ensure-conforms conn norms))
 
 (defrecord Context [config conn routes master-routes descriptor])
 
@@ -119,7 +122,7 @@
        master-routes (maybe-enable-http-upsert config (or (:master-routes ctx) default-master-routes))]
    (-> ctx
        ;; Conform the database and establish the connection
-       (assoc :conn (conn-database config))
+       (assoc :conn (connect-database (:db-uri config)))
        ;; Ensure master routes are set
        (assoc :master-routes master-routes)
        ;; Reset routes to the initial state
@@ -213,38 +216,51 @@
    bootstrap/json-body
    interceptor/vase-error-ring-response])
 
+;; TODO Instead of assuming datomic here, we should accept anything
+;; that we can deref to get a connection
+;; TODO We should add an interceptor that executes transactions on :leave
 (defn app-interceptors
-  [descriptor app-name version]
-  (into common-api-interceptors
-        [(interceptor/forward-headers-interceptor (keyword (name app-name) (name version))
-                                                  (get-in descriptor [app-name version :forward-headers] []))
-         (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))]))
+  [{:keys [descriptor app-name version datomic-uri]}]
+  (let [datomic-conn (d/connect datomic-uri)]
+    (into common-api-interceptors
+          [(interceptor/forward-headers-interceptor (keyword (name app-name) (name version))
+                                                    (get-in descriptor [app-name version :forward-headers] []))
+           (db/insert-datomic datomic-conn)
+           (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))])))
 
-(defn table-route-vecs
+(defn- specified-routes
+  [{:keys [descriptor app-name version]}]
+  (get-in descriptor [app-name version :routes]))
+
+(defn api-routes
   "Given a descriptor map, an app-name keyword, and a version keyword,
    return route vectors in Pedestal's tabular format. Routes will all be
    subordinated under `base`"
-  [base descriptor app-name version make-interceptors-fn]
-  (let [common (app-interceptors descriptor app-name version)]
-    (for [[path verb-map] (get-in descriptor [app-name version :routes])
-          [verb action]   verb-map
-          :let            [route-interceptors (make-interceptors-fn (conj common (i/-interceptor action)))]]
-      [(str base path) verb route-interceptors])))
+  [base spec make-interceptors-fn]
+  (let [common (app-interceptors spec)]
+    (for [[path verb-map] (specified-routes spec)
+          [verb action]   verb-map]
+      [(str base path) verb (make-interceptors-fn (conj common (i/-interceptor action)))])))
 
 (defn- api-base
   [base {:keys [app-name version]}]
   (str base "/" (name app-name) "/" (name version)))
 
-(defn- api-description
+(defn- api-description-route
   [api-root make-interceptors-fn routes route-name]
   [api-root :get (make-interceptors-fn (conj common-api-interceptors (describe-api routes))) :route-name route-name])
 
-(defn- routes-for-spec
+(defn- api-description-route-name
+  [{:keys [app-name version]}]
+  (keyword (str (name app-name) "-" (name version)) "describe"))
+
+(defn- spec-routes
   "Return a seq of route vectors from a single specification"
-  [api-root make-interceptors-fn {:keys [descriptor app-name version] :as spec}]
+  [api-root make-interceptors-fn spec]
   (let [app-version-root   (api-base api-root spec)
-        app-version-routes (table-route-vecs app-version-root descriptor app-name version make-interceptors-fn)]
-    (cons (api-description app-version-root make-interceptors-fn app-version-routes (keyword (str (name app-name) "-" (name version)) "describe")) app-version-routes)))
+        app-version-routes (api-routes app-version-root spec make-interceptors-fn)
+        app-api-route      (api-description-route app-version-root make-interceptors-fn app-version-routes (api-description-route-name spec))]
+    (cons app-api-route app-version-routes)))
 
 (defn routes
   "Return a seq of route vectors for Pedestal's table routing syntax. Routes
@@ -255,7 +271,8 @@
    The routes will support all the operations defined in the
    spec. Callers should treat the format of these routes as
    opaque. They may change in number, quantity, or layout."
-  [api-root spec-or-specs &  {:keys [make-interceptors-fn] :or {make-interceptors-fn into} :as opts}]
-  (let [specs  (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
-        routes (mapcat (partial routes-for-spec api-root make-interceptors-fn) specs)]
-    (cons (api-description api-root make-interceptors-fn routes :describe-apis) routes)))
+  [api-root spec-or-specs & {:keys [make-interceptors-fn] :or {make-interceptors-fn identity} :as opts}]
+  (let [specs     (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
+        routes    (mapcat (partial spec-routes api-root make-interceptors-fn) specs)
+        api-route (api-description-route api-root make-interceptors-fn routes :describe-apis)]
+    (cons api-route routes)))

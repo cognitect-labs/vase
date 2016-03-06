@@ -1,63 +1,50 @@
 (ns vase.service-route-table
   (:import [java.util UUID])
   (:require [io.pedestal.http :as http]
+            [io.pedestal.http.cors :as cors]
+            [io.pedestal.http.impl.servlet-interceptor :as servlet-interceptor]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.table :as table]
             [io.pedestal.log :as log]
-            [ring.util.response :as ring-resp]
-            [vase.interceptor :as interceptor]
             [vase]
-            ;[vase.util :as util]
-            [vase.config :as conf]))
+            [vase.config :as conf]
+            [datomic.api :as d]))
 
-(defn unique-config
-     "Returns a unique Vase config map"
-     []
-     {:db-uri (str "datomic:mem://" (UUID/randomUUID))
-      :service-port 8080
-      :http-app-root "/"
-      :enable-upsert true
-      :http-upsert true
-      :transact-upsert true
-      :initial-descriptor "test_descriptor.edn"
-      :initial-version [:example :v1]
-      :test-trials 36})
+(defn- bootstrap! [uri] )
 
 (defn clj-ver
   [request]
-  (ring-resp/response (format "Clojure %s - served from %s"
+  {:status 200 :body (format "Clojure %s - served from %s"
                               (clojure-version)
-                              (route/url-for ::clj-ver))))
+                              (route/url-for ::clj-ver))})
+
 (defn health-check
   [request]
-  (ring-resp/response "alive"))
+  {:status 200 :body "alive"})
 
-(def common-interceptors
-  [io.pedestal.http.impl.servlet-interceptor/exception-debug
-   interceptor/attach-received-time
-   interceptor/attach-request-id
-   http/html-body])
+(def dev-interceptors [cors/dev-allow-origin servlet-interceptor/exception-debug])
 
 (defn make-master-routes
   [spec]
   (table/route-table
    {}
    (concat
-    [["/"      :get (conj common-interceptors health-check) :route-name ::health-check]
-     ["/about" :get (conj common-interceptors clj-ver)      :route-name ::clj-ver]]
-    (vase/routes "/api" spec :make-interceptors-fn #(into common-interceptors %)))))
+    [["/"      :get health-check :route-name ::health-check]
+     ["/about" :get clj-ver      :route-name ::clj-ver]]
+    (vase/routes "/api" spec :make-interceptors-fn (fn [is] (into dev-interceptors is))))))
 
 (defn service-map
   "Return a new, fully initialized service map"
   []
-  (let [config       (unique-config)
-        vase-context (atom (vase/map->Context {:config config}))
-        descriptor   (vase/load-descriptor (:initial-descriptor config))
-        spec         {:descriptor descriptor :app-name :example :version :v1}]
-    #_(vase/bootstrap-vase-context! vase-context (make-master-routes vase-context))
-    {:env          :prod
-     :vase/context vase-context ;; For testing, shouldn't need this otherwise
-     ::http/routes (make-master-routes spec)
+  (let [test-db    (str "datomic:mem://" (UUID/randomUUID))
+        descriptor (vase/load-descriptor "test_descriptor.edn")
+        conn       (vase/connect-database test-db)]
+    (vase/ensure-schema conn (-> descriptor :example :norms))
+    {:env                 :prod
+     ::http/routes        (make-master-routes {:descriptor  descriptor
+                                               :app-name    :example
+                                               :version     :v1
+                                               :datomic-uri test-db})
      ::http/resource-path "/public"
-     ::http/type :jetty
-     ::http/port (conf/get-key config :service-port)}))
+     ::http/type          :jetty
+     ::http/port          8080}))
