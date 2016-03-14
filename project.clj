@@ -43,14 +43,5 @@
                                                                                             [org.slf4j/jul-to-slf4j]
                                                                                             [org.slf4j/jcl-over-slf4j]]]]
                     :resource-paths ["resources"
-                                     "test/resources"]
-                    :jvm-opts ^:replace ["-d64" "-server"
-                                         "-XX:+UseConcMarkSweepGC" "-XX:+UseParNewGC"
-                                         "-XX:+UseCompressedOops"
-                                         "-XX:+ExplicitGCInvokesConcurrent"
-                                         "-XX:+CMSParallelRemarkEnabled"
-                                         "-Dvaseconfig=./test/resources/system.edn"]}}
-  :min-lein-version "2.0.0"
-  :global-vars  {*warn-on-reflection* true
-                 *assert* true}
-  :pedantic? :abort)
+                                     "test/resources"]}}
+  :min-lein-version "2.0.0")

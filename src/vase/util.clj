@@ -9,26 +9,9 @@
                     File)
            (javax.xml.bind DatatypeConverter)))
 
-(def ^:dynamic *deep-merge-fn* last)
-
 (defn map-vals
   [f m]
   (reduce-kv (fn [m k v] (assoc m k (f v))) m m))
-
-(defn deep-merge
-  "Merge any number of values. When `vals` are maps, this performs a recursive
-  merge. When `vals` are not maps, `*deep-merge-fn*` is used to choose a
-  winner.
-
-  By default, `*deep-merge-fn*` is bound to `last`, which means the last value
-  of `vals` will be chosen.
-
-  You can specify your own merge strategy by binding `*deep-merge-fn*` to
-  another function."
-  [& vals]
-  (if (every? map? (keep identity vals))
-    (apply merge-with deep-merge vals)
-    (*deep-merge-fn* vals)))
 
 (defn fully-qualify-symbol
   ([sym] (fully-qualify-symbol *ns* sym))
@@ -131,61 +114,22 @@
 
 ;; Response Generation
 ;; -------------------
-(defn merge-payloads
-  "Does a deep merge of provided payloads."
-  [& partial-payload-maps]
-  (apply deep-merge (flatten partial-payload-maps)))
+(defn- complete-with-errors?
+  [response errors]
+  (and (seq response) (seq errors)))
 
-(defn base-body [maybe-map]
-  (let [some-map (if (or (map? maybe-map)
-                         (nil? maybe-map)) maybe-map {:payload maybe-map})]
-    (if (some #{:response :errors :request} (keys some-map))
-      (merge-payloads {:request {} :response {} :errors {}} some-map)
-      {:request {} :response some-map :errors {}})))
+(defn- bad-request?
+  [response errors]
+  (and (nil? (seq response)) (seq errors)))
 
-(defn payload
-  "Generates the body of a Ring response that's standard for API responses"
-  ([req help-url]
-   {:request {:body (get req :json-params
-                         (get req :edn-params
-                              (get req :body-string "")))
-              :this_ (:uri req)
-              :help help-url
-              :server_received_time (str (:received-time req))}
-    :response {}
-    :errors {}})
-  ([req help-url & partial-payload-maps]
-   (merge-payloads (payload req help-url) (map base-body partial-payload-maps))))
+(defn- exception?
+  [response]
+  (instance? Throwable response))
 
-(defn response
-  "Converts a body into a valid Ring response e.g. sets status"
-  [payload-map]
-  (let [resp {:status 200 :headers {} :body payload-map}]
-    (cond
-      (and
-        (seq (:response payload-map))
-        (seq (:errors payload-map))) (assoc resp :status 205)
-      (and
-        (empty? (:response payload-map))
-        (seq (:errors payload-map))) (assoc resp :status 400)
-      :else resp)))
-
-(defn error-response
-  "Returns a Ring response with given status and a JSON error body with given error"
-  [status error]
-  {:pre [(< 399 status 600)]}
-  {:status status
-   :body (write-json {:errors [error]})
-   :headers {"Content-Type" "application/json"}})
-
-(defn throw-500!
-  "Throws a clojure.lang.ExceptionInfo with a 500 error body to return to the end user.
-  The exception also comes with :reason :five-hundred-response."
-  ([] (throw-500! ""))
-  ([err-body]
-   (throw (ex-info "A fatal error occurred. Failing hard with a 500 response: " {:reason :five-hundred-response :body err-body}))))
-
-(defn five-hundred-exception?
-  "Returns true if an exception failed due to throw-500!."
-  [exception]
-  (= :five-hundred-response (:reason (ex-data exception))))
+(defn status-code
+  [response errors]
+  (cond
+    (complete-with-errors? response errors) 205
+    (bad-request?          response errors) 400
+    (exception?            response)        500
+    :else                                   200))

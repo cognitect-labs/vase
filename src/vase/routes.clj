@@ -1,5 +1,5 @@
 (ns vase.routes
-  (:require [io.pedestal.http :as bootstrap]
+  (:require [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]
             [io.pedestal.http.body-params :as body-params]
             [vase.datomic :as datomic]
@@ -17,24 +17,24 @@
                    results                                              (mapv #(take 2 %) routes)]
                (assoc context :response
                       (if edn
-                        (bootstrap/edn-response results)
+                        (http/edn-response results)
                         {:status 200
                          :body   (str/join sep (map #(str/join " " %) results))}))))}))
 
 (def ^:private common-api-interceptors
   [interceptor/attach-received-time
    interceptor/attach-request-id
-   bootstrap/json-body
-   interceptor/vase-error-ring-response])
+   http/json-body])
 
 (defn- app-interceptors
   [{:keys [descriptor app-name version datomic-uri]}]
-  (let [datomic-conn (datomic/connect datomic-uri)]
-    (into common-api-interceptors
-          [(interceptor/forward-headers-interceptor (keyword (name app-name) (name version))
-                                                    (get-in descriptor [app-name version :forward-headers] []))
-           (datomic/insert-datomic datomic-conn)
-           (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))])))
+  (let [datomic-conn       (datomic/connect datomic-uri)
+        headers-to-forward (get-in descriptor [app-name version :forward-headers] [])
+        headers-to-forward (conj headers-to-forward interceptor/request-id-header)]
+    (conj common-api-interceptors
+          (datomic/insert-datomic datomic-conn)
+          (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))
+          (interceptor/forward-headers headers-to-forward))))
 
 (defn- specified-routes
   [{:keys [descriptor app-name version]}]

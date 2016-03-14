@@ -1,18 +1,15 @@
 (ns vase.test-helper
-  (:import [java.util UUID])
   (:require [io.pedestal.test :refer [response-for]]
-            [io.pedestal.http :as bootstrap]
+            [io.pedestal.http :as http]
             [io.pedestal.log :as log]
             [vase.interceptor :as interceptor]
-            [vase]
             [vase.util :as util]
-            [datomic.api :as d]
             [vase.service-route-table :as srt]))
 
 (defn new-service
   "This generates a new testable service for use with io.pedestal.test/response-for."
   ([]            (new-service (srt/service-map)))
-  ([service-map] (::bootstrap/service-fn (bootstrap/create-servlet service-map))))
+  ([service-map] (::http/service-fn (http/create-servlet service-map))))
 
 (def ^:dynamic *current-service* nil)
 
@@ -70,5 +67,4 @@
   ([response reader]
      (-> response
          :body
-         reader
-         :response)))
+         reader)))

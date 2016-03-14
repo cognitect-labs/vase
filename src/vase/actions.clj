@@ -11,6 +11,12 @@
 ;; Code generation tools
 ;;
 
+(defn tap [where xs forms]
+  `(do
+     ~@(for [x xs]
+        `(println ~where  ~x))
+    ~forms))
+
 (defn context-fn
   [ctx-sym forms]
   `(fn [~ctx-sym] ~forms))
@@ -43,17 +49,36 @@
                           (:edn-params ~req-sym))]
      ~forms))
 
-(defn payload-response
-  [req-sym doc body]
-  `(util/response (util/payload ~req-sym ~(or doc "") ~(or body ""))))
+(defn response-body
+  [body]
+  `{:body ~(or body "")})
 
-(defn map-response
-  [status headers body]
-  `{:status ~(or status 200) :headers ~(or headers {}) :body ~(or body "")})
+(defn query-response-body
+  [query-result-sym]
+  (response-body `(into [] ~query-result-sym)))
+
+(defn tx-response-body
+  [tx-result-sym args-sym]
+  (response-body `{:transaction ~tx-result-sym :whitelist ~args-sym}))
 
 (defn bind-response
   [resp-sym resp-forms forms]
   `(let [~resp-sym ~resp-forms]
+     ~forms))
+
+(defn derive-status-code
+  [ctx-sym resp-sym forms]
+  `(let [~resp-sym (assoc ~resp-sym :status (util/status-code (:body ~resp-sym) (:errors ~ctx-sym)))]
+     ~forms))
+
+(defn assign-headers
+  [resp-sym headers forms]
+  `(let [~resp-sym (update ~resp-sym :headers merge ~headers)]
+     ~forms))
+
+(defn assign-status-code
+  [resp-sym status forms]
+  `(let [~resp-sym (assoc ~resp-sym :status ~status)]
      ~forms))
 
 (defn attach-response
@@ -92,11 +117,7 @@
 
 (defn validation-result
   [param-sym rule-vec]
-  `(themis/unfold-result (themis/validation ~param-sym ~rule-vec)))
-
-(defn query-result-payload
-  [req-sym query-result-sym doc]
-  (payload-response req-sym doc `{:response ~query-result-sym}))
+  (response-body `(themis/unfold-result (themis/validation ~param-sym ~rule-vec))))
 
 (defn bind-allowed-arguments
   [req-sym args-sym properties forms]
@@ -118,10 +139,6 @@
          tx-result#     (d/transact conn# (mapv process-id ~args-sym))
          ~tx-result-sym (map (juxt :e :a :v) (:tx-data @tx-result#))]
      ~forms))
-
-(defn tx-result-payload
-  [req-sym args-sym tx-result-sym doc]
-  (payload-response req-sym doc `{:transaction ~tx-result-sym :whitelist ~args-sym}))
 
 (defmacro nesting
   [& forms]
@@ -148,20 +165,22 @@
 ;; Interceptors for common cases
 ;;
 (defn respond-action-exprs
-  [params body status headers enforce-format doc]
+  [params body status headers]
   (gensyms [ctx-sym resp-sym req-sym param-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (if enforce-format (payload-response req-sym doc body) (map-response status headers body)))
+            (bind-response resp-sym (response-body body))
+            (assign-headers resp-sym headers)
+            (assign-status-code resp-sym (or status 200))
             (attach-response ctx-sym resp-sym))))
 
 (defn respond-action
-  [name params body status headers enforce-format doc]
+  [name params body status headers]
   (dynamic-interceptor name
                        :respond
-                       {:enter (respond-action-exprs params body status headers enforce-format doc)}))
+                       {:enter (respond-action-exprs params body status headers)}))
 
 (defn redirect-action-exprs
   [params body status headers url]
@@ -170,7 +189,9 @@
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (map-response (or status 302) (merge headers {"Location" url}) body))
+            (bind-response resp-sym (response-body body))
+            (assign-headers resp-sym (merge headers {"Location" url}))
+            (assign-status-code resp-sym (or status 302))
             (attach-response ctx-sym resp-sym))))
 
 (defn redirect-action
@@ -179,22 +200,24 @@
                        {:enter (redirect-action-exprs (or params []) body status headers (or url ""))}))
 
 (defn validate-action-exprs
-  [params rule-vec doc]
+  [params headers rule-vec]
   (gensyms [ctx-sym resp-sym req-sym param-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (payload-response req-sym doc (validation-result param-sym rule-vec)))
+            (bind-response resp-sym (validation-result param-sym rule-vec))
+            (assign-headers resp-sym headers)
+            (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn validate-action
-  [name params rule-vec doc]
+  [name params headers rule-vec]
   (dynamic-interceptor name :validate
-                       {:enter (validate-action-exprs params rule-vec doc)}))
+                       {:enter (validate-action-exprs params headers rule-vec)}))
 
 (defn query-action-exprs
-  [query variables coercions constants doc]
+  [query variables coercions constants headers]
   (gensyms [ctx-sym resp-sym req-sym args-sym db-sym vals-sym query-result-sym]
            (nesting
             (context-fn ctx-sym)
@@ -203,26 +226,30 @@
             (bind-vals args-sym vals-sym variables coercions)
             (bind-db req-sym db-sym)
             (bind-query-results query-result-sym query db-sym vals-sym constants)
-            (bind-response resp-sym (query-result-payload req-sym query-result-sym doc))
+            (bind-response resp-sym (query-response-body query-result-sym))
+            (assign-headers resp-sym headers)
+            (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn query-action
-  [name query variables coercions constants doc]
+  [name query variables coercions constants headers]
   (dynamic-interceptor name :query
-                       {:enter (query-action-exprs query variables coercions constants doc)}))
+                       {:enter (query-action-exprs query variables coercions constants headers)}))
 
 (defn transact-action-exprs
-  [properties doc]
+  [properties headers]
   (gensyms [ctx-sym resp-sym req-sym args-sym tx-result-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-allowed-arguments req-sym args-sym properties)
             (perform-transaction req-sym args-sym tx-result-sym)
-            (bind-response resp-sym (tx-result-payload req-sym args-sym tx-result-sym doc))
+            (bind-response resp-sym (tx-response-body tx-result-sym args-sym))
+            (assign-headers resp-sym headers)
+            (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn transact-action
-  [name properties doc]
+  [name properties headers]
   (dynamic-interceptor name :transact
-                       {:enter (transact-action-exprs properties doc)}))
+                       {:enter (transact-action-exprs properties headers)}))
