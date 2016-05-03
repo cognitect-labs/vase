@@ -1,16 +1,7 @@
 (ns vase.interceptor-test
   (:require [clojure.test :refer :all]
-            [vase.test-helper :as helper]
-            [vase.interceptor :refer :all]
-            [io.pedestal.interceptor.chain :as chain]))
-
-(defn- run-interceptor
-  ([i]     (run-interceptor {} i))
-  ([ctx i] (chain/execute (chain/enqueue* ctx i))))
-
-(defn- new-ctx
-  [& {:as headers}]
-  {:request {:headers headers}})
+            [vase.test-helper :as helper :refer [run-interceptor new-ctx]]
+            [vase.interceptor :refer :all]))
 
 (deftest stock-interceptors
   (testing "attach-received-time"

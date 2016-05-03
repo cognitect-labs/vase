@@ -4,7 +4,8 @@
             [io.pedestal.log :as log]
             [vase.interceptor :as interceptor]
             [vase.util :as util]
-            [vase.service-route-table :as srt]))
+            [vase.service-route-table :as srt]
+            [io.pedestal.interceptor.chain :as chain]))
 
 (defn new-service
   "This generates a new testable service for use with io.pedestal.test/response-for."
@@ -68,3 +69,11 @@
      (-> response
          :body
          reader)))
+
+(defn run-interceptor
+  ([i]     (run-interceptor {} i))
+  ([ctx i] (chain/execute (chain/enqueue* ctx i))))
+
+(defn new-ctx
+  [& {:as headers}]
+  {:request {:headers headers}})
