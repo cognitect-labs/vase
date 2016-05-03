@@ -2,12 +2,12 @@
   (:import [java.util UUID])
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
-            [io.pedestal.http.route.table :as table]
+            [io.pedestal.http.route.definition.table :as table]
             [vase]))
 
 (defn make-master-routes
   [spec]
-  (table/route-table
+  (table/table-routes
    {}
    (vase/routes "/api" spec)))
 

@@ -53,12 +53,7 @@
 (defrecord RespondAction [name params edn-coerce body status headers enforce-format doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/respond-action name params body status headers))
-
-  definition/ExpandableVerbAction
-  (expand-verb-action [_]
-    (definition/expand-verb-action
-      (actions/respond-action name params body status headers))))
+    (actions/respond-action name params body status headers)))
 
 (defn respond [form]
   {:pre [(map? form)
@@ -73,12 +68,7 @@
 (defrecord RedirectAction [name params body status headers url]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/redirect-action name params body status headers url))
-
-  definition/ExpandableVerbAction
-  (expand-verb-action [_]
-    (definition/expand-verb-action
-      (actions/redirect-action name params body status headers url))))
+    (actions/redirect-action name params body status headers url)))
 
 (defn redirect [form]
   {:pre [(map? form)
@@ -100,19 +90,7 @@
                                                             form)
                                  form))
                     (or properties []))]
-      (actions/validate-action name params headers rule-vec)))
-
-  definition/ExpandableVerbAction
-  (expand-verb-action [_]
-    (let [params   (or params [])
-          rule-vec (walk/postwalk
-                    (fn [form] (if (symbol? form)
-                                 (util/fully-qualify-symbol (the-ns 'vase.actions)
-                                                            form)
-                                 form))
-                    (or properties []))]
-      (definition/expand-verb-action
-        (actions/validate-action name params headers rule-vec)))))
+      (actions/validate-action name params headers rule-vec))))
 
 (defn validate [form]
   {:pre [(map? form)
@@ -128,14 +106,7 @@
   (-interceptor [_]
     (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
           coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
-      (actions/query-action name query variables coercions constants headers)))
-
-  definition/ExpandableVerbAction
-  (expand-verb-action [_]
-    (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
-          coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
-      (definition/expand-verb-action
-        (actions/query-action name query variables coercions constants headers)))))
+      (actions/query-action name query variables coercions constants headers))))
 
 (defn query [form]
   {:pre [(map? form)
@@ -151,12 +122,7 @@
 (defrecord TransactAction [name properties headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/transact-action name properties headers))
-
-  definition/ExpandableVerbAction
-  (expand-verb-action [_]
-    (definition/expand-verb-action
-      (actions/transact-action name properties headers))))
+    (actions/transact-action name properties headers)))
 
 (defn transact [form]
   {:pre [(map? form)
