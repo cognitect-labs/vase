@@ -34,6 +34,12 @@
       (update-in [:request :query-params] merge p)
       (update-in [:request :params] merge p)))
 
+(defn- execute-and-expect
+  ([action status body headers]
+   (expect-response (:response (helper/run-interceptor action)) status body headers))
+  ([ctx action status body headers]
+   (expect-response (:response (helper/run-interceptor ctx action)) status body headers)))
+
 (defn make-respond
   ([params exprs]
    (make-respond params exprs 200))
@@ -44,12 +50,24 @@
 
 (deftest respond-action
   (testing "static response"
-    (are [action status body headers] (expect-response (:response (helper/run-interceptor action)) status body headers)
-      (make-respond [] "respond-only" 202)           202 "respond-only" {}
-      (make-respond [] "with-header"  201 {"a" "b"}) 201 "with-header"  {"a" "b"}))
+    (are [ status body headers action] (execute-and-expect action status body headers)
+      202 "respond-only" {}          (make-respond [] "respond-only" 202)
+      201 "with-header"  {"a" "b"}   (make-respond [] "with-header"  201 {"a" "b"})))
 
   (testing "with parameters"
-    (are [expected action ctx] (= expected  (-> ctx (helper/run-interceptor action) :response :body))
+    (are [expected-body action ctx] (execute-and-expect ctx action 200 expected-body {})
       "p1: foo"  (make-respond '[p1]      '(str "p1: " p1))           (with-query-params {:p1 "foo"})
       "p1: &"    (make-respond '[p1]      '(str "p1: " p1))           (with-query-params {:p1 "&"})
       "foo.bar." (make-respond '[p1 zort] '(format "%s.%s." p1 zort)) (with-query-params {:p1 "foo" :zort "bar"}))))
+
+(defn make-redirect
+  ([params status body headers url]
+   (actions/redirect-action :redirector params body status headers url)))
+
+(deftest redirect-action
+  (testing "static redirect"
+    (are [status body headers action] (execute-and-expect action status body headers)
+       302 "" {"Location" "http://www.example.com"} (make-redirect [] 302 "" {} "http://www.example.com"))
+
+    (are [headers action ctx] (execute-and-expect ctx action 302 "" headers)
+      {"Location" "https://donotreply.com"} (make-redirect '[p1] 302 "" {} 'p1) (with-query-params {:p1 "https://donotreply.com"}))))
