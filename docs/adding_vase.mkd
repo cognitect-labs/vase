@@ -1,7 +1,7 @@
 Adding Vase to a Pedestal project
 =================================
 
-This document will help you add Vase to an existing Pedestal project.
+This document will help you add Vase to an existing Pedestal project. Vase creates pedestal routes based on an application description. These routes can be concatenated to your application's routes.
 
 It assumes you created your Pedestal project with the template:
 
@@ -24,8 +24,7 @@ In your `project.clj`, add the Vase dependency information:
 ```clojure
 (ns my-new-service.service
   (:require ;...
-            [vase.interceptor :as interceptor]
-            [vase.config :as conf]
+            [vase.datomic]
             [vase]))
 ```
 
@@ -46,55 +45,45 @@ The initial template will have a route definition within `service.clj`
 This should become...
 
 ```clojure
-(def config (conf/default-config))
-(def vase-context (atom (vase/map->Context {:config config})))
-
-(def master-routes `["/" {:get home-page} ^:interceptors [interceptor/attach-received-time
-                                                          interceptor/attach-request-id
-                                                          bootstrap/html-body
-                                                          (interceptor/bind-vase-context vase-context)]
-                     ["/about" {:get about-page}]
-                     ^:vase/api-root ["/api" {:get vase/show-routes}
-                                       ^:interceptors [bootstrap/json-body
-                                                       interceptor/vase-error-ring-response]]])
-
-;; Initialize Vase on Service Load
-(vase/bootstrap-vase-context! vase-context master-routes)
+(defn master-routes
+  []
+  (table/table-routes
+   {}
+   [["/" :get [bootstrap/html-body home-page] :route-name ::home-page]
+    ["/about" :get [bootstrap/html-body about-page] :route-name ::about-page]]))
+    
+(defn app-routes
+  [api-root spec]
+  (table/table-routes
+   {}
+   (vase/routes api-root spec)))
 ```
 
 #### Update your service map
 
-Your service map should respect the live-upsert and port settings within
-the Vase configuration file, `system.edn`:
-
 ```clojure
-(def service {:env :prod
-              ;; You can bring your own non-default interceptors. Make
-              ;; sure you include routing and set it up right for
-              ;; dev-mode. If you do, many other keys for configuring
-              ;; default interceptors will be ignored.
-              ;; :bootstrap/interceptors []
-              ::bootstrap/routes (if (config :enable-upsert) #(:routes @vase-context) (:routes @vase-context))
-
-              ;; Uncomment next line to enable CORS support, add
-              ;; string(s) specifying scheme, host and port for
-              ;; allowed source(s):
-              ;;
-              ;; "http://localhost:8080"
-              ;;
-              ;;::bootstrap/allowed-origins ["scheme://host:port"]
-
-              ;; Root for resource interceptor that is available by default.
-              ::bootstrap/resource-path "/public"
-
-              ;; Either :jetty or :tomcat (see comments in project.clj
-              ;; to enable Tomcat)
-              ;;::bootstrap/host "localhost"
-              ::bootstrap/type :jetty
-              ::bootstrap/port (config :service-port)})
+(defn service-map
+  []
+  (let [db "datomic:mem://vase-sample"
+        descriptor (vase/load-descriptor "sample.edn")
+        conn (vase.datomic/connect db)]
+    (vase.datomic/ensure-schema conn (-> descriptor :example :norms))
+    {:env :prod
+     ::bootstrap/routes (concat (master-routes)
+                                (app-routes "/api" {:descriptor  descriptor
+                                                    :app-name    :example
+                                                    :version     :v1
+                                                    :datomic-uri db}))
+     ::bootstrap/resource-path "/public"
+     ::bootstrap/type :jetty
+     ::bootstrap/port 8080}))
 ```
 
-### Step 3: Create services
+### Step 3: Update your `server.clj`
+
+Update `runnable-service` and `run-dev` to invoke the `service/service-map` fn.
+
+### Step 4: Create services
 
 Your Pedestal application is now Vase-enabled.  You should now setup any
 necessary configuration files.  Once Vase is configured, you can begin
