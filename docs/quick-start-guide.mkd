@@ -1,0 +1,475 @@
+### Vase App Quick Start Guide
+
+This document explains how to create a simple web app using Vase step by step.
+
+##### Check you have all tools to get started
+
+1. Java 8 or later
+
+    Vase is written on top of [Pedestal](https://github.com/pedestal/pedestal), which needs Java 8 or later.
+
+2. Leiningen 2.0.0 or later
+
+    Pedestal uses [Leiningen](http://leiningen.org/) as a project build tool.
+
+3. Datomic
+
+    Vase is a tool to provides a flexible way to manage data in Datomic over REST API.
+    Datomic version is not necessary be the latest, but, we'd better to choose newer versions.
+    This document uses Datomic Pro 0.9.5359.
+    
+    Once Datomic archive has been downloaded and unzipped, run `bin/maven-install`
+    at the Datomic top directory, for example, `datomic-pro-0.9.5359`.
+    The command installs Datomic's jar archives to the local Maven repository. (`~/.m2/repository/com/datomic/...`)
+     
+
+
+*Note 1*
+
+We don't need to install or download neither of Pedestal and Vase.
+Leiningen will download when you hit `lein run`, `lein deps`, or some other Leiningen commands for the first time.
+ 
+*Note 2*
+
+Vase includes a dependency to the specific version of Datomic free.
+As far as Datomic free works fine, there's no need to download/install Datomic.
+
+
+
+##### Step 1: Create a Pedestal project
+
+The first step is to create a Pedestal project.
+
+```bash
+lein new pedestal-service my-vase-app
+```
+
+The command above creates a directory, `my-vase-app`, which has a simple web app ready to run.
+
+
+##### Step 2: Add Vase and Datomic dependencies
+
+The `my-vase-app` directory has `project.clj`. Open this file and add the dependencies.
+
+```clojure
+;; project.clj
+[com.datomic/datomic-pro "0.9.5359" :exclusions [[com.fasterxml.jackson.core/jackson-core]
+                                                 [com.fasterxml.jackson.core/jackson-databind]
+                                                 [joda-time]]]
+[com.cognitect/vase "0.1.0-SNAPSHOT" :exclusions [com.datomic/datomic-free]]
+```
+
+If we use Datomic free in the Vase dependency, just add Vase dependency only.
+
+```clojure
+[com.cognitect/vase "0.1.0-SNAPSHOT"]
+```
+
+An entire project.clj file looks like [this]() ;; TODO needs URL
+
+
+##### Step 3: Write a simple Vase descriptor
+
+The descriptor is a key concept of the Vase. We can define a whole application by the descriptor without writing a code.
+However, let's make the descriptor as simple as possible now so that we can start easily.
+
+Create a directory, `resources`, in the application top directory.
+This directory is declared as a resource path in `project.clj`
+
+```clojure
+:resource-paths ["config", "resources"]
+```
+
+
+Then, create a new file, `my-vase-app.edn`, in the resources directory.
+
+```
+mkdir resources
+cd resources
+
+[edit my-vase-app.edn]
+```
+
+A minimal possible descriptor (does nothing as a Vase app) is:
+
+```clojure
+{:descriptor {}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
+```
+
+Above is just to check changes on Pedestal service works.
+Later, we will add more to make it a working example.
+
+
+##### Step 4: Vasify Pedestal service
+
+This section describes what changes should be done to make Pedestal service work as a Vase app.
+Updates will be mostly done in `src/my_vase_app/service.clj` file.
+
+###### Add required libaries to ns form
+
+We need vase and Pedestal table route definition in `service.clj`. Vase uses recently added Pedestal table routes.
+After adding these two, ns form looks like this:
+
+```clojure
+(ns my-vase-app.service
+  (:require [io.pedestal.http :as http]
+            [io.pedestal.http.route :as route]
+            [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.route.definition.table :as table]
+            [ring.util.response :as ring-resp]
+            [vase]))
+```
+
+###### Add `master-routes` function for a `table-routes` to serve original home-page and about-page.
+
+As explained, Vase uses table routes, redefine routes to home-page and about-page as in below:
+
+```clojure
+(defn master-routes
+  []
+  (table/table-routes
+   {}
+   [["/" :get [http/html-body home-page] :route-name ::home-page]
+    ["/about" :get [http/html-body about-page] :route-name ::about-page]]))
+```
+
+###### Add Vase routes function
+
+Vase routes are defined by `vase/routes` function, which need at least two arguments, 
+api root path and descriptor (a.k.a. spec). In `service.clj`, add `app-routes` function below:
+ 
+```clojrue
+(defn app-routes
+  [api-root spec]
+  (table/table-routes
+   {}
+   (vase/routes api-root spec)))
+```
+
+###### Combine two route functions
+
+So far, we had normal and Vase routes functions. These two should be combined in one to set in service map.
+Replace routes definition by:
+ 
+```clojure
+(def routes
+  (concat (master-routes)
+          (app-routes "/api" (vase/load-descriptor "my-vase-app.edn"))))
+```
+
+Be aware parameters given to `app-routes` function. Vase app routes will have paths starting from "/api".
+The second parameter is a descriptor we just defined.
+The `vase/load-descriptor` function reads a given file from classpath(s) and returns edn format data.
+
+###### Delete expand-routes from `server.clj`
+
+The routes defined above is not a expandable routes. Delete the expandable routes setting from `server.clj`.
+It is only in `run-dev` function. The `run-dev` will look like this:
+
+```clojure
+(defn run-dev
+  "The entry-point for 'lein run-dev'"
+  [& args]
+  (println "\nCreating your [DEV] server...")
+  (-> service/service ;; start with production configuration
+      (merge {:env :dev
+              ::server/join? false
+              ::server/allowed-origins {:creds true :allowed-origins (constantly true)}})
+      ;; Wire up interceptor chains
+      server/default-interceptors
+      server/dev-interceptors
+      server/create-server
+      server/start))
+```
+
+
+##### Start a server and see it works
+
+Our descriptor is a minimal possible and does nothing as a Vase app.
+But, it's good to start the web server and see the server works.
+
+```
+lein run
+```
+
+Then, connect to the server:
+
+```
+curl -i http://localhost:8080/
+curl -i http://localhost:8080/about
+```
+
+
+##### Step 5: Add a Vase api route
+
+With Vase, we can define REST API. Below is the simple example to add RESTful route in the descriptor.
+Open `resources/my-vase-app.edn` and add a route definition.
+
+```clojure
+{:descriptor {:my-vase-app
+              {:v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                                       :body "Hello My Vase App!"}}]]}}}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
+```
+
+Restart the server by `lein run` (or `lein run-dev`) and make HTTP request:
+
+```
+curl -i http://localhost:8080/api/my-vase-app/v1/
+HTTP/1.1 200 OK
+Date: Thu, 02 Jun 2016 17:29:20 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+vaserequest-id: YVxQKwoQQ0o
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Server: Jetty(9.3.8.v20160314)
+
+Hello My Vase App!
+```
+
+
+##### Step 6: Transact Datomic schema
+
+This section describes how to write a Datomic schema and transact.
+
+###### Add a Datomic schema
+
+Before writing the schema, add the place to write schema:
+
+```clojure
+{:descriptor {:my-vase-app
+              {:norms {:my-vase-app/name-schema {:txes []}}
+               :v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                                       :body "Hello My Vase App!"}}]]}}}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
+```
+
+Above examples has an empty vector as a value of :txes in the inner map.
+Here is the place the schemas are added.
+
+Vase support shorthand notation as well as original Datomic schema syntax.
+For exmaple, these two are equvalent:
+
+```clojure
+;; Datomic schema
+{:db/id #db/id[:db.part/db]
+ :db/ident :item/name
+ :db/unique :db.unique/value
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "The name of an item"
+ :db.install/_attribute :db.part/db}
+ 
+;; Vase shorthand schema notation
+[:item/name :one :string :unique "The name of an item"]
+```
+
+Here's updated descriptor file with shorthand schema definition:
+
+```clojure
+{:descriptor {:my-vase-app
+              {:norms
+               {:my-vase-app/item-schema
+                {:txes
+                 [#vase/short-schema-tx [[:item/name :one :string :unique "The name of an item"]]]}}
+               :v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                                       :body "Hello My Vase App!"}}]]}}}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
+```
+
+###### Transact the schema
+
+To transact schema, we should hit `vase.datomic/ensure-schema` function in somewhere.
+An appropriate way of invoking the function would be to turn service map definition to a function
+and to run schema transaction.
+
+Here are changes in `service.clj` file.
+
+  - add `vase.datomic` to ns form
+
+```clojure
+ (ns my-vase-app.service
+   (:require [io.pedestal.http :as http]
+             [io.pedestal.http.route :as route]
+             [io.pedestal.http.body-params :as body-params]
+             [io.pedestal.http.route.definition.table :as table]
+             [ring.util.response :as ring-resp]
+             [vase]
+             [vase.datomic]))
+```
+
+  - make `service` and `routes` functions
+  
+  Along side of turning `service` to the function, `routes` definition also turned to a function to avoid
+  loading the same descriptor twice.
+  
+  ```clojure
+  (defn routes
+    [spec]
+    (concat (master-routes)
+            (app-routes "/api" spec)))
+  
+  (defn service
+    []
+    (let [spec (vase/load-descriptor "my-vase-app.edn")
+          db-uri (:datomic-uri spec)
+          conn (vase.datomic/connect db-uri)]
+      (vase.datomic/ensure-schema conn (get-in spec [:descriptor :my-vase-app :norms]))
+      {:env :prod
+       ::http/routes (routes spec)
+       ::http/resource-path "/public"
+       ::http/type :jetty
+       ::http/port 8080}))
+  ```
+  
+  - update `server.clj`
+  
+  Since `service` is now a function, we need to update `server.clj` as well.
+  There are two lines using `service`, in `defonce` and `run-dev`.
+  These lines look like this:
+  
+  ```clojure
+  (defonce runnable-service (server/create-server (service/service)))
+  
+  (defn run-dev
+    "The entry-point for 'lein run-dev'"
+    [& args]
+    (println "\nCreating your [DEV] server...")
+    (-> (service/service) ;; start with production configuration
+        (merge {:env :dev
+                ::server/join? false
+                ::server/allowed-origins {:creds true :allowed-origins (constantly true)}})
+        ;; Wire up interceptor chains
+        server/default-interceptors
+        server/dev-interceptors
+        server/create-server
+        server/start))
+  ```
+  
+  The schema will be transacted when server gets started by `lein run` (or `lein run-dev`).
+   
+   
+##### Step 7: Make a simple query
+
+To see the schema is actually transacted, making a query to Datomic would be an easy way.
+On Vase, this is done by adding a RESTful API in the descriptor.
+After query API is added, the descriptor looks like this:
+
+```clojure
+{:descriptor {:my-vase-app
+              {:norms
+               {:my-vase-app/item-schema
+                {:txes
+                 [#vase/short-schema-tx [[:item/name :one :string :unique "The name of an item"]]]}}
+               :v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                                       :body "Hello My Vase App!"}}]
+                             ["/idents" {:get #vase/query {:name :my-vase-app-v1/query-idents
+                                                           :params []
+                                                           :query [:find ?e ?v :where [?e :db/ident ?v]]}}]]}}}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
+
+```
+
+Restart the server and make an http request.
+
+```
+curl -i http://localhost:8080/api/my-vase-app/v1/idents
+HTTP/1.1 200 OK
+Date: Thu, 02 Jun 2016 19:58:10 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+vaserequest-id: SEk2RhdZXio
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Server: Jetty(9.3.8.v20160314)
+
+[[22,"db.type/long"],[38,"db.unique/identity"],...(bunch)...,[65,"item/name"],...(bunch)...,[49,"db.lang/java"]]
+```
+
+We can see `[65, "item/name"]` among bunch of idents in the HTTP response.
+
+
+##### Step 8: Transact data and make a query
+
+The schema has been transacted already, so to transact data, the only step is to add RESTful API in the descriptor.
+At the same time, we are going to add query API since creating and listing share the path in REST.
+
+After adding transact/query APIs, the routes definition in the descriptor looks like this:
+
+```clojure
+:v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                        :body "Hello My Vase App!"}}]
+              ["/idents" {:get #vase/query {:name :my-vase-app-v1/query-idents
+                                            :params []
+                                            :query [:find ?e ?v :where [?e :db/ident ?v]]}}]
+              ["/items" {:get #vase/query {:name :my-vase-app-v1/list-items
+                                           :params []
+                                           :query [:find ?name :in $ :where [?e :item/name ?name]]}
+                         :post #vase/transact {:name :my-vase-app-v1/create-item
+                                               :properties [:item/name]}}]]}}}
+```
+
+To transact data, make an HTTP request with POST method and data.
+Below are the usage examples for transaction and query.
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"item/name": "Millennium Falcon"}]}' -i http://localhost:8080/api/my-vase-app/v1/items
+HTTP/1.1 200 OK
+Date: Thu, 02 Jun 2016 20:29:43 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+vaserequest-id: SxYXKzQxHlI
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Server: Jetty(9.3.8.v20160314)
+
+{"transaction":[[13194139534317,50,"2016-06-02T20:29:43Z"],[17592186045422,65,"Millennium Falcon"]],"whitelist":[{"item/name":"Millennium Falcon"}]}
+
+
+curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"item/name": "Naboo Royal Cruiser"}]}' -i http://localhost:8080/api/my-vase-app/v1/items
+HTTP/1.1 200 OK
+Date: Thu, 02 Jun 2016 20:30:42 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+vaserequest-id: LFcSLhIeBBo
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Server: Jetty(9.3.8.v20160314)
+
+{"transaction":[[13194139534319,50,"2016-06-02T20:30:42Z"],[17592186045424,65,"Naboo Royal Cruiser"]], "whitelist":[{"item/name":"Naboo Royal Cruiser"}]}
+
+
+curl -i http://localhost:8080/api/my-vase-app/v1/items
+HTTP/1.1 200 OK
+Date: Thu, 02 Jun 2016 20:40:46 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+vaserequest-id: TxESRCcoPzA
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Server: Jetty(9.3.8.v20160314)
+
+[["Millennium Falcon"],["Naboo Royal Cruiser"]]
+```

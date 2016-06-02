@@ -1,0 +1,18 @@
+{:descriptor {:my-vase-app
+              {:norms
+               {:my-vase-app/item-schema
+                {:txes
+                 [#vase/short-schema-tx [[:item/name :one :string :unique "The name of an item"]]]}}
+               :v1 {:routes [["/" {:get #vase/respond {:name :my-vase-app-v1/simple-response
+                                                       :body "Hello My Vase App!"}}]
+                             ["/idents" {:get #vase/query {:name :my-vase-app-v1/query-idents
+                                                           :params []
+                                                           :query [:find ?e ?v :where [?e :db/ident ?v]]}}]
+                             ["/items" {:get #vase/query {:name :my-vase-app-v1/list-items
+                                                          :params []
+                                                          :query [:find ?name :in $ :where [?e :item/name ?name]]}
+                                        :post #vase/transact {:name :my-vase-app-v1/create-item
+                                                              :properties [:item/name]}}]]}}}
+ :app-name :my-vase-app
+ :version :v1
+ :datomic-uri "datomic:mem://my-vase-app"}
