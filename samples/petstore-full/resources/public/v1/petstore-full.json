@@ -75,8 +75,7 @@
                 "security": [
                     {
                         "petstore_auth": [
-                            "write_pets",
-                            "read_pets"
+                            "write_pets"
                         ]
                     }
                 ]
@@ -138,8 +137,7 @@
                 "security": [
                     {
                         "petstore_auth": [
-                            "write_pets",
-                            "read_pets"
+                            "write_pets"
                         ]
                     }
                 ]
@@ -151,7 +149,7 @@
                     "pet"
                 ],
                 "summary": "Add a new pet to the store",
-                "description": "",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.pet/id\": 0,\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 0\n      ],\n    \"petstore.pet/name\": \"doggie\",\n    \"petsotre.pet/photoUrls\": [\n      \"http://example.com/photos/1\"\n      ],\n    \"petstore.pet/tags\": [\n      [\"petstore.tag/id\", 0],\n      [\"petstore.tag/id\", 1]\n      ],\n    \"petstore.pet/status\": \"petstore.pet.status/available\"\n    }\n  ]\n}\n\npetstore.pet/category is a reference to petstore.category/id.\nalso, petstore.tags are references to petstore.tag/id.\npetstore.pet/status is one of available, pending or sold under\npetstore.pet.status namespace.\n",
                 "operationId": "addPet",
                 "consumes": [
                     "application/json"
@@ -178,8 +176,7 @@
                 "security": [
                     {
                         "petstore_auth": [
-                            "write_pets",
-                            "read_pets"
+                            "write_pets"
                         ]
                     }
                 ]
@@ -934,7 +931,11 @@
                                 "format": "int64"
                             },
                             "petstore.pet/category": {
-                                "$ref": "#/definitions/Category"
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "for example, [\"petstore.category/id\" 0]"
                             },
                             "petstore.pet/name": {
                                 "type": "string",
@@ -949,7 +950,11 @@
                             "petstore.pet/tags": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/Tag"
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "for example, [\"petstore.tag/id\" 0]"
                                 }
                             },
                             "petstore.pet/status": {
@@ -959,7 +964,7 @@
                                     "pending",
                                     "sold"
                                 ],
-                                "description": "pet status in the store"
+                                "description": "pet status, one of three"
                             }
                         }
                     }
