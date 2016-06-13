@@ -112,15 +112,14 @@
                               {:get #vase/query {:name :petstore-full-v1/find-a-pet
                                                  :params [id]
                                                  :edn-coerce [id]
-                                                 :query [:find ?id ?category ?name ?photo-urls ?status ?tags
-                                                         :in $ ?id
-                                                         :where
-                                                         [?e :petstore.pet/id ?id]
-                                                         [?e :petstore.pet/category ?category]
-                                                         [?e :petstore.pet/name ?name]
-                                                         [?e :petstore.pet/photoUrls ?photo-urls]
-                                                         [?e :petstore.pet/status ?status]
-                                                         [?e :petstore.pet/tags ?tags]]}
+                                                 :query [:find
+                                                         (pull ?e
+                                                               [:petstore.pet/id
+                                                                :petstore.pet/name
+                                                                {:petstore.pet/category [:petstore.category/id :petstore.category/name]}
+                                                                :petstore.pet/photoUrls
+                                                                {:petstore.pet/tags [:petstore.tag/id :petstore.tag/name]}
+                                                                {:petstore.pet/status [:db/ident]}]) :in $ ?id :where [?e :petstore.pet/id ?id]]}
                                :post #vase/transact {:name :petstore-full-v1/update-a-pet
                                                      :properties [:petstore.pet/id
                                                                   :petstore.pet/name

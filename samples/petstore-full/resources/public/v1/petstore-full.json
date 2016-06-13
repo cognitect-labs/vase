@@ -149,7 +149,7 @@
                     "pet"
                 ],
                 "summary": "Add a new pet to the store",
-                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.pet/id\": 0,\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 0\n      ],\n    \"petstore.pet/name\": \"doggie\",\n    \"petsotre.pet/photoUrls\": [\n      \"http://example.com/photos/1\"\n      ],\n    \"petstore.pet/tags\": [\n      [\"petstore.tag/id\", 0],\n      [\"petstore.tag/id\", 1]\n      ],\n    \"petstore.pet/status\": \"petstore.pet.status/available\"\n    }\n  ]\n}\n\npetstore.pet/category is a reference to petstore.category/id.\nalso, petstore.tags are references to petstore.tag/id.\npetstore.pet/status is one of available, pending or sold under\npetstore.pet.status namespace.\n",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.pet/id\": 0,\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 0\n      ],\n    \"petstore.pet/name\": \"doggie\",\n    \"petstore.pet/photoUrls\": [\n      \"http://example.com/photos/1\"\n      ],\n    \"petstore.pet/tags\": [\n      [\"petstore.tag/id\", 0],\n      [\"petstore.tag/id\", 1]\n      ],\n    \"petstore.pet/status\": \"petstore.pet.status/available\"\n    }\n  ]\n}\n\npetstore.pet/category is a reference to petstore.category/id.\nalso, petstore.tags are references to petstore.tag/id.\npetstore.pet/status is one of available, pending or sold under\npetstore.pet.status namespace.\n",
                 "operationId": "addPet",
                 "consumes": [
                     "application/json"
@@ -861,7 +861,7 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "petstore.categories/name": {
+                "petstore.category/name": {
                     "type": "string"
                 }
             }
@@ -900,7 +900,7 @@
                     "type": "string",
                     "example": "doggie"
                 },
-                "petsotre.pet/photoUrls": {
+                "petstore.pet/photoUrls": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -941,7 +941,7 @@
                                 "type": "string",
                                 "example": "doggie"
                             },
-                            "petsotre.pet/photoUrls": {
+                            "petstore.pet/photoUrls": {
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -1022,7 +1022,7 @@
                     "type": "string",
                     "format": "date-time"
                 },
-                "petsotre.order/status": {
+                "petstore.order/status": {
                     "type": "string",
                     "description": "Order Status"
                 },
