@@ -186,7 +186,7 @@
                     "pet"
                 ],
                 "summary": "Update an existing pet",
-                "description": "",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.pet/id\", 0],\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 1\n      ],\n    \"petstore.pet/name\": \"donkey\",\n    \"petstore.pet/status\": \"petstore.pet.status/pending\"\n    }\n  ]\n}\n",
                 "operationId": "updatePet",
                 "consumes": [
                     "application/json",
@@ -203,7 +203,7 @@
                         "description": "Pet object that needs to be added to the store",
                         "required": false,
                         "schema": {
-                            "$ref": "#/definitions/Pet"
+                            "$ref": "#/definitions/updatePet"
                         }
                     }
                 ],
@@ -929,6 +929,61 @@
                             "petstore.pet/id": {
                                 "type": "integer",
                                 "format": "int64"
+                            },
+                            "petstore.pet/category": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "for example, [\"petstore.category/id\" 0]"
+                            },
+                            "petstore.pet/name": {
+                                "type": "string",
+                                "example": "doggie"
+                            },
+                            "petstore.pet/photoUrls": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "petstore.pet/tags": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "for example, [\"petstore.tag/id\" 0]"
+                                }
+                            },
+                            "petstore.pet/status": {
+                                "type": "string",
+                                "enum": [
+                                    "available",
+                                    "pending",
+                                    "sold"
+                                ],
+                                "description": "pet status, one of three"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "updatePet": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "db/id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
                             },
                             "petstore.pet/category": {
                                 "type": "array",

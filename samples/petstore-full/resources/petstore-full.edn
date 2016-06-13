@@ -81,8 +81,8 @@
                                                                   :petstore.pet/photoUrls
                                                                   :petstore.pet/tags
                                                                   :petstore.pet/status]}
-                               :put #vase/transact {:name :petstore-full-v1/update
-                                                     :properties [:petstore.pet/id
+                               :put #vase/transact {:name :petstore-full-v1/update-pet
+                                                     :properties [:db/id
                                                                   :petstore.pet/category
                                                                   :petstore.pet/name
                                                                   :petstore.pet/photoUrls
