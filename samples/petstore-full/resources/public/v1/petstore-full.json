@@ -186,7 +186,7 @@
                     "pet"
                 ],
                 "summary": "Update an existing pet",
-                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.pet/id\", 0],\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 1\n      ],\n    \"petstore.pet/name\": \"donkey\",\n    \"petstore.pet/status\": \"petstore.pet.status/pending\"\n    }\n  ]\n}\n",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.pet/id\", 0],\n    \"petstore.pet/category\": [\"petstore.category/id\", 1],\n    \"petstore.pet/name\": \"donkey\",\n    \"petstore.pet/photoUrls\": [\"http://example.com/myPhoto/101\"],\n    \"petstore.pet/tags\": [[\"petstore.tag/id\", 3]],\n    \"petstore.pet/status\": \"petstore.pet.status/pending\"\n    }\n  ]\n}\n",
                 "operationId": "updatePet",
                 "consumes": [
                     "application/json",
@@ -228,13 +228,13 @@
                 ]
             }
         },
-        "/pets/findByStatus": {
+        "/pets/findByStatus/{status}": {
             "get": {
                 "tags": [
                     "pet"
                 ],
                 "summary": "Finds Pets by status",
-                "description": "Multiple status values can be provided with comma seperated strings",
+                "description": "Multiple status values can be provided with comma seperated strings.\nExample input is\n[\"petstore.pet.status/available\", \"petstore.pet.status/pending\"]\n",
                 "operationId": "findPetsByStatus",
                 "produces": [
                     "application/json",
@@ -242,7 +242,7 @@
                 ],
                 "parameters": [
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "status",
                         "description": "Status values that need to be considered for filter",
                         "required": false,
@@ -326,7 +326,7 @@
                 ]
             }
         },
-        "/pets/{petId}": {
+        "/pet/{petId}": {
             "get": {
                 "tags": [
                     "pet"
@@ -430,7 +430,7 @@
                     "pet"
                 ],
                 "summary": "Deletes a pet",
-                "description": "",
+                "description": "NOT YET IMPLEMENTED. Vase doesn't support retract yet.",
                 "operationId": "deletePet",
                 "produces": [
                     "application/json",

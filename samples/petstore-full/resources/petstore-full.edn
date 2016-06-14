@@ -88,27 +88,23 @@
                                                                   :petstore.pet/photoUrls
                                                                   :petstore.pet/tags
                                                                   :petstore.pet/status]}}]
-                             ["/pets/findByStatus"
-                              {:get #vase/query {:name :petstore-full-v1/find-a-pet-by-status
+                             ["/pets/findByStatus/:status"
+                              {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
                                                  :params [status]
-                                                 :edn-coerce [status]
-                                                 :query [:find ?id ?category ?name ?photo-urls ?status ?tags
-                                                         :in $ [?status ...]
+                                                 :edn-corece [status]
+                                                 :query [:find
+                                                         (pull ?e
+                                                               [:petstore.pet/id
+                                                                :petstore.pet/name
+                                                                {:petstore.pet/category [:petstore.category/id :petstore.category/name]}
+                                                                :petstore.pet/photoUrls
+                                                                {:petstore.pet/tags [:petstore.tag/id :petstore.tag/name]}
+                                                                {:petstore.pet/status [:db/ident]}])
+                                                         :in $ ?status
                                                          :where
-                                                         [?e :petstore.pet/id ?id]
-                                                         [?e :petstore.pet/category ?category]
-                                                         [?e :petstore.pet/name ?name]
-                                                         [?e :petstore.pet/photoUrls ?photo-urls]
-                                                         [?e :petstore.pet/status ?status]
-                                                         [?e :petstore.pet/tags ?tags]]}}
-                              {:post #vase/transact {:name :petstore-full-v1/add-pet
-                                                     :properties [:petstore.pet/id
-                                                                  :petstore.pet/category
-                                                                  :petstore.pet/name
-                                                                  :petstore.pet/photoUrls
-                                                                  :petstore.pet/tags
-                                                                  :petstore.pet/status]}}]
-                             ["/pets/:id"
+                                                         [?e :petstore.pet/status ?se]
+                                                         [?se :db/ident ?status]]}}]
+                             ["/pet/:id"
                               {:get #vase/query {:name :petstore-full-v1/find-a-pet
                                                  :params [id]
                                                  :edn-coerce [id]
