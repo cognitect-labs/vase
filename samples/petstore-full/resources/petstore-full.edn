@@ -88,10 +88,10 @@
                                                                   :petstore.pet/photoUrls
                                                                   :petstore.pet/tags
                                                                   :petstore.pet/status]}}]
-                             ["/pets/findByStatus/:status"
+                             ["/pets/findByStatus/:statuses"
                               {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
-                                                 :params [status]
-                                                 :edn-corece [status]
+                                                 :params [statuses]
+                                                 :edn-corece [statuses]
                                                  :query [:find
                                                          (pull ?e
                                                                [:petstore.pet/id
@@ -100,10 +100,10 @@
                                                                 :petstore.pet/photoUrls
                                                                 {:petstore.pet/tags [:petstore.tag/id :petstore.tag/name]}
                                                                 {:petstore.pet/status [:db/ident]}])
-                                                         :in $ ?status
+                                                         :in $ [?statuses ...]
                                                          :where
                                                          [?e :petstore.pet/status ?se]
-                                                         [?se :db/ident ?status]]}}]
+                                                         [?se :db/ident ?statuses]]}}]
                              ["/pet/:id"
                               {:get #vase/query {:name :petstore-full-v1/find-a-pet
                                                  :params [id]

@@ -228,7 +228,7 @@
                 ]
             }
         },
-        "/pets/findByStatus/{status}": {
+        "/pets/findByStatus/{statuses}": {
             "get": {
                 "tags": [
                     "pet"
@@ -243,7 +243,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "status",
+                        "name": "statuses",
                         "description": "Status values that need to be considered for filter",
                         "required": false,
                         "type": "array",
