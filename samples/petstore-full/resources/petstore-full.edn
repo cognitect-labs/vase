@@ -19,7 +19,8 @@
                         [[:petstore.category/id :one :long :unique "category id"]
                          [:petstore.category/name :one :string "name of category"]]]}
                 :petstore-full/order-schema
-                {:txes [#vase/short-schema-tx
+                {:requires [:petstore-full/order-status-schema]
+                 :txes [#vase/short-schema-tx
                         [[:petstore.order/id :one :long :unique "order id"]
                          [:petstore.order/petId :one :long "pet id of this order"]
                          [:petstore.order/quantity :one :long "quantiy of pets"]
@@ -31,7 +32,8 @@
                         [[:petstore.tag/id :one :long :unique "tag id"]
                          [:petstore.tag/name :one :string "tag name"]]]}
                 :petstore-full/pet-schema
-                {:txes [#vase/short-schema-tx
+                {:requires [:petstore-full/pet-status-schema]
+                 :txes [#vase/short-schema-tx
                         [[:petstore.pet/id :one :long :unique "pet id"]
                          [:petstore.pet/category :one :ref "Reference to :pet-stpre.category"]
                          [:petstore.pet/name :one :string "pet's name"]
@@ -91,7 +93,7 @@
                              ["/pets/findByStatus/:statuses"
                               {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
                                                  :params [statuses]
-                                                 :edn-corece [statuses]
+                                                 :edn-coerce [statuses]
                                                  :query [:find
                                                          (pull ?e
                                                                [:petstore.pet/id

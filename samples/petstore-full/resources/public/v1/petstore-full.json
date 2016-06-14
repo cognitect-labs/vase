@@ -1069,7 +1069,7 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "petstore.order/uantity": {
+                "petstore.order/quantity": {
                     "type": "integer",
                     "format": "int32"
                 },
