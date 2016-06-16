@@ -22,7 +22,7 @@
                 {:requires [:petstore-full/order-status-schema]
                  :txes [#vase/short-schema-tx
                         [[:petstore.order/id :one :long :unique "order id"]
-                         [:petstore.order/petId :one :long "pet id of this order"]
+                         [:petstore.order/petId :one :ref "pet id of this order"]
                          [:petstore.order/quantity :one :long "quantiy of pets"]
                          [:petstore.order/shipDate :one :instant "ship date"]
                          [:petstore.order/status :one :ref "Reference to one of :placed, :approved or :delivered"]
@@ -76,21 +76,21 @@
                                                      :properties [:petstore.tag/id
                                                                   :petstore.tag/name]}}]
                              ["/pets"
-                              {:post #vase/transact {:name :petstore-full-v1/add-pet
+                              {:post #vase/transact {:name :petstore-full-v1/add-pets
                                                      :properties [:petstore.pet/id
                                                                   :petstore.pet/category
                                                                   :petstore.pet/name
                                                                   :petstore.pet/photoUrls
                                                                   :petstore.pet/tags
                                                                   :petstore.pet/status]}
-                               :put #vase/transact {:name :petstore-full-v1/update-pet
+                               :put #vase/transact {:name :petstore-full-v1/update-pets
                                                      :properties [:db/id
                                                                   :petstore.pet/category
                                                                   :petstore.pet/name
                                                                   :petstore.pet/photoUrls
                                                                   :petstore.pet/tags
                                                                   :petstore.pet/status]}}]
-                             ["/pets/findByStatus/:statuses"
+                             ["/pets/findByStatus"
                               {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
                                                  :params [statuses]
                                                  :edn-coerce [statuses]
@@ -121,7 +121,35 @@
                                :post #vase/transact {:name :petstore-full-v1/update-a-pet
                                                      :properties [:petstore.pet/id
                                                                   :petstore.pet/name
-                                                                  :petstore.pet/status]}}]]}}}
+                                                                  :petstore.pet/status]}}]
+                             ["/store/orders"
+                              {:post #vase/transact {:name :petstore-full-v1/add-orders
+                                                     :properties [:petstore.order/id
+                                                                  :petstore.order/petId
+                                                                  :petstore.order/quantity
+                                                                  :petstore.order/shipDate
+                                                                  :petstore.order/status
+                                                                  :petstore.order/complete]}
+                               :put #vase/transact {:name :petstore-full-v1/update-orders
+                                                    :properties [:db/id
+                                                                 :petstore.order/petId
+                                                                 :petstore.order/quantity
+                                                                 :petstore.order/shipDate
+                                                                 :petstore.order/status
+                                                                 :petstore.order/complete]}}]
+                             ["/store/order/:id"
+                              {:get #vase/query {:name :petstore-full-v1/find-an-order
+                                                 :params [id]
+                                                 :edn-coerce [id]
+                                                 :query [:find
+                                                         (pull ?e
+                                                               [:petstore.order/id
+                                                                {:petstore.order/petId
+                                                                 [:petstore.pet/id :petstore.pet/name]}
+                                                                :petstore.order/quantity
+                                                                :petstore.order/shipDate
+                                                                {:petstore.order/status [:db/ident]}
+                                                                :petstore.order/complete]) :in $ ?id :where [?e :petstore.order/id ?id]]}}]]}}}
  :app-name :petstore-full
  :version :v1
  :datomic-uri "datomic:dev://localhost:4334/petstore-full"}
