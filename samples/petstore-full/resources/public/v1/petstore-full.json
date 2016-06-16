@@ -425,7 +425,7 @@
                     "store"
                 ],
                 "summary": "Place orders for pets",
-                "description": "[NOTE: Currently, transacting datetime has a data conversion problem. The fix is on the way.]\n\nExample post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.order/id\": 0,\n    \"petstore.order/petId\": [\n      \"petstore.pet/id\", 0\n      ],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/placed\",\n    \"petstore.order/complate\": false\n    }\n  ]\n}\n\npetstore.order/petId is a reference to petstore.pet/id.\npetstore.order/shipDate is a string which takes RFC3339 format.\npetstore.pet/status is one of placed, approved or delievered under\npetstore.order.status namespace.\n",
+                "description": "[NOTE: Currently, transacting datetime has a data conversion problem. The fix is on the way.]\n\nExample post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.order/id\": 0,\n    \"petstore.order/petId\": [\n      \"petstore.pet/id\", 0\n      ],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/placed\",\n    \"petstore.order/complete\": false\n    }\n  ]\n}\n\npetstore.order/petId is a reference to petstore.pet/id.\npetstore.order/shipDate is a string which takes RFC3339 format.\npetstore.pet/status is one of placed, approved or delievered under\npetstore.order.status namespace.\n",
                 "operationId": "placeOrders",
                 "consumes": [
                     "application/json"
@@ -461,7 +461,7 @@
                     "store"
                 ],
                 "summary": "Update orders based on IDs",
-                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.order/id\", 0],\n    \"petstore.order/petId\": [\"petstore.pet/id\", 1],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/approved\",\n    \"petstore.order/complate\": true\n    }\n  ]\n}\n",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.order/id\", 0],\n    \"petstore.order/petId\": [\"petstore.pet/id\", 1],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/approved\",\n    \"petstore.order/complete\": true\n    }\n  ]\n}\n",
                 "operationId": "updateOrders",
                 "consumes": [
                     "application/json"
@@ -476,7 +476,7 @@
                         "description": "order placed for purchasing the pet",
                         "required": false,
                         "schema": {
-                            "$ref": "#/definitions/newOrder"
+                            "$ref": "#/definitions/updateOrder"
                         }
                     }
                 ],
@@ -914,6 +914,9 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "petstore.pet/id"
+                        ],
                         "properties": {
                             "petstore.pet/id": {
                                 "type": "integer",
@@ -967,6 +970,9 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "db/id"
+                        ],
                         "properties": {
                             "db/id": {
                                 "type": "array",
@@ -1084,6 +1090,9 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "petstore.order/id"
+                        ],
                         "properties": {
                             "petstore.order/id": {
                                 "type": "integer",
@@ -1105,7 +1114,50 @@
                             },
                             "petstore.order/status": {
                                 "type": "string",
-                                "description": "Order Status"
+                                "description": "Order Status, placed, approved or delivered"
+                            },
+                            "petstore.order/complete": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "updateOrder": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "db/id"
+                        ],
+                        "properties": {
+                            "db/id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "petstore.order/petId": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "petstore.order/quantity": {
+                                "type": "integer",
+                                "format": "int32"
+                            },
+                            "petstore.order/shipDate": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "petstore.order/status": {
+                                "type": "string",
+                                "description": "Order Status, place, approved or delivered"
                             },
                             "petstore.order/complete": {
                                 "type": "boolean"
