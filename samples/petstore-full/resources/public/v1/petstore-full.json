@@ -47,7 +47,7 @@
                 "tags": [
                     "category"
                 ],
-                "summary": "Add a new categories to the store",
+                "summary": "Add new categories to the store",
                 "description": "",
                 "operationId": "addCategory",
                 "consumes": [
@@ -109,7 +109,7 @@
                 "tags": [
                     "tag"
                 ],
-                "summary": "Add a new tags to the store",
+                "summary": "Add new tags to the store",
                 "description": "",
                 "operationId": "addTag",
                 "consumes": [
@@ -148,9 +148,9 @@
                 "tags": [
                     "pet"
                 ],
-                "summary": "Add a new pet to the store",
+                "summary": "Add new pets to the store",
                 "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.pet/id\": 0,\n    \"petstore.pet/category\": [\n      \"petstore.category/id\", 0\n      ],\n    \"petstore.pet/name\": \"doggie\",\n    \"petstore.pet/photoUrls\": [\n      \"http://example.com/photos/1\"\n      ],\n    \"petstore.pet/tags\": [\n      [\"petstore.tag/id\", 0],\n      [\"petstore.tag/id\", 1]\n      ],\n    \"petstore.pet/status\": \"petstore.pet.status/available\"\n    }\n  ]\n}\n\npetstore.pet/category is a reference to petstore.category/id.\nalso, petstore.tags are references to petstore.tag/id.\npetstore.pet/status is one of available, pending or sold under\npetstore.pet.status namespace.\n",
-                "operationId": "addPet",
+                "operationId": "addPets",
                 "consumes": [
                     "application/json"
                 ],
@@ -185,9 +185,9 @@
                 "tags": [
                     "pet"
                 ],
-                "summary": "Update an existing pet",
+                "summary": "Update existing pets",
                 "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.pet/id\", 0],\n    \"petstore.pet/category\": [\"petstore.category/id\", 1],\n    \"petstore.pet/name\": \"donkey\",\n    \"petstore.pet/photoUrls\": [\"http://example.com/myPhoto/101\"],\n    \"petstore.pet/tags\": [[\"petstore.tag/id\", 3]],\n    \"petstore.pet/status\": \"petstore.pet.status/pending\"\n    }\n  ]\n}\n",
-                "operationId": "updatePet",
+                "operationId": "updatePets",
                 "consumes": [
                     "application/json",
                     "application/xml"
@@ -228,12 +228,12 @@
                 ]
             }
         },
-        "/pets/findByStatus/{statuses}": {
+        "/pets/findByStatus": {
             "get": {
                 "tags": [
                     "pet"
                 ],
-                "summary": "Finds Pets by status",
+                "summary": "Find pets by status",
                 "description": "Multiple status values can be provided with comma seperated strings.\nExample input is\n[\"petstore.pet.status/available\", \"petstore.pet.status/pending\"]\n",
                 "operationId": "findPetsByStatus",
                 "produces": [
@@ -242,7 +242,7 @@
                 ],
                 "parameters": [
                     {
-                        "in": "path",
+                        "in": "query",
                         "name": "statuses",
                         "description": "Status values that need to be considered for filter",
                         "required": false,
@@ -277,61 +277,12 @@
                 ]
             }
         },
-        "/pets/findByTags": {
-            "get": {
-                "tags": [
-                    "pet"
-                ],
-                "summary": "Finds Pets by tags",
-                "description": "Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 for testing.",
-                "operationId": "findPetsByTags",
-                "produces": [
-                    "application/json",
-                    "application/xml"
-                ],
-                "parameters": [
-                    {
-                        "in": "query",
-                        "name": "tags",
-                        "description": "Tags to filter by",
-                        "required": false,
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "multi"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Pet"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid tag value"
-                    }
-                },
-                "security": [
-                    {
-                        "petstore_auth": [
-                            "write_pets",
-                            "read_pets"
-                        ]
-                    }
-                ]
-            }
-        },
         "/pet/{petId}": {
             "get": {
                 "tags": [
                     "pet"
                 ],
-                "summary": "Find pet by ID",
+                "summary": "Find a pet by ID",
                 "description": "Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error conditions",
                 "operationId": "getPetById",
                 "produces": [
@@ -379,7 +330,7 @@
                     "pet"
                 ],
                 "summary": "Updates a pet in the store with form data",
-                "description": "",
+                "description": "WON'T SUPPORT. Vase doesn't support this feature.",
                 "operationId": "updatePetWithForm",
                 "consumes": [
                     "application/x-www-form-urlencoded"
@@ -429,7 +380,7 @@
                 "tags": [
                     "pet"
                 ],
-                "summary": "Deletes a pet",
+                "summary": "Delete a pet",
                 "description": "NOT YET IMPLEMENTED. Vase doesn't support retract yet.",
                 "operationId": "deletePet",
                 "produces": [
@@ -468,17 +419,19 @@
                 ]
             }
         },
-        "/stores/order": {
+        "/store/orders": {
             "post": {
                 "tags": [
                     "store"
                 ],
-                "summary": "Place an order for a pet",
-                "description": "",
-                "operationId": "placeOrder",
+                "summary": "Place orders for pets",
+                "description": "[NOTE: Currently, transacting datetime has a data conversion problem. The fix is on the way.]\n\nExample post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.order/id\": 0,\n    \"petstore.order/petId\": [\n      \"petstore.pet/id\", 0\n      ],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/placed\",\n    \"petstore.order/complate\": false\n    }\n  ]\n}\n\npetstore.order/petId is a reference to petstore.pet/id.\npetstore.order/shipDate is a string which takes RFC3339 format.\npetstore.pet/status is one of placed, approved or delievered under\npetstore.order.status namespace.\n",
+                "operationId": "placeOrders",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
-                    "application/json",
-                    "application/xml"
+                    "application/json"
                 ],
                 "parameters": [
                     {
@@ -487,7 +440,43 @@
                         "description": "order placed for purchasing the pet",
                         "required": false,
                         "schema": {
+                            "$ref": "#/definitions/newOrder"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successful operation",
+                        "schema": {
                             "$ref": "#/definitions/Order"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Order"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "store"
+                ],
+                "summary": "Update orders based on IDs",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.order/id\", 0],\n    \"petstore.order/petId\": [\"petstore.pet/id\", 1],\n    \"petstore.order/quantity\": 1,\n    \"petstore.order/shipDate\": \"2016-06-12T23:20:50.52Z\",\n    \"petstore.order/status\": \"petstore.order.status/approved\",\n    \"petstore.order/complate\": true\n    }\n  ]\n}\n",
+                "operationId": "updateOrders",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "order placed for purchasing the pet",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/newOrder"
                         }
                     }
                 ],
@@ -504,7 +493,7 @@
                 }
             }
         },
-        "/stores/order/{orderId}": {
+        "/store/order/{orderId}": {
             "get": {
                 "tags": [
                     "store"
@@ -1062,12 +1051,14 @@
             "type": "object",
             "properties": {
                 "petstore.order/id": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "petstore.order/petId": {
                     "type": "integer",
-                    "format": "int64"
+                    "format": "int32"
                 },
                 "petstore.order/quantity": {
                     "type": "integer",
@@ -1079,10 +1070,48 @@
                 },
                 "petstore.order/status": {
                     "type": "string",
-                    "description": "Order Status"
+                    "description": "Order Status, placed, approved or delivered"
                 },
                 "petstore.order/complete": {
                     "type": "boolean"
+                }
+            }
+        },
+        "newOrder": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "petstore.order/id": {
+                                "type": "integer",
+                                "format": "int64"
+                            },
+                            "petstore.order/petId": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "petstore.order/quantity": {
+                                "type": "integer",
+                                "format": "int32"
+                            },
+                            "petstore.order/shipDate": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "petstore.order/status": {
+                                "type": "string",
+                                "description": "Order Status"
+                            },
+                            "petstore.order/complete": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
                 }
             }
         }
