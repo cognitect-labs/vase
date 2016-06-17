@@ -1,6 +1,5 @@
-
 {:app-name :example
- :version [:v2]
+ :version :v2
  :descriptor {:example ;; API name // app-root
 
  ;; Idempotent Schema Datoms (norms)
@@ -59,7 +58,7 @@
                                             :query [:find ?e ?v :where [?e :db/ident ?v]]}}]]
        :schemas [:example/user-schema :example/loan-schema]
        :forward-headers ["vaserequest-id"]}
-  :v2 {:routes [["/hello" {:get #vase/respond {:name :example-v2/hello
-                                                 :enforce-format true
-                                                 :body "Another Hello World Route"}}]]}}}}
-
+  :v2 {:routes [["/hello" {:get #vase/respond {:name           :example-v2/hello
+                                               :enforce-format true
+                                               :body           "Another Hello World Route"}}]]}}}
+ :datomic-uri "datomic:mem://example"}
