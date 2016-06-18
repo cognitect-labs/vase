@@ -11,18 +11,24 @@
    {}
    (vase/routes "/api" spec)))
 
+(defn test-spec
+  []
+  {:app-name :example
+   :version :v1
+   :descriptor (vase/load-descriptor "test_descriptor.edn")
+   :datomic-uri (str "datomic:mem://" (UUID/randomUUID))})
+
 (defn service-map
   "Return a new, fully initialized service map"
   []
-  (let [test-db    (str "datomic:mem://" (UUID/randomUUID))
-        descriptor (vase/load-descriptor "test_descriptor.edn")
-        conn       (vase.datomic/connect test-db)]
-    (vase.datomic/ensure-schema conn (-> descriptor :example :norms))
+  (let [{:keys [app-name
+                version
+                descriptor
+                datomic-uri] :as spec} (test-spec)
+        conn                           (vase.datomic/connect datomic-uri)]
+    (vase.datomic/ensure-schema conn (get-in descriptor [app-name :norms]))
     {:env                 :prod
-     ::http/routes        (make-master-routes {:descriptor  descriptor
-                                               :app-name    :example
-                                               :version     :v1
-                                               :datomic-uri test-db})
+     ::http/routes        (make-master-routes spec)
      ::http/resource-path "/public"
      ::http/type          :jetty
      ::http/port          8080}))

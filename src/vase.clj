@@ -1,7 +1,9 @@
 (ns vase
   (:require [vase.routes :as r]
             [vase.util :as util]
-            [vase.literals]))
+            [vase.literals]
+            [vase.spec]
+            [clojure.spec :as s]))
 
 (defn load-descriptor
   "Given a resource name, loads a descriptor, using the proper readers to get
@@ -23,3 +25,9 @@
         routes    (mapcat (partial r/spec-routes api-root make-interceptors-fn) specs)
         api-route (r/api-description-route api-root make-interceptors-fn routes :describe-apis)]
     (cons api-route routes)))
+
+(s/fdef routes
+        :args (s/cat :api-route vase.spec/valid-uri?
+                     :spec-or-specs (s/or :single-spec ::vase.spec/spec
+                                          :multiple-specs (s/* ::vase.spec/spec)))
+        :ret  ::vase.spec/route-table)
