@@ -1,5 +1,6 @@
+[![CircleCI](https://circleci.com/gh/cognitect-labs/vase.svg?style=svg&circle-token=21b84b7aea75483821d3852de6c5d9930e85720a)](https://circleci.com/gh/cognitect-labs/vase)
 
-Vase: A container for data-driven services
+Vase: Data-driven microservices
 ============================================
 
 This system provides a data-driven way to describe and run RESTful APIs that
