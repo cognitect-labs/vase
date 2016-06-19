@@ -44,7 +44,6 @@
                       (s/unstrument #'vase/routes)))
 
 (deftest vase-routes-fn-tests
-  (is (vase/routes "/api" test-spec))
   (is (vase/routes "/api" []))
   (is (vase/routes "/api" [test-spec]))
   (is (vase/routes "/api" [test-spec sample-spec]))

@@ -9,7 +9,7 @@
   [spec]
   (table/table-routes
    {}
-   (vase/routes "/api" spec)))
+   (vase/routes "/api" [spec])))
 
 (defn test-spec
   []
