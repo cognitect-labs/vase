@@ -29,7 +29,7 @@
 (deftest vase-spec-tests
   (testing "full vase spec"
     (doseq [vspec [test-spec sample-spec]]
-      (is (s/valid? ::vase.spec/spec vspec))))
+      (is (s/valid? ::vase.spec/description vspec))))
 
   (testing "descriptors"
     (doseq [d ["sample_descriptor.edn"

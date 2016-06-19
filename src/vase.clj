@@ -20,12 +20,12 @@
    The routes will support all the operations defined in the
    spec. Callers should treat the format of these routes as
    opaque. They may change in number, quantity, or layout."
-  [api-root specs & {:keys [make-interceptors-fn] :or {make-interceptors-fn identity} :as opts}]
-  (let [routes    (mapcat (partial r/spec-routes api-root make-interceptors-fn) specs)
+  [api-root descriptions & {:keys [make-interceptors-fn] :or {make-interceptors-fn identity} :as opts}]
+  (let [routes    (mapcat (partial r/spec-routes api-root make-interceptors-fn) descriptions)
         api-route (r/api-description-route api-root make-interceptors-fn routes :describe-apis)]
     (cons api-route routes)))
 
 (s/fdef routes
         :args (s/cat :api-route vase.spec/valid-uri?
-                     :specs (s/spec (s/* ::vase.spec/spec)))
+                     :specs (s/spec (s/* ::vase.spec/description)))
         :ret  ::vase.spec/route-table)

@@ -62,4 +62,4 @@
 (s/def ::descriptor (s/and (s/map-of ::app-name ::app) not-empty))
 
 ;; -- Vase spec --
-(s/def ::spec (s/keys :req-un [::app-name ::version ::descriptor ::datomic-uri]))
+(s/def ::description (s/keys :req-un [::app-name ::version ::descriptor ::datomic-uri]))
