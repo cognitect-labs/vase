@@ -15,7 +15,7 @@
   []
   {:app-name :example
    :version :v1
-   :descriptor (vase/load-descriptor "test_descriptor.edn")
+   :descriptor (vase/load "test_descriptor.edn")
    :datomic-uri (str "datomic:mem://" (UUID/randomUUID))})
 
 (defn service-map

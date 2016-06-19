@@ -5,7 +5,7 @@
             [vase.spec]
             [clojure.spec :as s]))
 
-(defn load-descriptor
+(defn load
   "Given a resource name, loads a descriptor, using the proper readers to get
    support for Vase literals."
   [res]
