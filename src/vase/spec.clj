@@ -42,8 +42,7 @@
 (s/def ::head ::interceptor)
 (s/def ::options ::interceptor)
 
-(s/def ::action (s/and (s/keys ::opt-un [::get ::put ::post ::delete ::head ::options])
-                       #(not-empty (select-keys % [:get :put :post :delete :head :options]))))
+(s/def ::action (s/keys ::opt-un [::get ::put ::post ::delete ::head ::options]))
 (s/def ::route (s/cat :path valid-uri? :actions ::action))
 (s/def ::routes (s/* (s/spec ::route)))
 
