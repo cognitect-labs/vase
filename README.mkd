@@ -1,55 +1,85 @@
 [![CircleCI](https://circleci.com/gh/cognitect-labs/vase.svg?style=svg&circle-token=21b84b7aea75483821d3852de6c5d9930e85720a)](https://circleci.com/gh/cognitect-labs/vase)
 
-Vase: Data-driven microservices
-============================================
+# Vase: Data-driven microservices
 
 This system provides a data-driven way to describe and run RESTful APIs that
 are backed by a durable database (Datomic).
 
+## Releases and Dependency Information
 
-### Getting started
+There are no released versions of Vase. You will need to clone this repository and install it locally:
 
-If you are new to the project, please review the [design document](docs/design_doc.mkd).
+```
+git clone https://github.com/cognitect-labs/vase
+cd vase
+lein install
+```
 
-If you're looking to get started with Vase, follow the tutorial: [Building your first API](docs/your_first_api.mkd).
-You may also want to see [how to add Vase to an existing Pedestal Service](docs/adding_vase.mkd).
+[Leiningen](https://github.com/technomancy/leiningen) dependency information:
 
+```clj
+ [org.clojure/clojure "1.9.0-alpha7"]
+ [com.cognitect/vase  "0.1.0-SNAPSHOT"]
+```
 
-## Usage
+[Maven](http://maven.apache.org/) dependency information:
 
-Once Vase is [added to your service](docs/adding_vase.mkd), you can begin setting
-up a `system.edn` configuration file and your initial service descriptor
-(both must be on your resource path).  The configuration file will point to
-your `:initial-descriptor`.  Please see this project's [test config](test/resources/system.edn)
-and [test descriptor](test/resources/test_descriptor.edn) as an example.
+```xml
+<dependency>
+  <groupId>com.cognitect</groupId>
+  <artifactId>vase</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+</dependency>
+```
 
+## Features
 
-## Configuration
+* Describe Pedestal routes as data
+* Create and update Datomic schema
 
-To configure logging see config/logback.xml. By default, the app logs to stdout and `logs/`.
-To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
+## Getting Started
 
-The [Datomic Schema](http://docs.datomic.com/schema.html) used internally by Vase
-is located in the [resource directory](./resources/vase-schema.edn).
+Vase turns API descriptions into Pedestal routes. The API descriptions
+specify actions for routes, these are turned into interceptors in the
+Pedestal routes. This is done by `vase/routes`.
 
-#### System Config
+`vase/routes` takes an API base URL and a description. The routes it
+returns can be used directly by pedestal like this:
 
-There also exists an [application/service level configuration file](./config/system.edn)
+```clj
+(require '[io.pedestal.http.route.definition.table :as table])
+(require '[vase]))
 
-Use this file to:
+(defn make-master-routes
+  [spec]
+  (table/table-routes
+   {}
+   (vase/routes "/api" spec)))
+```
 
- * Set the port that the service runs: `:service-port` *default: 8080*
- * Toggle upsert on or off (always on in dev mode): `:enable-upsert` *true*
-   * If turned off but other upsert options are turned on, those other options will
-     appear functional, but have no affect on the application
- * Toggle upsert over http on or off: `:http-upsert` *true*
- * Toggle transacting a history of upsert changes into the DB: `:transact-upsert` *true*
- * Set an initial descriptor file to load when the service starts: `:initial-descriptor` *"sample-descriptor.edn"*
-   * This is a string of a JVM Resource-path file
- * Set an initial version of an API to load when the service starts: `:initial-version` *[:example :v1]*
-   * This must be a path in the initial descriptor
+The routes that `vase/routes` returns can also be combined with
+hand-written Pedestal routes by concatenating the input to
+`table/table-routes`:
 
-#### Datomic Config
+```clj
+(require '[io.pedestal.http.route.definition.table :as table])
+(require '[vase]))
 
-Datomic is configured through its transactor/storage conf file - that is set/determined by the user.
+(defn make-master-routes
+  [spec]
+  (table/table-routes
+   {}
+   (concat
+     [["/hello" :get [hello]]]
+     (vase/routes "/api" spec))))
+```
 
+## Documentation
+
+* [Adding Vase to an existing Pedestal service](docs/adding_vase.mkd)
+* [Building Your First API](docs/your_first_api.mkd)
+* [Design document](docs/design_doc.mkd)
+
+## Copyright
+
+Copyright ©2016 Cognitect, Inc. All rights reserved.

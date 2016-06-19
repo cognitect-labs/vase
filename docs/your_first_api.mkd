@@ -1,17 +1,15 @@
 Building your first API
 =======================
 
-This is a guide to get you started with the Vase - the container service.
+This is a guide to get you started with Vase - the data-driven microservice container.
 It will help you write your first descriptor file.
 
 You should understand the [design](./design_doc.mkd) of the system and the file
-formats used before you begin.  The most important pieces:
+formats used before you begin. The most important pieces:
 
  * The data exchange format with Vase itself is *edn*
  * The data exchange format of the hosted APIs is the [universal json response format](./design_doc.mkd#default-output-format), or *JSON* for short
- * An API is described in a descriptor file
- * If you plan on upserting over HTTP, it's easier to build your descriptor in
-   a payload format.
+ * An API is described as descriptor (data)
 
 It also important to note that the terms *service*, *server*, *container* are all used interchangeably.
 
@@ -48,17 +46,21 @@ And we might have URLs that:
 ### Building the data model
 
 Data models are defined with a schema.  You may split your schema up into
-logic pieces that map directly to your application domain.  In our example,
+logical pieces that map directly to your application domain.  In our example,
 we'll define part of the schema for Items, and another part for Users.
 
-Since we'll be upserting our API over HTTP to the container, it's best to build
-using the `payload` format.
+We can put the description into a `.edn` file that our service can
+load. The description will tell Vase how a single application works
+(potentially with multiple API versions.) Later, we will combine that
+with some deployment configuration to pick out which applications and
+which versions we want to activate, along with the Datomic URI to
+operate against.
+
+For now, we start by describing the application API itself.
 
 ```clojure
 {
-  :descriptor {:accounts {}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {}
 }
 ```
 
@@ -77,18 +79,17 @@ describe them.
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                         [:item/name :one :string "The name of an item"]
-                                                         [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                         [:user/email :one :string :unique "The email address for a given user"]
-                                                         [:user/items :many :ref "The collection of items a user owns"]]]}}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+    :norms {
+      :accounts/item-schema {
+        :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+                                      [:item/name :one :string "The name of an item"]
+                                      [:item/description :one :string :fulltext "A short description of the item"]]]}
+      :accounts/user-schema {
+        :requires [:accounts/item-schema]
+        :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+                                      [:user/email :one :string :unique "The email address for a given user"]
+                                      [:user/items :many :ref "The collection of items a user owns"]]]}}}
 }
 ```
 
@@ -109,14 +110,13 @@ you're always free to use full Datomic [schema](http://docs.datomic.com/schema.h
 definitions like:
 
 ```clojure
-{:db/id #db/id[:db.part/db]
- :db/ident :item/name
- :db/valueType :db.type/string
+{:db/id          #db/id[:db.part/db]
+ :db/ident       :item/name
+ :db/valueType   :db.type/string
  :db/cardinality :db.cardinality/one
- :db/doc "The name of an item"
+ :db/doc         "The name of an item"
  :db.install/_attribute :db.part/db}
 ```
-
 
 ### Making it RESTful
 
@@ -131,22 +131,13 @@ Below we've added a route to our descriptor that gives some information about ou
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :body "General User and Item Information"}}]]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+    ;; :norms as before
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :body "General User and Item Information"}}]]}}
 }
 ```
 
@@ -154,6 +145,7 @@ Routes are defined as vectors of vectors.  Each subvector defines a single
 route/path, and then a map of HTTP verbs to action literals.  Here we see that
 *GET /api/accounts/v1/about* will respond with a text body.  Also notice that
 every action literal needs a unique `:name` associated with it.
+
 There are five action literals:
 
  * `#vase/respond` - respond with static data, optionally formatted as JSON
@@ -169,170 +161,141 @@ forward some HTTP request headers with every response.
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :body "General User and Item Information"}}]]
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :body "General User and Item Information"}}]]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-Since our API is only about providing operations for user details and accounts,
-we only need to depend on/declare the user schema.  Above we're saying that
-version *v1* of our *accounts* API uses the *user-schema*, and to forward the
-*vaserequest-id* header from every request to every response.  This HTTP header
-is used to trace and debug requests to the service (and is automatically added
-if it's not sent in).  APIs can depend on any number of schemas.  You should
-feel free to grow and evolved your normalized schema `:norms` and add
-them to you APIs `:schema` dependencies. This is one of the major benefits
-of Datomic.
+Since our API is only about providing operations for user details and
+accounts, we only need to depend on/declare the user schema.  Above
+we're saying that version *v1* of our *accounts* API uses the
+*user-schema*, and to forward the *vaserequest-id* header from every
+request to every response.  This HTTP header is used to trace and
+debug requests to the service (and is automatically added if it's not
+sent in).
 
+An API can depend on any number of schemas.  You should feel free to
+grow and evolve your normalized schema `:norms` and add them to you
+APIs `:schema` dependencies. This is one of the major benefits of
+Datomic.
 
-#### Upserting your new API
+### Try it out
 
-Sending this payload to the service will call the container to upsert it -
-Update it if it exists, insert it if its new.  There's a client script
-to make the process as straight forward as possible (as long as your using the
-default container settings).
+Save your descriptor as `resources/accounts.edn`. If you haven't
+already added Vase to your Pedestal service, follow the ["Adding
+Vase"](docs/adding_vase.mkd) guide. Update the descriptor name in the
+`vase/load-descriptor` call to:
 
- 1. Save the descriptor text shown above into a file named `config/my-new-payload.edn`
- 2. Run: `./client.sh config/my-new-payload.edn`, to upsert your payload.
- 3. Run: `./client` to see the latest routes
+```clojure
+(vase/load-descriptor "accounts.edn")
+```
 
-You can also use your browser and go to [http://127.0.0.1:8080/api](http://127.0.0.1:8080/api)
+Also update the value for `:app-name` to `:accounts`
 
+Start Pedestal and use curl to test the new URL.
+
+```
+curl http://localhost:8080/api/accounts/v1/about
+```
 
 #### Handling Parameters
 
-HTTP parameters are bound in a route's action literal, using the `:params`
-keyword.  They can come in various forms, extracted from: an edn payload
-(POST), a JSON payload (POST), Form data (POST), querystring arguments (GET),
-and URL parameters.  Parameters are resolved with an order of precedence, as listed below:
+HTTP parameters are bound in a route's action literal, using the
+`:params` keyword.  They can come in various forms, extracted from: an
+edn payload (POST), a JSON payload (POST), Form data (POST),
+querystring arguments (GET), and URL parameters.  Parameters are
+resolved with an order of precedence, as listed below:
 
- * edn POST payloads override
+ * EDN POST payloads override
  * JSON POST payloads override
- * POST Form data payloads override
- * QueryString args override
+ * POST form data payloads override
+ * Query string args override
  * URL parameters
 
 Let's look at them from the bottom up.
 
-URL parameters bind a single value from a URL to a symbol name in your action literal.
-Here's an example with a URL parameter:
+URL parameters bind a single value from a URL to a symbol name in your
+action literal. Here's an example with a URL parameter:
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body your-name}}]]
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                :body "General User and Item Information"}}]
+                  ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body your-name}}]]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-In this trivial example we bind part of the URL to the symbol `your-name` and
-return it as the body of our response.  URL parameters are always string values.
-Upsert your descriptor and [see for yourself](http://127.0.0.1:8080/about/paul).
+In this trivial example we bind part of the URL to the symbol
+`your-name` and return it as the body of our response.  URL parameters
+are always string values.  Restart Pedestal with this version of your
+descriptor and [see for yourself](http://127.0.0.1:8080/about/paul).
+
 Let's see how we might take multiple parameters for a given route.
 
-Querystring args are typically used for filtering the result of returned data.
+Query string args are typically used for filtering the result of returned data.
 Here's an example were we'll return a JSON response for all of our expected query args
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body your-name}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]]
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :body "General User and Item Information"}}]
+                  ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body your-name}}]
+                  ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                      :params [one-thing another-thing]
+                                                      :body {:first-param one-thing
+                                                             :second-param another-thing}}}]]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-When you upsert and browse to [the new url](http://127.0.0.1:8080/aboutquery?one-thing=hello&another-thing=world), you'll
-notice that the response that comes back is JSON, not text like the other `respond`
-actions we specified.  When the body of a response is not a string, it's
-automatically converted into JSON.
+When you restart and browse to [the new
+url](http://127.0.0.1:8080/aboutquery?one-thing=hello&another-thing=world),
+you'll notice that the response that comes back is JSON, not text like
+the other `respond` actions we specified.  When the body of a response
+is not a string, it's automatically converted into JSON.
 
 You can also force string bodies conform to that format.  Let's update our old
 */about* page to return JSON with `:enforce-format true`:
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body your-name}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]]
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                  ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body your-name}}]
+                  ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                      :params [one-thing another-thing]
+                                                      :body {:first-param one-thing
+                                                             :second-param another-thing}}}]]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
@@ -373,38 +336,32 @@ Clojure's `(str ...)` function.
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]]
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+  :accounts {
+
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                  ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body (str "You said your name was: " your-name)}}]
+                  ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                      :params [one-thing another-thing]
+                                                      :body {:first-param one-thing
+                                                             :second-param another-thing}}}]]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
 With great power comes great responsibility - bending this ability is dangerous
 and can cause the container to crash, but in a pinch it can allow you to shape an
 API to meet your needs.
+
+Obviously, this means anyone who can alter your descriptor can run
+arbitrary code in your server. Don't accept untrusted inputs as
+descriptors!
 
 
 #### Getting data in with `transact`
@@ -415,44 +372,32 @@ to the system descriptor:
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]
+  :accounts {
 
-                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
-                                                                 :properties [
-                                                                   :db/id
-                                                                   :user/userId
-                                                                   :user/email]}}]]
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                  ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body (str "You said your name was: " your-name)}}]
+                  ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                      :params [one-thing another-thing]
+                                                      :body {:first-param one-thing
+                                                             :second-param another-thing}}}]
+                  ["/user" {:post #vase/transact {:name :accounts-v1/user-create
+                                                  :properties [:db/id
+                                                               :user/userId
+                                                               :user/email]}}]]
 
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+         :schemas [:accounts/user-schema]
+         :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-The added `#transact` literal shown above consists of a single element
-`:properties`.  The `:properties` field describes the whitelisted properties
+The added `#vase/transact` literal shown above consists of a single element
+`:properties`. The `:properties` field describes the whitelisted properties
 accepted in a set of incoming POST data.  The properties `:user/userId` and
 `:user/userEmail` are fairly self-explanatory, but the `:db/id` property is
 handled specially.  That is, the `:db/id` key signifies if the incoming data
@@ -503,7 +448,6 @@ field to correspond to a unique value for the entity in question.  For example:
 Because the User IDs are unique to each user, they can be used to demarcate a
 unique entity in the database for the purposes of transcting associated data.
 
-
 #### Getting data out with `query`
 
 It makes sense that if the Vase system allows the insertion of new data that
@@ -513,54 +457,41 @@ queries.  Observe the following addition to the system descriptor:
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]
+  :accounts {
+    ;; API Versions
+    ;; -------------
+    :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body (str "You said your name was: " your-name)}}]
+                ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                            :params [one-thing another-thing]
+                                                            :body {:first-param one-thing
+                                                                   :second-param another-thing}}}]
+                ["/user" {:post #vase/transact {:name :accounts-v1/user-create
+                                                  :properties [
+                                                    :db/id
+                                                    :user/userId
+                                                    :user/email]}
+                          :get #vase/query {:name :accounts-v1/user-page
+                                               :params [email]
+                                               :query
+                                               [:find ?e
+                                                :in $ ?email
+                                                :where [?e :user/email ?email]]}}]]
 
-                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
-                                                                 :properties [
-                                                                   :db/id
-                                                                   :user/userId
-                                                                   :user/email]}
-                                         :get #vase/query {:name :accounts-v1/user-page
-                                                              :params [email]
-                                                              :query
-                                                              [:find ?e
-                                                               :in $ ?email
-                                                               :where
-                                                               [?e :user/email ?email]]}}]]
-
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+       :schemas [:accounts/user-schema]
+       :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-One query routes is defined above called `/user`.  This route allows the look up
+One query route is defined above called `/user`.  This route allows the look up
 of database entity information based on an email supplied as a URL parameter (e.g.
-http://example.com/user?email=user@example.com).  The `#query` action
-contains two fundametal properties, `:params` and `:query` (we'll discuss a
-3rd, optional, property below).  The `:params` properties defines the accepted keyed
+http://example.com/user?email=user@example.com).  The `#vase/query` action
+contains two fundametal properties, `:params` and `:query` (we'll discuss an optional
+third property below).  The `:params` property defines the accepted keyed
 data names that are used as external arguments to the query to resolve those listed
 parameters to the incoming values.  The `:params` field can be left empty to signify
 that the query does not accept arguments.  The `:query` property contains the actual
@@ -573,62 +504,52 @@ Observe our next change to the descriptor below:
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]
+  :accounts {
+  ;; API Versions
+  ;; -------------
+  :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body (str "You said your name was: " your-name)}}]
+                ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                            :params [one-thing another-thing]
+                                                            :body {:first-param one-thing
+                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
-                                                                 :properties [
-                                                                   :db/id
-                                                                   :user/userId
-                                                                   :user/email]}
-                                         :get #vase/query {:name :accounts-v1/user-page
-                                                              :params [email]
-                                                              :query
-                                                              [:find ?e
-                                                               :in $ ?email
-                                                               :where
-                                                               [?e :user/email ?email]]}}]
-                               ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
-                                                                :params [id]
-                                                                :edn-coerce [id]
-                                                                :query
-                                                                 [:find ?e
-                                                                  :in $ ?id
-                                                                  :where
-                                                                  [?e :user/userId ?id]]}}]]
+                ["/user" {:post #vase/transact {:name :accounts-v1/user-create
+                                                  :properties [
+                                                    :db/id
+                                                    :user/userId
+                                                    :user/email]}
+                          :get #vase/query {:name :accounts-v1/user-page
+                                               :params [email]
+                                               :query
+                                               [:find ?e
+                                                :in $ ?email
+                                                :where [?e :user/email ?email]]}}]
+                ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
+                                                 :params [id]
+                                                 :edn-coerce [id]
+                                                 :query
+                                                  [:find ?e
+                                                   :in $ ?id
+                                                   :where [?e :user/userId ?id]]}}]]
 
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+       :schemas [:accounts/user-schema]
+       :forward-headers ["vaserequest-id"]}}
 }
 ```
 
-The second route, called `/user/:id` allows the a similar information lookup, but instead supplied
-as a path parameter (e.g. http://example.com/user/id). By default the `:id` parameter would be
-a string value, but by using the `:edn-coerce` property of the `#query` action we tell Vase to
-attempt to parse the string as a valid EDN data type.  Therefore, when clients hit the URL
-bound to that query the proper types will match (i.e. the DB expects integer IDs, not string IDs).
+The new route `/user/:id` allows the a similar information lookup, but
+with the argument as a path parameter
+(e.g. http://example.com/user/id). By default the `:id` parameter
+would be a string value, but by using the `:edn-coerce` property of
+the `#query` action we tell Vase to attempt to parse the string as a
+valid EDN data type.  Therefore, when clients hit the URL bound to
+that query the proper types will match (i.e. the DB expects integer
+IDs, not string IDs).
 
 **Querying `or` and other constants**
 
@@ -645,66 +566,54 @@ An example of simple constants follows - observe our last change to the schema b
 
 ```clojure
 {
-  :descriptor {:accounts {
-                 :norms {:accounts/item-schema {
-                           :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
-                                                           [:item/name :one :string "The name of an item"]
-                                                           [:item/description :one :string :fulltext "A short description of the item"]]]}
-                         :accounts/user-schema {
-                           :requires [:accounts/item-schema]
-                           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
-                                                           [:user/email :one :string :unique "The email address for a given user"]
-                                                           [:user/items :many :ref "The collection of items a user owns"]]]}}
-                 ;; API Versions
-                 ;; -------------
-                 :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
-                                                                :enforce-format true
-                                                                :body "General User and Item Information"}}]
-                               ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
-                                                                           :params [your-name]
-                                                                           :body (str "You said your name was: " your-name)}}]
-                               ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
-                                                                           :params [one-thing another-thing]
-                                                                           :body {:first-param one-thing
-                                                                                  :second-param another-thing}}}]
+  :accounts {
+  ;; API Versions
+  ;; -------------
+  :v1 {:routes [["/about" {:get #vase/respond {:name :accounts-v1/about-response
+                                                 :enforce-format true
+                                                 :body "General User and Item Information"}}]
+                ["/about/:your-name" {:get #vase/respond {:name :accounts-v1/about-yourname
+                                                            :params [your-name]
+                                                            :body (str "You said your name was: " your-name)}}]
+                ["/aboutquery" {:get #vase/respond {:name :accounts-v1/about-query
+                                                            :params [one-thing another-thing]
+                                                            :body {:first-param one-thing
+                                                                   :second-param another-thing}}}]
 
-                               ["/user" {:post #vase/transact {:name :accounts-v1/user-create
-                                                                 :properties [
-                                                                   :db/id
-                                                                   :user/userId
-                                                                   :user/email]}
-                                         :get #vase/query {:name :accounts-v1/user-page
-                                                              :params [email]
-                                                              :query
-                                                              [:find ?e
-                                                               :in $ ?email
-                                                               :where
-                                                               [?e :user/email ?email]]}}]
-                               ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
-                                                                :params [id]
-                                                                :edn-coerce [id]
-                                                                :query
-                                                                 [:find ?e
-                                                                  :in $ ?id
-                                                                  :where
-                                                                  [?e :user/userId ?id]]}}]
-                               ["/special-users" {:get #vase/query {:name :accounts-v1/user-id-page
-                                                                      :params []
-                                                                      :constants [["jane@domain.com" "bill@domain.com"]]
-                                                                :query
-                                                                 [:find ?e
-                                                                  :in $ [?email ...]
-                                                                  :where
-                                                                  [?e :user/email ?email]]}}]]
+                ["/user" {:post #vase/transact {:name :accounts-v1/user-create
+                                                  :properties [
+                                                    :db/id
+                                                    :user/userId
+                                                    :user/email]}
+                          :get #vase/query {:name :accounts-v1/user-page
+                                               :params [email]
+                                               :query
+                                               [:find ?e
+                                                :in $ ?email
+                                                :where
+                                                [?e :user/email ?email]]}}]
+                ["/user/:id" {:get #vase/query {:name :accounts-v1/user-id-page
+                                                 :params [id]
+                                                 :edn-coerce [id]
+                                                 :query
+                                                  [:find ?e
+                                                   :in $ ?id
+                                                   :where
+                                                   [?e :user/userId ?id]]}}]
+                ["/special-users" {:get #vase/query {:name :accounts-v1/user-id-page
+                                                       :params []
+                                                       :constants [["jane@domain.com" "bill@domain.com"]]
+                                                 :query
+                                                  [:find ?e
+                                                   :in $ [?email ...]
+                                                   :where
+                                                   [?e :user/email ?email]]}}]]
 
-                      :schemas [:accounts/user-schema]
-                      :forward-headers ["vaserequest-id"]}}}
-  :app-name :accounts
-  :version [:v1]
+       :schemas [:accounts/user-schema]
+       :forward-headers ["vaserequest-id"]}}
 }
 ```
 
 These features can be combined in anyway to produce a target API.
 
 Good luck and get building!
-
