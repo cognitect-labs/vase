@@ -63,3 +63,8 @@
 
 ;; -- Vase spec --
 (s/def ::description (s/keys :req-un [::app-name ::version ::descriptor ::datomic-uri]))
+
+(s/def ::norms2       (s/* (s/keys :req [::ident] ::opt [::requires ::txes])))
+(s/def ::ident        keyword?)
+(s/def ::endpoints    (s/* (s/keys :req [::ident] :opt [::routes ::schemas ::forward-headers])))
+(s/def ::description2 (s/keys :req [::endpoints ::norms2]))
