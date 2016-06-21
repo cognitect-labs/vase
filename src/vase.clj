@@ -2,7 +2,7 @@
   (:require [vase.routes :as r]
             [vase.util :as util]
             [vase.literals]
-            [vase.spec]
+            [vase.descriptor]
             [clojure.spec :as s]))
 
 (defn load
@@ -21,11 +21,9 @@
    spec. Callers should treat the format of these routes as
    opaque. They may change in number, quantity, or layout."
   [api-root descriptions & {:keys [make-interceptors-fn] :or {make-interceptors-fn identity} :as opts}]
-  (let [routes    (mapcat (partial r/spec-routes api-root make-interceptors-fn) descriptions)
-        api-route (r/api-description-route api-root make-interceptors-fn routes :describe-apis)]
-    (cons api-route routes)))
+  (mapcat (partial r/descriptor-routes api-root make-interceptors-fn) descriptions))
 
 (s/fdef routes
-        :args (s/cat :api-route vase.spec/valid-uri?
-                     :specs (s/spec (s/* ::vase.spec/description)))
-        :ret  ::vase.spec/route-table)
+        :args (s/cat :api-route vase.descriptor/valid-uri?
+                     :descs (s/spec (s/* :vase.descriptor/description)))
+        :ret  ::vase.descriptor/route-table)

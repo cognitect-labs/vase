@@ -36,7 +36,6 @@
     :example-v1/r-page
     :example-v1/ar-page
     :example-v1/url-param-example
-    :example-v1/validate-page
     :example-v1/db-page
     :example-v1/users-page
     :example-v1/user-id-page
@@ -44,7 +43,8 @@
     :example-v1/user-page
     :example-v1/fogus-page
     :example-v1/foguspaul-page
-    :example-v1/fogussomeone-page})
+    :example-v2/describe
+    :example-v2/hello})
 
 (deftest all-route-names-present
   (let [service     (vase.service-route-table/service-map)

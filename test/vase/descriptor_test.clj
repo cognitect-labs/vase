@@ -16,9 +16,6 @@
 (deftest exercise-constant-and-parameter-action
   (helper/with-service (srt/service-map)
     (let [post1 (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "mefogus@gmail.com"}]})
-          post2 (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "paul.degrandis@gmail.com"}]})
-          special-get (helper/GET "/api/example/v1/fogus-and-someone?someone=paul.degrandis@gmail.com")]
+          post2 (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "paul.degrandis@gmail.com"}]})]
       (are [x] (= (:status x) 200)
-           post1 post2 special-get)
-      (is (seq (helper/response-data special-get)))
-      (is (= (count (helper/response-data special-get)) 2)))))
+           post1 post2))))

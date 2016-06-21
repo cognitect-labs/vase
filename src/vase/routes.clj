@@ -26,46 +26,55 @@
    interceptor/attach-request-id
    http/json-body])
 
-(defn- app-interceptors
-  [{:keys [descriptor app-name version datomic-uri]}]
-  (let [datomic-conn       (datomic/connect datomic-uri)
-        headers-to-forward (get-in descriptor [app-name version :forward-headers] [])
-        headers-to-forward (conj headers-to-forward interceptor/request-id-header)]
-    (conj common-api-interceptors
-          (datomic/insert-datomic datomic-conn)
-          (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))
-          (interceptor/forward-headers headers-to-forward))))
+(def ^:private body-params
+  (body-params/body-params
+   (body-params/default-parser-map :edn-options {:readers *data-readers*})))
 
-(defn- specified-routes
-  [{:keys [descriptor app-name version]}]
-  (get-in descriptor [app-name version :routes]))
+(defn- headers-to-forward
+  [{:keys [vase.descriptor/forward-headers] :or {forward-headers []}}]
+  (conj forward-headers interceptor/request-id-header))
+
+(defn- app-interceptors
+  [db-injector endpoint]
+  (conj common-api-interceptors
+        db-injector
+        body-params
+        (interceptor/forward-headers (headers-to-forward endpoint))))
+
+(defn- describe-route-name [ident]
+  (keyword (str (namespace ident) "-" (name ident)) "describe"))
+
+(defn- api-description-route
+  [path route-name make-interceptors-fn routes]
+  [path :get (make-interceptors-fn (conj common-api-interceptors (describe-api routes))) :route-name route-name])
+
+(defn- endpoint-description
+  [endpoint-base ident make-interceptors-fn routes]
+  (api-description-route endpoint-base
+                         (describe-route-name ident)
+                         make-interceptors-fn routes))
+
+(defn- endpoint-routes
+  [base db-injector make-interceptors-fn {:keys [vase.descriptor/routes vase.descriptor/ident] :as endpoint}]
+  (let [endpoint-base     (str base "/" (subs (str ident) 1))
+        common            (app-interceptors db-injector endpoint)
+        routes            (for [[path verb-map] routes
+                                [verb action]   verb-map
+                                :let [intc (make-interceptors-fn (conj common (i/-interceptor action)))]]
+                            [(str endpoint-base path) verb intc])
+        description-route (endpoint-description endpoint-base ident make-interceptors-fn routes)]
+    (cons description-route routes)))
 
 (defn- api-routes
   "Given a descriptor map, an app-name keyword, and a version keyword,
    return route vectors in Pedestal's tabular format. Routes will all be
    subordinated under `base`"
-  [base spec make-interceptors-fn]
-  (let [common (app-interceptors spec)]
-    (for [[path verb-map] (specified-routes spec)
-          [verb action]   verb-map]
-      [(str base path) verb (make-interceptors-fn (conj common (i/-interceptor action)))])))
+  [base {:keys [vase.descriptor/endpoints] :as descriptor} make-interceptors-fn]
+  (mapcat (partial endpoint-routes base (datomic/insert-datomic descriptor) make-interceptors-fn) endpoints))
 
-(defn- api-base
-  [base {:keys [app-name version]}]
-  (str base "/" (name app-name) "/" (name version)))
-
-(defn- api-description-route-name
-  [{:keys [app-name version]}]
-  (keyword (str (name app-name) "-" (name version)) "describe"))
-
-(defn api-description-route
-  [api-root make-interceptors-fn routes route-name]
-  [api-root :get (make-interceptors-fn (conj common-api-interceptors (describe-api routes))) :route-name route-name])
-
-(defn spec-routes
+(defn descriptor-routes
   "Return a seq of route vectors from a single specification"
-  [api-root make-interceptors-fn spec]
-  (let [app-version-root   (api-base api-root spec)
-        app-version-routes (api-routes app-version-root spec make-interceptors-fn)
-        app-api-route      (api-description-route app-version-root make-interceptors-fn app-version-routes (api-description-route-name spec))]
-    (cons app-api-route app-version-routes)))
+  [api-root make-interceptors-fn descriptor]
+  (let [routes            (api-routes api-root descriptor make-interceptors-fn)
+        description-route (api-description-route api-root :describe-apis make-interceptors-fn routes)]
+    (cons description-route routes)))
