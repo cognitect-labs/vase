@@ -29,7 +29,7 @@
     "paths": {
         "/pets": {
             "get": {
-                "description": "Returns all pets from the system that the user has access to",
+                "description": "Returns all pets from database",
                 "operationId": "findPets",
                 "produces": [
                     "application/json",
@@ -77,7 +77,7 @@
                 }
             },
             "post": {
-                "description": "Creates a new pet in the store.  Duplicates are allowed",
+                "description": "Creates new pets in the store. The id must be unique.",
                 "operationId": "addPet",
                 "produces": [
                     "application/json"
@@ -109,9 +109,9 @@
                 }
             }
         },
-        "/pets/{id}": {
+        "/pet/{id}": {
             "get": {
-                "description": "Returns a user based on a single ID, if the user does not have access to the pet",
+                "description": "Returns a pet based on a single ID.",
                 "operationId": "findPetById",
                 "produces": [
                     "application/json",
@@ -175,8 +175,8 @@
         "pet": {
             "type": "object",
             "required": [
-                "id",
-                "name"
+                "pet-store.pet/id",
+                "pet-store.pet/name"
             ],
             "properties": {
                 "pet-store.pet/id": {

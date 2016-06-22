@@ -1,6 +1,7 @@
 ## Pet Store Example
 
-This example contains Swagger UI and Vase example
+_Reshaped Descriptor_
+This example contains Swagger UI and Vase example which uses a reshaped style of descriptor.
 
 ## Datomic Setup
 

@@ -33,7 +33,7 @@
   [api-root spec]
   (table/table-routes
    {}
-   (vase/routes api-root spec)))
+   (vase/routes api-root [spec])))
 
 (defn routes
   [spec]
@@ -44,10 +44,8 @@
 ;; See http/default-interceptors for additional options you can configure
 (defn service
   []
-  (let [spec (vase/load-descriptor "pet-store.edn")
-        db-uri (:datomic-uri spec)
-        conn (vase.datomic/connect db-uri)]
-    (vase.datomic/ensure-schema conn (get-in spec [:descriptor :pet-store :norms]))
+  (let [spec (vase/load "petstore-simple.edn")]
+    (vase.datomic/ensure-schema spec)
     {:env :prod
      ::http/routes (routes spec)
      ::http/resource-path "/public"
