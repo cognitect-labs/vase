@@ -48,7 +48,9 @@
 (s/def ::route (s/cat :path valid-uri? :actions ::action))
 (s/def ::routes (s/* (s/spec ::route)))
 
-(s/def ::api-version (s/keys :req-un [::routes] :opt-un [::schemas ::forward-headers]))
+(s/def ::interceptors (s/+ ::interceptor))
+
+(s/def ::api-version (s/keys :req-un [::routes] :opt-un [::schemas ::forward-headers ::interceptors]))
 
 ;; -- descriptor app specs --
 ;; -- norms --
@@ -57,7 +59,8 @@
 (s/def ::requires (s/* qualified-keyword?))
 (s/def ::norms (s/map-of qualified-keyword? (s/keys ::req-un [::txes] ::opt-un [::requires])))
 
-(s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version :norms ::norms))
+(s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version
+                                             :norms ::norms))
                     (s/keys :req-un [::norms])))
 
 ;; -- The descriptor spec --
