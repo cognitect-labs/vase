@@ -102,7 +102,8 @@
                                                                    [?e :user/userEmail ?emails]]}}]]
        :schemas [:example/user-schema :example/loan-schema]
        :forward-headers ["vaserequest-id"]}
-  :v2 {:routes [["/hello" {:get #vase/respond {:name :example-v2/hello
+  :v2 {:interceptors [io.pedestal.http/transit-body]
+       :routes [["/hello" {:get #vase/respond {:name :example-v2/hello
                                                  :enforce-format true
-                                                 :body "Another Hello World Route"}}]]}}}
+                                                 :body {:just-a-key "Another Hello World Route"}}}]]}}}
 

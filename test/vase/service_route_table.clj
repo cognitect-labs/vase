@@ -14,7 +14,7 @@
 (defn test-spec
   []
   {:app-name :example
-   :version :v1
+   :version [:v1 :v2]
    :descriptor (vase/load-descriptor "test_descriptor.edn")
    :datomic-uri (str "datomic:mem://" (UUID/randomUUID))})
 
@@ -32,3 +32,8 @@
      ::http/resource-path "/public"
      ::http/type          :jetty
      ::http/port          8080}))
+
+(comment
+
+  (vase/routes "/api" (test-spec))
+  )

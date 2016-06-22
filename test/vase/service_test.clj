@@ -44,7 +44,9 @@
     :example-v1/user-page
     :example-v1/fogus-page
     :example-v1/foguspaul-page
-    :example-v1/fogussomeone-page})
+    :example-v1/fogussomeone-page
+    :example-v2/describe
+    :example-v2/hello})
 
 (deftest all-route-names-present
   (let [service     (vase.service-route-table/service-map)

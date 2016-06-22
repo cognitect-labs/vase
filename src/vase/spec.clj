@@ -26,7 +26,8 @@
 
 ;; -- Vase specs --
 (s/def ::app-name keyword?)
-(s/def ::version  keyword?)
+(s/def ::version  (s/or :base keyword?
+                        :top-level (s/+ keyword?)))
 (s/def ::datomic-uri (s/with-gen (s/and string? valid-uri? #(.startsWith % "datomic"))
                        #(gen/return (str "datomic:mem://" (java.util.UUID/randomUUID)))))
 
@@ -56,7 +57,8 @@
 (s/def ::requires (s/* qualified-keyword?))
 (s/def ::norms (s/map-of qualified-keyword? (s/keys ::req-un [::txes] ::opt-un [::requires])))
 
-(s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version :norms ::norms)) (s/keys :req-un [::norms])))
+(s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version :norms ::norms))
+                    (s/keys :req-un [::norms])))
 
 ;; -- The descriptor spec --
 (s/def ::descriptor (s/and (s/map-of ::app-name ::app) not-empty))

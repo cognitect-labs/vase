@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [vase.test-helper :as helper]
-            [vase.service-route-table :as srt]))
+            [vase.service-route-table :as srt]
+            [vase.util :as util]))
 
 (deftest exercise-descriptored-service
   (helper/with-service (srt/service-map)
@@ -22,3 +23,10 @@
            post1 post2 special-get)
       (is (seq (helper/response-data special-get)))
       (is (= (count (helper/response-data special-get)) 2)))))
+
+(deftest exercise-version-interceptor-chains
+  (helper/with-service (srt/service-map)
+    (let [hello-resp (helper/GET "/api/example/v2/hello")
+          hello-body (util/read-transit-json (:body hello-resp))]
+      (is (= hello-body {:just-a-key "Another Hello World Route"})))))
+
