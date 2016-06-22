@@ -45,13 +45,18 @@
 
 (defn- api-routes
   "Given a descriptor map, an app-name keyword, and a version keyword,
-   return route vectors in Pedestal's tabular format. Routes will all be
-   subordinated under `base`"
+  return route vectors in Pedestal's tabular format. Routes will all be
+  subordinated under `base`"
   [base spec make-interceptors-fn]
   (let [common (app-interceptors spec)]
     (for [[path verb-map] (specified-routes spec)
-          [verb action]   verb-map]
-      [(str base path) verb (make-interceptors-fn (conj common (i/interceptor action)))])))
+          [verb action]   verb-map
+          :let [interceptors (if (vector? action)
+                               (into common (update-in action
+                                                       [(dec (count action))]
+                                                       i/interceptor))
+                               (conj common (i/interceptor action)))]]
+      [(str base path) verb (make-interceptors-fn interceptors)])))
 
 (defn- api-base
   [base {:keys [app-name version]}]

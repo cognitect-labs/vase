@@ -30,3 +30,9 @@
           hello-body (util/read-transit-json (:body hello-resp))]
       (is (= hello-body {:just-a-key "Another Hello World Route"})))))
 
+(deftest exercise-per-route-interceptor-chains
+  (helper/with-service (srt/service-map)
+    (let [hello-resp (helper/GET "/api/example/v2/intercept")
+          hello-body (helper/response-data hello-resp)]
+      (is (= hello-body {:one 1})))))
+

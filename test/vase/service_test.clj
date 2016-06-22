@@ -27,7 +27,9 @@
     (is (= 200 (:status (helper/GET "/api?edn=true"))))
     (is (= 200 (:status (helper/GET "/api"))))
     (is (= 200 (:status (helper/GET "/api/example/v1?edn=true"))))
-    (is (= 200 (:status (helper/GET "/api/example/v1"))))))
+    (is (= 200 (:status (helper/GET "/api/example/v1"))))
+    (is (= 200 (:status (helper/GET "/api/example/v2?edn=true"))))
+    (is (= 200 (:status (helper/GET "/api/example/v2"))))))
 
 (def known-route-names
   #{:describe-apis
@@ -46,7 +48,8 @@
     :example-v1/foguspaul-page
     :example-v1/fogussomeone-page
     :example-v2/describe
-    :example-v2/hello})
+    :example-v2/hello
+    :example-v2/intercept})
 
 (deftest all-route-names-present
   (let [service     (vase.service-route-table/service-map)

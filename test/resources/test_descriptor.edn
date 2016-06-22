@@ -105,5 +105,8 @@
   :v2 {:interceptors [io.pedestal.http/transit-body]
        :routes [["/hello" {:get #vase/respond {:name :example-v2/hello
                                                  :enforce-format true
-                                                 :body {:just-a-key "Another Hello World Route"}}}]]}}}
+                                                 :body {:just-a-key "Another Hello World Route"}}}]
+                ["/intercept" {:get [io.pedestal.http/json-body #vase/respond {:name :example-v2/intercept
+                                                                               :enforce-format true
+                                                                               :body {:one 1}}]}]]}}}
 
