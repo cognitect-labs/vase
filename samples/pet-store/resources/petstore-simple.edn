@@ -26,5 +26,6 @@
                                                            :query [:find (pull ?e [*])
                                                                    :in $ ?id
                                                                    :where
-                                                                   [?e :pet-store.pet/id ?id]]}}]]}]
- :vase.descriptor/datomic-uri "datomic:dev://localhost:4334/pet-store"}
+                                                                   [?e :pet-store.pet/id ?id]]}}]]
+   :vase.descriptor/schemas [:pet-store/pet-schema]}]
+ :vase.descriptor/datomic-uri "datomic:mem://pet-store"}
