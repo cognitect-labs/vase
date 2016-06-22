@@ -119,16 +119,16 @@
 (defmethod print-method QueryAction [t ^java.io.Writer w]
   (.write w (str "#vase/query" (into {} t))))
 
-(defrecord TransactAction [name properties headers doc]
+(defrecord TransactAction [name properties db-op headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/transact-action name properties headers)))
+    (actions/transact-action name properties db-op headers)))
 
 (defn transact [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->TransactAction form))
+  (map->TransactAction (merge {:db-op :vase/assert-entity} form)))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
   (.write w (str "#vase/transact" (into {} t))))

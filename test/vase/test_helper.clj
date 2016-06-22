@@ -34,6 +34,21 @@
   [& args]
   (apply response-for (service) :post args))
 
+(defn DELETE
+  "Make a DELETE request on our service using response-for."
+  [& args]
+  (apply response-for (service) :delete args))
+
+(defn json-request
+  ([verb url payload]
+   (json-request verb url payload {}))
+  ([verb url payload opts]
+   (response-for (service)
+                 verb url
+                 :headers (merge {"Content-Type" "application/json"}
+                                 (:headers opts))
+                 :body (util/write-json payload))))
+
 (defn post-json
   "Makes a POST request to URL-path expecting a payload to submit as JSON.
 
@@ -42,11 +57,7 @@
   ([URL-path payload]
    (post-json URL-path payload {}))
   ([URL-path payload opts]
-   (response-for (service)
-                 :post URL-path
-                 :headers (merge {"Content-Type" "application/json"}
-                                 (:headers opts))
-                 :body (util/write-json payload))))
+   (json-request :post URL-path payload opts)))
 
 (defn post-edn
   "Makes a POST request to URL-path expecting a payload to submit as edn.

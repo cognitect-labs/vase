@@ -20,7 +20,7 @@
     (actions/redirect-action :redirector [] "Body content" 303 {} "https://www.example.com")
     (actions/validate-action :validator  [] {} [])
     (actions/query-action    :query      [] [] [] [] {})
-    (actions/transact-action :transact   [] [])))
+    (actions/transact-action :transact   [] :vase/assert-entity [])))
 
 (defn- expect-response
   [actual status body headers]

@@ -73,10 +73,14 @@
                                                       :where
                                                       [?e :user/userEmail ?email]]}
                           :post #vase/transact {:name :example-v1/user-create
-                                                  :properties [:db/id
-                                                               :user/userId
-                                                               :user/userEmail
-                                                               :user/userBio]}}]
+                                                :properties [:db/id
+                                                             :user/userId
+                                                             :user/userEmail
+                                                             :user/userBio]}
+                          :delete #vase/transact {:name :example-v1/user-delete
+                                                  :db-op :vase/retract-entity
+                                                  ;; :retract-entity requires :db/id to be supplied
+                                                  :properties [:db/id]}}]
 
                 ["/fogus" {:get #vase/query {:name :example-v1/fogus-page
                                                :params []

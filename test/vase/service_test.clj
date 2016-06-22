@@ -43,6 +43,7 @@
     :example-v1/users-page
     :example-v1/user-id-page
     :example-v1/user-create
+    :example-v1/user-delete
     :example-v1/user-page
     :example-v1/fogus-page
     :example-v1/foguspaul-page

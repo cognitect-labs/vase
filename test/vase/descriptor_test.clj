@@ -7,12 +7,23 @@
 
 (deftest exercise-descriptored-service
   (helper/with-service (srt/service-map)
-    (let [post-response (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "mefogus@gmail.com"}]})
-          get-response  (helper/GET "/api/example/v1/fogus")]
+    (let [post-response (helper/post-json "/api/example/v1/user" {:payload [{:user/userId 42
+                                                                             :user/userEmail "mefogus@gmail.com"}]})
+          get-response  (helper/GET "/api/example/v1/fogus")
+          get-response2  (helper/GET "/api/example/v1/users/42")
+          delete-response (helper/json-request
+                            :delete "/api/example/v1/user"
+                            {:payload [{:db/id [:user/userId 42]}]})
+          get-response3 (helper/GET "/api/example/v1/fogus")]
       (is (= 200 (:status post-response)))
       (is (= 200 (:status get-response)))
+      (is (= 200 (:status get-response2)))
+      ;(is (= 200 (:status delete-response)))
+      (is (= 200 (:status get-response3)))
       (is (seq (helper/response-data post-response)))
-      (is (seq (helper/response-data get-response))))))
+      (is (= (seq (helper/response-data get-response))
+             (seq (helper/response-data get-response2))))
+      (is (empty? (helper/response-data get-response3))))))
 
 (deftest exercise-constant-and-parameter-action
   (helper/with-service (srt/service-map)
