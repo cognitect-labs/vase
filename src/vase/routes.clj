@@ -52,9 +52,7 @@
     (for [[path verb-map] (specified-routes spec)
           [verb action]   verb-map
           :let [interceptors (if (vector? action)
-                               (into common (update-in action
-                                                       [(dec (count action))]
-                                                       i/interceptor))
+                               (into common (map i/interceptor action))
                                (conj common (i/interceptor action)))]]
       [(str base path) verb (make-interceptors-fn interceptors)])))
 
