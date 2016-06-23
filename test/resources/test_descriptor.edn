@@ -36,47 +36,48 @@
    :example.test/person (clojure.spec/keys :req-un [:example.test/name
                                                     :example.test/age])}
 
-  ;; API Versions
-  ;; ------------
-  :v1 {:vase.api/routes
-       [["/hello" {:get #vase/respond {:name :example-v1/simple-response
-                                       :body "Hello World"}}]
-        ["/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page
-                                                     :url "http://www.google.com"}}]
-        ["/redirect-to-param" {:get #vase/redirect {:name :example-v1/ar-page
+  ;; API Tags/Versions
+  ;; ------------------
+  :vase/apis
+  {:v1 {:vase.api/routes
+        {"/hello" {:get #vase/respond {:name :example-v1/simple-response
+                                       :body "Hello World"}}
+         "/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page
+                                                     :url "http://www.google.com"}}
+         "/redirect-to-param" {:get #vase/redirect {:name :example-v1/ar-page
                                                     ;; POST bodies and query string args are bound in :params
                                                     :params [someurl]
-                                                    :url someurl}}]
-        ["/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
+                                                    :url someurl}}
+         "/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
                                                       ;; URL parameters are also bound in :params
                                                       :params [url-thing]
                                                       :edn-coerce [url-thing] ;; parse a param as an edn string
-                                                      :body (str "You said: " url-thing " which is a " (type url-thing))}}]
-        ;; Validate (with clojure.spec) happens on the entire `param` map
-        ["/validate" {:post #vase/validate {:name :example-v1/validate-page
-                                            :spec :example.test/person}}]
-        ;; Just use datomic queries
-        ["/db" {:get #vase/query {:name :example-v1/db-page
+                                                      :body (str "You said: " url-thing " which is a " (type url-thing))}}
+         ;; Validate (with clojure.spec) happens on the entire `param` map
+         "/validate" {:post #vase/validate {:name :example-v1/validate-page
+                                            :spec :example.test/person}}
+         ;; Just use datomic queries
+         "/db" {:get #vase/query {:name :example-v1/db-page
                                   :params []
                                   :query [:find ?e ?v
-                                          :where [?e :db/ident ?v]]}}]
+                                          :where [?e :db/ident ?v]]}}
 
-        ["/users" {:get #vase/query {:name :example-v1/users-page
+         "/users" {:get #vase/query {:name :example-v1/users-page
                                      :params []
                                      :query [:find ?id ?email
                                              :where
                                              [?e :user/userId ?id]
-                                             [?e :user/userEmail ?email]]}}]
+                                             [?e :user/userEmail ?email]]}}
 
-        ["/users/:id" {:get #vase/query {:name :example-v1/user-id-page
+         "/users/:id" {:get #vase/query {:name :example-v1/user-id-page
                                          :params [id]
                                          :edn-coerce [id]
                                          :query [:find ?e
                                                  :in $ ?id
                                                  :where
-                                                 [?e :user/userId ?id]]}}]
+                                                 [?e :user/userId ?id]]}}
 
-        ["/user" {:get #vase/query {:name :example-v1/user-page
+         "/user" {:get #vase/query {:name :example-v1/user-page
                                     :params [email]
                                     :query [:find ?e
                                             :in $ ?email
@@ -90,39 +91,39 @@
                   :delete #vase/transact {:name :example-v1/user-delete
                                           :db-op :vase/retract-entity
                                           ;; :retract-entity requires :db/id to be supplied
-                                          :properties [:db/id]}}]
+                                          :properties [:db/id]}}
 
-        ["/fogus" {:get #vase/query {:name :example-v1/fogus-page
+         "/fogus" {:get #vase/query {:name :example-v1/fogus-page
                                      :params []
                                      :query [:find ?e
                                              :in $
                                              :where
-                                             [?e :user/userEmail "mefogus@gmail.com"]]}}]
+                                             [?e :user/userEmail "mefogus@gmail.com"]]}}
 
-        ["/fogus-and-paul" {:get #vase/query {:name :example-v1/foguspaul-page
+         "/fogus-and-paul" {:get #vase/query {:name :example-v1/foguspaul-page
                                               :params []
                                               :constants [["mefogus@gmail.com" "paul.degrandis@gmail.com"]]
                                               :query [:find ?e
                                                       :in $ [?emails ...]
                                                       :where
-                                                      [?e :user/userEmail ?emails]]}}]
-        ["/fogus-and-someone" {:get #vase/query {:name :example-v1/fogussomeone-page
+                                                      [?e :user/userEmail ?emails]]}}
+         "/fogus-and-someone" {:get #vase/query {:name :example-v1/fogussomeone-page
                                                  :params [someone]
                                                  :constants ["mefogus@gmail.com"]
                                                  :query [:find ?e
                                                          :in $ ?someone ?fogus
                                                          :where
                                                          [(list ?someone ?fogus) [?emails ...]]
-                                                         [?e :user/userEmail ?emails]]}}]]
-       :vase.api/schemas [:example/user-schema :example/loan-schema]
-       :vase.api/forward-headers ["vaserequest-id"]}
+                                                         [?e :user/userEmail ?emails]]}}}
+        :vase.api/schemas [:example/user-schema :example/loan-schema]
+        :vase.api/forward-headers ["vaserequest-id"]}
 
-  :v2 {:vase.api/interceptors [io.pedestal.http/transit-body]
-       :vase.api/routes
-       [["/hello" {:get #vase/respond {:name :example-v2/hello
+   :v2 {:vase.api/interceptors [io.pedestal.http/transit-body]
+        :vase.api/routes
+        {"/hello" {:get #vase/respond {:name :example-v2/hello
                                        :enforce-format true
-                                       :body {:just-a-key "Another Hello World Route"}}}]
-        ["/intercept" {:get [io.pedestal.http/json-body #vase/respond {:name :example-v2/intercept
+                                       :body {:just-a-key "Another Hello World Route"}}}
+         "/intercept" {:get [io.pedestal.http/json-body #vase/respond {:name :example-v2/intercept
                                                                        :enforce-format true
-                                                                       :body {:one 1}}]}]]}}}
+                                                                       :body {:one 1}}]}}}}}}
 
