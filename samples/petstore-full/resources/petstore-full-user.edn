@@ -1,0 +1,16 @@
+{:vase.descriptor/norms
+ [{:vase.descriptor/ident :petstore-full/user-schema
+   :vase.descriptor/txes [#vase/short-schema-tx
+                          [[:petstore.user/id :one :long :unique "user id"]
+                           [:petstore.user/username :one :string "username"]
+                           [:petstore.user/firstName :one :string "first name"]
+                           [:petstore.user/lastName :one :string "last name"]
+                           [:petstore.user/email :one :string "user's email"]
+                           [:petstore.user/password :one :string "password"]
+                           [:petstore.user/phone :one :string "phone number"]
+                           [:petstore.user/userStatus :one :long "User Status"]]]}]
+ :vase.descriptor/endpoints
+ [{:vase.descriptor/ident :petstore-full/v1/users
+   :vase.descriptor/schemas [:petstore-full/user-schema]
+   :vase.descriptor/routes []}]
+ :vase.descriptor/datomic-uri  "datomic:dev://localhost:4334/petstore-full"}

@@ -1,0 +1,5 @@
+{:descriptors ["petstore-full-category.edn"
+               "petstore-full-tag.edn"
+               "petstore-full-pet.edn"
+               "petstore-full-order.edn"
+               "petstore-full-user.edn"]}

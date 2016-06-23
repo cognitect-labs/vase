@@ -27,24 +27,31 @@
     ["/about" :get [http/html-body about-page] :route-name ::about-page]]))
 
 (defn app-routes
-  [api-root spec]
+  [api-root specs]
   (table/table-routes
    {}
-   (vase/routes api-root spec)))
+   (vase/routes api-root specs)))
 
 (defn routes
-  [spec]
+  [specs]
   (concat (master-routes)
-          (app-routes "/api" spec)))
+          (app-routes "/api" specs)))
+
+(defn load-specs
+  [descriptors]
+  (reduce #(conj %1 (vase/load %2)) []  descriptors))
+
+(defn ensure-schemas
+  [specs]
+  (doall (map #(vase.datomic/ensure-schema %) specs)))
 
 (defn service
   []
-  (let [spec (vase/load-descriptor "petstore-full.edn")
-        db-uri (:datomic-uri spec)
-        conn (vase.datomic/connect db-uri)]
-    (vase.datomic/ensure-schema conn (get-in spec [:descriptor :petstore-full :norms]))
+  (let [descriptors (:descriptors (vase/load "vase-descriptors.edn"))
+        specs (load-specs descriptors)]
+    (ensure-schemas specs)
     {:env :prod
-     ::http/routes (routes spec)
+     ::http/routes (routes specs)
      ::http/resource-path "/public"
      ::http/type :jetty
      ::http/port 8888}))

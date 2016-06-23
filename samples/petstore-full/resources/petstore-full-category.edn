@@ -1,0 +1,20 @@
+{:vase.descriptor/norms
+ [{:vase.descriptor/ident :petstore-full/category-schema
+   :vase.descriptor/txes [#vase/short-schema-tx
+                          [[:petstore.category/id :one :long :unique "category id"]
+                           [:petstore.category/name :one :string "name of category"]]]}]
+ :vase.descriptor/endpoints
+ [{:vase.descriptor/ident :petstore-full/v1/categories
+   :vase.descriptor/schemas [:petstore-full/category-schema]
+   :vase.descriptor/routes [["/"
+                             {:get #vase/query {:name :petstore-full/find-categories
+                                                :params []
+                                                :query [:find ?id ?name
+                                                        :in $
+                                                        :where
+                                                        [?e :petstore.category/id ?id]
+                                                        [?e :petstore.category/name ?name]]}
+                              :post #vase/transact {:name :petstore-full/add-categories
+                                                    :properties [:petstore.category/id
+                                                                 :petstore.category/name]}}]]}]
+ :vase.descriptor/datomic-uri  "datomic:dev://localhost:4334/petstore-full"}
