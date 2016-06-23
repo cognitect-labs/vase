@@ -11,6 +11,18 @@
   [res]
   (util/edn-resource res))
 
+(defn extract-specs
+  [descriptor]
+  (doseq [[app-name app-map] descriptor]
+    (when-let [specs (:specs app-map)]
+      (doseq [[k specv] specs]
+        (let [sv (cond
+                   (spec/spec? specv) specv
+                   (list? specv) (eval specv)
+                   (symbol? specv) (resolve specv)
+                   :else specv)]
+          (eval `(spec/def ~k ~sv)))))))
+
 (defn routes
   "Return a seq of route vectors for Pedestal's table routing syntax. Routes
   will all begin with `api-root/:app-name/:version`.

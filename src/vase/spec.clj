@@ -59,9 +59,13 @@
 (s/def ::requires (s/* qualified-keyword?))
 (s/def ::norms (s/map-of qualified-keyword? (s/keys ::req-un [::txes] ::opt-un [::requires])))
 
+(s/def ::specs (s/map-of qualified-keyword? ::s/any))
+
 (s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version
-                                             :norms ::norms))
-                    (s/keys :req-un [::norms])))
+                                             :norms ::norms
+                                             :specs ::specs))
+                    (s/keys :req-un [::norms]
+                            :opt-un [::specs])))
 
 ;; -- The descriptor spec --
 (s/def ::descriptor (s/and (s/map-of ::app-name ::app) not-empty))

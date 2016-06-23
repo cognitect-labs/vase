@@ -27,6 +27,7 @@
                 datomic-uri] :as spec} (test-spec)
         conn                           (vase.datomic/connect datomic-uri)]
     (vase.datomic/ensure-schema conn (get-in descriptor [app-name :norms]))
+    (vase/extract-specs descriptor)
     {:env                 :prod
      ::http/routes        (make-master-routes spec)
      ::http/resource-path "/public"

@@ -1,10 +1,8 @@
 (ns vase.actions
   (:require [clojure.walk :as walk]
+            [clojure.spec :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as interceptor]
-            [themis.core :as themis]
-            [themis.validators :as validators]
-            [themis.predicates :as preds]
             [vase.util :as util])
   (:import java.net.URLDecoder))
 
@@ -116,8 +114,12 @@
      ~forms))
 
 (defn validation-result
-  [param-sym rule-vec]
-  (response-body `(themis/unfold-result (themis/validation ~param-sym ~rule-vec))))
+  [param-sym spec]
+  (response-body `(reduce (fn [a# [k# v#]]
+                            (assoc a# k# (dissoc v# :pred)))
+                        {}
+                        (:clojure.spec/problems (clojure.spec/explain-data ~spec ~param-sym)))))
+
 
 (defn bind-allowed-arguments
   [req-sym args-sym properties forms]
@@ -219,21 +221,21 @@
                        {:enter (redirect-action-exprs (or params []) body status headers (or url ""))}))
 
 (defn validate-action-exprs
-  [params headers rule-vec]
+  [params headers spec]
   (gensyms [ctx-sym resp-sym req-sym param-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (validation-result param-sym rule-vec))
+            (bind-response resp-sym (validation-result param-sym spec))
             (assign-headers resp-sym headers)
             (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn validate-action
-  [name params headers rule-vec]
+  [name params headers spec]
   (dynamic-interceptor name :validate
-                       {:enter (validate-action-exprs params headers rule-vec)}))
+                       {:enter (validate-action-exprs params headers spec)}))
 
 (defn query-action-exprs
   [query variables coercions constants headers]

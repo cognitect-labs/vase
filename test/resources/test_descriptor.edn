@@ -27,6 +27,11 @@
                                            [:loanOffer/notes :many :string "Notes about the loan"]
                                            [:user/loanOffers :many :ref "The collection of loan offers"]]]}}
 
+  :specs {:example.test/age (fn [age] (> age 21))
+          :example.test/name (clojure.spec/and string? not-empty)
+          :example.test/person (clojure.spec/keys :req-un [:example.test/name
+                                                           :example.test/age])}
+
   ;; API Versions
   ;; ------------
   :v1 {:routes [["/hello" {:get #vase/respond {:name :example-v1/simple-response
@@ -41,11 +46,9 @@
                                                                 :params [url-thing]
                                                                 :edn-coerce [url-thing] ;; parse a param as an edn string
                                                                 :body (str "You said: " url-thing " which is a " (type url-thing))}}]
-                ;; Validation happens on the entire `param` map
+                ;; Validate (with clojure.spec) happens on the entire `param` map
                 ["/validate" {:post #vase/validate {:name :example-v1/validate-page
-                                                      :properties [[:name [validators/hard-presence]]
-                                                                   [:age  [(validators/from-predicate preds/non-neg-integer? "Age needs to be non-negative")
-                                                                           (validators/from-predicate (fnil > 0) 21 "You're not allowed to drink")]]]}}]
+                                                    :spec :example.test/person}}]
                 ;; Just use datomic queries
                 ["/db" {:get #vase/query {:name :example-v1/db-page
                                             :params []

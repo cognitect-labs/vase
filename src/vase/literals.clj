@@ -80,17 +80,11 @@
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#vase/redirect" (into {} t))))
 
-(defrecord ValidateAction [name params headers properties doc]
+(defrecord ValidateAction [name params headers spec doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (let [params   (or params [])
-          rule-vec (walk/postwalk
-                    (fn [form] (if (symbol? form)
-                                 (util/fully-qualify-symbol (the-ns 'vase.actions)
-                                                            form)
-                                 form))
-                    (or properties []))]
-      (actions/validate-action name params headers rule-vec))))
+    (let [params (or params [])]
+      (actions/validate-action name params headers spec))))
 
 (defn validate [form]
   {:pre [(map? form)
