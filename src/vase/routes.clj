@@ -4,7 +4,7 @@
             [io.pedestal.http.body-params :as body-params]
             [vase.datomic :as datomic]
             [vase.interceptor :as interceptor]
-            [clojure.string :as str]))
+            [clojure.string :as string]))
 
 (defn- describe-api
   "Return a list of all active routes.
@@ -13,13 +13,14 @@
   [routes]
   (i/interceptor
    {:enter (fn [context]
-             (let [{:keys [f sep edn] :or {f "" sep "<br/>" edn false}} (-> context :request :query-params)
-                   results                                              (mapv #(take 2 %) routes)]
+             (let [{:keys [f sep edn]
+                    :or {f "" sep "<br/>" edn false}} (get-in context [:request :query-params])
+                   results (mapv #(take 2 %) routes)]
                (assoc context :response
                       (if edn
                         (http/edn-response results)
                         {:status 200
-                         :body   (str/join sep (map #(str/join " " %) results))}))))}))
+                         :body   (string/join sep (map #(string/join " " %) results))}))))}))
 
 (def ^:private common-api-interceptors
   [interceptor/attach-received-time
@@ -41,7 +42,7 @@
 
 (defn- specified-routes
   [{:keys [descriptor app-name version]}]
-  (get-in descriptor [app-name version :routes]))
+  (get-in descriptor [app-name version :vase.routes]))
 
 (defn- api-routes
   "Given a descriptor map, an app-name keyword, and a version keyword,

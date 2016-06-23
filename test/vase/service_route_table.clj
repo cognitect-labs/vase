@@ -26,7 +26,7 @@
                 descriptor
                 datomic-uri] :as spec} (test-spec)
         conn                           (vase.datomic/connect datomic-uri)]
-    (vase.datomic/ensure-schema conn (get-in descriptor [app-name :norms]))
+    (vase.datomic/ensure-schema conn (get-in descriptor [app-name :vase/norms]))
     (vase/extract-specs descriptor)
     {:env                 :prod
      ::http/routes        (make-master-routes spec)
@@ -36,5 +36,10 @@
 
 (comment
 
+  (service-map)
+  (let [s (test-spec)]
+    (vase.datomic/normalize-norm-keys (get-in s [:descriptor (:app-name s) :vase/norms])))
+
+  (vase.datomic/ensure-schema )
   (vase/routes "/api" (test-spec))
   )

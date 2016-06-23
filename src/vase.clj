@@ -14,7 +14,7 @@
 (defn extract-specs
   [descriptor]
   (doseq [[app-name app-map] descriptor]
-    (when-let [specs (:specs app-map)]
+    (when-let [specs (:vase.specs app-map)]
       (doseq [[k specv] specs]
         (let [sv (cond
                    (spec/spec? specv) specv

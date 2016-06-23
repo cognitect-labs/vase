@@ -32,8 +32,8 @@
                        #(gen/return (str "datomic:mem://" (java.util.UUID/randomUUID)))))
 
 ;; -- descriptor api version specs --
-(s/def ::schemas (s/* qualified-keyword?))
-(s/def ::forward-headers (s/* (s/and string? not-empty)))
+(s/def :vase.api/schemas (s/* qualified-keyword?))
+(s/def :vase.api/forward-headers (s/* (s/and string? not-empty)))
 
 ;; -- routes --
 (s/def ::get ::interceptor)
@@ -43,29 +43,33 @@
 (s/def ::head ::interceptor)
 (s/def ::options ::interceptor)
 
-(s/def ::action (s/and (s/keys ::opt-un [::get ::put ::post ::delete ::head ::options])
+(s/def ::action (s/and (s/keys :opt-un [::get ::put ::post ::delete ::head ::options])
                        #(not-empty (select-keys % [:get :put :post :delete :head :options]))))
 (s/def ::route (s/cat :path valid-uri? :actions ::action))
-(s/def ::routes (s/* (s/spec ::route)))
+(s/def :vase.api/routes (s/* (s/spec ::route)))
 
-(s/def ::interceptors (s/+ ::interceptor))
+(s/def :vase.api/interceptors (s/+ ::interceptor))
 
-(s/def ::api-version (s/keys :req-un [::routes] :opt-un [::schemas ::forward-headers ::interceptors]))
+(s/def ::api-version (s/keys :req [:vase.api/routes]
+                             :opt [:vase.api/schemas
+                                   :vase.api/forward-headers
+                                   :vase.api/interceptors]))
 
 ;; -- descriptor app specs --
 ;; -- norms --
 (s/def ::tx (s/* (s/or :_ vector? :_ map?)))
-(s/def ::txes (s/* (s/spec ::tx)))
-(s/def ::requires (s/* qualified-keyword?))
-(s/def ::norms (s/map-of qualified-keyword? (s/keys ::req-un [::txes] ::opt-un [::requires])))
+(s/def :vase.norms/txes (s/* (s/spec ::tx)))
+(s/def :vase.norms/requires (s/* qualified-keyword?))
+(s/def :vase/norms (s/map-of qualified-keyword? (s/keys :req [:vase.norms/txes]
+                                                        :opt [:vase.norms/requires])))
 
-(s/def ::specs (s/map-of qualified-keyword? ::s/any))
+(s/def :vase/specs (s/map-of qualified-keyword? ::s/any))
 
 (s/def ::app (s/and (s/map-of keyword? (s/or :api-version ::api-version
-                                             :norms ::norms
-                                             :specs ::specs))
-                    (s/keys :req-un [::norms]
-                            :opt-un [::specs])))
+                                             :norms :vase/norms
+                                             :specs :vase/specs))
+                    (s/keys :req [:vase/norms]
+                            :opt [:vase/specs])))
 
 ;; -- The descriptor spec --
 (s/def ::descriptor (s/and (s/map-of ::app-name ::app) not-empty))
