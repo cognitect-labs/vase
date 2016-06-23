@@ -15,7 +15,6 @@
                  [io.pedestal/pedestal.service "0.5.0" :exclusions [[com.fasterxml.jackson.core/jackson-core]
                                                                     [com.fasterxml.jackson.core/jackson-databind]
                                                                     [com.fasterxml.jackson.datatype/jackson-datatype-json-org]]]
-                 [ohpauleez/themis "0.1.1"]
 
                  ;; Cleanup
                  [commons-codec "1.10"]
