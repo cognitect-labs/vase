@@ -21,41 +21,43 @@
                                            ;; :fulltext also implies :index
                                            [:user/userBio :one :string :fulltext "A short blurb about the user"]]]}}
 
-  ;; API Tags/Versions
-  ;; ------------------
-  :vase/apis
-  {:v1 {:vase.api/routes
-        {"/hello" {:get #vase/respond {:name :example-v1/simple-response
-                                       :body "Hello World"}}
-         "/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page
-                                                     :url "http://www.google.com"}}
-         "/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
-                                                      ;; URL parameters are also bound in :params
-                                                      :params [url-thing]
-                                                      :edn-coerce [url-thing] ;; parse a param as an edn string
-                                                      :body (str "You said: " url-thing " which is a " (type url-thing))}}
-         "/users" {:get #vase/query {:name :example-v1/user-page
-                                     :params [email]
-                                     :query [:find ?e
-                                             :in $ ?email
-                                             :where
-                                             [?e :user/userEmail ?email]]}
-                   :post #vase/transact {:name :example-v1/user-create
-                                         :properties [:db/id
-                                                      :user/userId
-                                                      :user/userEmail
-                                                      :user/userBio]}}
-         "/users/:id" {:get #vase/query {:name :example-v1/user-id-page
-                                         :params [id]
-                                         :edn-coerce [id]
-                                         :query [:find ?e
-                                                 :in $ ?id
-                                                 :where
-                                                 [?e :user/userId ?id]]}}}
-      :vase.api/schemas [:example/user-schema]
-      :vase.api/forward-headers ["vaserequest-id"]}
- :v2 {:vase.api/routes
-      {"/hello" {:get #vase/respond {:name :example-v2/hello
-                                     :enforce-format true
-                                     :body "Another Hello World Route"}}}}}}
+ ;; API Tags/Versions
+ ;; ------------------
+ :vase/apis
+ {:example/v1
+  {:vase.api/routes
+   {"/hello" {:get #vase/respond {:name :example.v1/simple-response
+                                  :body "Hello World"}}
+    "/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page
+                                                :url "http://www.google.com"}}
+    "/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
+                                                 ;; URL parameters are also bound in :params
+                                                 :params [url-thing]
+                                                 :edn-coerce [url-thing] ;; parse a param as an edn string
+                                                 :body (str "You said: " url-thing " which is a " (type url-thing))}}
+    "/users" {:get #vase/query {:name :example.v1/user-page
+                                :params [email]
+                                :query [:find ?e
+                                        :in $ ?email
+                                        :where
+                                        [?e :user/userEmail ?email]]}
+              :post #vase/transact {:name :example.v1/user-create
+                                    :properties [:db/id
+                                                 :user/userId
+                                                 :user/userEmail
+                                                 :user/userBio]}}
+    "/users/:id" {:get #vase/query {:name :example.v1/user-id-page
+                                    :params [id]
+                                    :edn-coerce [id]
+                                    :query [:find ?e
+                                            :in $ ?id
+                                            :where
+                                            [?e :user/userId ?id]]}}}
+   :vase.api/schemas [:example/user-schema]
+   :vase.api/forward-headers ["vaserequest-id"]}
+  :example/v2
+  {:vase.api/routes
+   {"/hello" {:get #vase/respond {:name :example.v2/hello
+                                  :enforce-format true
+                                  :body "Another Hello World Route"}}}}}}
 
