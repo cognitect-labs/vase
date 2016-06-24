@@ -2,16 +2,29 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [vase.test-helper :as helper]
-            [vase.service-route-table :as srt]))
+            [vase.service-route-table :as srt]
+            [vase.util :as util]))
 
 (deftest exercise-descriptored-service
   (helper/with-service (srt/service-map)
-    (let [post-response (helper/post-json "/api/example/v1/user" {:payload [{:user/userEmail "mefogus@gmail.com"}]})
-          get-response  (helper/GET "/api/example/v1/fogus")]
+    (let [post-response (helper/post-json "/api/example/v1/user" {:payload [{:user/userId 42
+                                                                             :user/userEmail "mefogus@gmail.com"}]})
+          get-response  (helper/GET "/api/example/v1/fogus")
+          get-response2  (helper/GET "/api/example/v1/users/42")
+          delete-response (helper/json-request
+                            :delete "/api/example/v1/user"
+                            {:payload [{:db/id [:user/userId 42]}]})
+          get-response3 (helper/GET "/api/example/v1/fogus")]
       (is (= 200 (:status post-response)))
       (is (= 200 (:status get-response)))
+      (is (= 200 (:status get-response2)))
+      ;(is (= 200 (:status delete-response)))
+      (is (= 200 (:status get-response3)))
+      (is (string? (get-in get-response [:headers "vaserequest-id"])))
       (is (seq (helper/response-data post-response)))
-      (is (seq (helper/response-data get-response))))))
+      (is (= (seq (helper/response-data get-response))
+             (seq (helper/response-data get-response2))))
+      (is (empty? (helper/response-data get-response3))))))
 
 (deftest exercise-constant-and-parameter-action
   (helper/with-service (srt/service-map)
@@ -22,3 +35,16 @@
            post1 post2 special-get)
       (is (seq (helper/response-data special-get)))
       (is (= (count (helper/response-data special-get)) 2)))))
+
+(deftest exercise-version-interceptor-chains
+  (helper/with-service (srt/service-map)
+    (let [hello-resp (helper/GET "/api/example/v2/hello")
+          hello-body (util/read-transit-json (:body hello-resp))]
+      (is (= hello-body {:just-a-key "Another Hello World Route"})))))
+
+(deftest exercise-per-route-interceptor-chains
+  (helper/with-service (srt/service-map)
+    (let [hello-resp (helper/GET "/api/example/v2/intercept")
+          hello-body (helper/response-data hello-resp)]
+      (is (= hello-body {:one 1})))))
+

@@ -27,24 +27,30 @@
     (is (= 200 (:status (helper/GET "/api?edn=true"))))
     (is (= 200 (:status (helper/GET "/api"))))
     (is (= 200 (:status (helper/GET "/api/example/v1?edn=true"))))
-    (is (= 200 (:status (helper/GET "/api/example/v1"))))))
+    (is (= 200 (:status (helper/GET "/api/example/v1"))))
+    (is (= 200 (:status (helper/GET "/api/example/v2?edn=true"))))
+    (is (= 200 (:status (helper/GET "/api/example/v2"))))))
 
 (def known-route-names
   #{:describe-apis
-    :example-v1/describe
-    :example-v1/simple-response
-    :example-v1/r-page
-    :example-v1/ar-page
-    :example-v1/url-param-example
-    :example-v1/validate-page
-    :example-v1/db-page
-    :example-v1/users-page
-    :example-v1/user-id-page
-    :example-v1/user-create
-    :example-v1/user-page
-    :example-v1/fogus-page
-    :example-v1/foguspaul-page
-    :example-v1/fogussomeone-page})
+    :example.v1/describe
+    :example.v1/simple-response
+    :example.v1/r-page
+    :example.v1/ar-page
+    :example.v1/url-param-example
+    :example.v1/validate-page
+    :example.v1/db-page
+    :example.v1/users-page
+    :example.v1/user-id-page
+    :example.v1/user-create
+    :example.v1/user-delete
+    :example.v1/user-page
+    :example.v1/fogus-page
+    :example.v1/foguspaul-page
+    :example.v1/fogussomeone-page
+    :example.v2/describe
+    :example.v2/hello
+    :example.v2/intercept})
 
 (deftest all-route-names-present
   (let [service     (vase.service-route-table/service-map)

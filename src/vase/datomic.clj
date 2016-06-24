@@ -10,9 +10,22 @@
   (d/create-database uri)
   (d/connect uri))
 
+(defn normalize-norm-keys
+  [norms]
+  (reduce
+    (fn [acc [k-title v-map]]
+      (assoc acc
+             k-title (reduce
+                       (fn [norm-acc [nk nv]]
+                         (assoc norm-acc
+                                (keyword (name nk)) nv))
+                       {} v-map)))
+    {}
+    norms))
+
 (defn ensure-schema
   [conn norms]
-  (c/ensure-conforms conn norms))
+  (c/ensure-conforms conn (normalize-norm-keys norms)))
 
 (defn insert-datomic
   "Provide a Datomic conn and db in all incoming requests"
@@ -23,3 +36,4 @@
               (-> context
                   (assoc-in [:request :conn] conn)
                   (assoc-in [:request :db]   (d/db conn))))}))
+

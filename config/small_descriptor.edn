@@ -1,58 +1,63 @@
 
-{:example ;; API name // app-root
+;; Idempotent Schema Datoms (norms)
+;; --------------------------------
+{:vase/norms
+ {:example/base-schema
+  ;; Supports full/long Datomic schemas
+  {:vase.norm/txes [[{:db/id #db/id[:db.part/db]
+                      :db/ident :company/name
+                      :db/unique :db.unique/value
+                      :db/valueType :db.type/string
+                      :db/cardinality :db.cardinality/one
+                      :db.install/_attribute :db.part/db}]]}
+  ;; End :example/base-schema
 
- ;; Idempotent Schema Datoms (norms)
- ;; --------------------------------
- {:norms {:example/base-schema
-          ;; Supports full/long Datomic schemas
-          {:txes [[{:db/id #db/id[:db.part/db]
-                    :db/ident :company/name
-                    :db/unique :db.unique/value
-                    :db/valueType :db.type/string
-                    :db/cardinality :db.cardinality/one
-                    :db.install/_attribute :db.part/db}]]}
-          ;; End :example/base-schema
+  :example/user-schema
+  ;; Also supports schema dependencies
+  {:vase.norm/requires [:example/base-schema]
+   ;; and supports short/basic schema definitions
+   :vase.norm/txes [#vase/short-schema-tx [[:user/userId :one :long :unique "A Users unique identifier"]
+                                           [:user/userEmail :one :string :unique "The users email"]
+                                           ;; :fulltext also implies :index
+                                           [:user/userBio :one :string :fulltext "A short blurb about the user"]]]}}
 
-          :example/user-schema
-          ;; Also supports schema dependencies
-          {:requires [:example/base-schema]
-           ;; and supports short/basic schema definitions
-           :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "A Users unique identifier"]
-                                         [:user/userEmail :one :string :unique "The users email"]
-                                         ;; :fulltext also implies :index
-                                         [:user/userBio :one :string :fulltext "A short blurb about the user"]]]}}
-
-  ;; API Versions
-  ;; ------------
-  :v1 {:routes [["/hello" {:get #vase/respond {:name :example-v1/simple-response
-                                               :body "Hello World"}}]
-                ["/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page, :url "http://www.google.com"}}]
-                ["/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
-                                                              ;; URL parameters are also bound in :params
-                                                              :params [url-thing]
-                                                              :edn-coerce [url-thing] ;; parse a param as an edn string
-                                                              :body (str "You said: " url-thing " which is a " (type url-thing))}}]
-                ["/users" {:get #vase/query {:name :example-v1/user-page
-                                             :params [email]
-                                             :query [:find ?e
-                                                     :in $ ?email
-                                                     :where
-                                                     [?e :user/userEmail ?email]]}
-                          :post #vase/transact {:name :example-v1/user-create
-                                                :properties [:db/id
-                                                             :user/userId
-                                                             :user/userEmail
-                                                             :user/userBio]}}]
-                ["/users/:id" {:get #vase/query {:name :example-v1/user-id-page
-                                                 :params [id]
-                                                 :edn-coerce [id]
-                                                 :query [:find ?e
-                                                         :in $ ?id
-                                                         :where
-                                                         [?e :user/userId ?id]]}}]]
-       :schemas [:example/user-schema]
-       :forward-headers ["vaserequest-id"]}
-  :v2 {:routes [["/hello" {:get #vase/respond {:name :example-v2/hello
-                                                 :enforce-format true
-                                                 :body "Another Hello World Route"}}]]}}}
+ ;; API Tags/Versions
+ ;; ------------------
+ :vase/apis
+ {:example/v1
+  {:vase.api/routes
+   {"/hello" {:get #vase/respond {:name :example.v1/simple-response
+                                  :body "Hello World"}}
+    "/redirect-to-google" {:get #vase/redirect {:name :example-v1/r-page
+                                                :url "http://www.google.com"}}
+    "/capture-s/:url-thing" {:get #vase/respond {:name :example-v1/url-param-example
+                                                 ;; URL parameters are also bound in :params
+                                                 :params [url-thing]
+                                                 :edn-coerce [url-thing] ;; parse a param as an edn string
+                                                 :body (str "You said: " url-thing " which is a " (type url-thing))}}
+    "/users" {:get #vase/query {:name :example.v1/user-page
+                                :params [email]
+                                :query [:find ?e
+                                        :in $ ?email
+                                        :where
+                                        [?e :user/userEmail ?email]]}
+              :post #vase/transact {:name :example.v1/user-create
+                                    :properties [:db/id
+                                                 :user/userId
+                                                 :user/userEmail
+                                                 :user/userBio]}}
+    "/users/:id" {:get #vase/query {:name :example.v1/user-id-page
+                                    :params [id]
+                                    :edn-coerce [id]
+                                    :query [:find ?e
+                                            :in $ ?id
+                                            :where
+                                            [?e :user/userId ?id]]}}}
+   :vase.api/schemas [:example/user-schema]
+   :vase.api/forward-headers ["vaserequest-id"]}
+  :example/v2
+  {:vase.api/routes
+   {"/hello" {:get #vase/respond {:name :example.v2/hello
+                                  :enforce-format true
+                                  :body "Another Hello World Route"}}}}}}
 

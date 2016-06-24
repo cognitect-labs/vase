@@ -80,17 +80,11 @@
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#vase/redirect" (into {} t))))
 
-(defrecord ValidateAction [name params headers properties doc]
+(defrecord ValidateAction [name params headers spec doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (let [params   (or params [])
-          rule-vec (walk/postwalk
-                    (fn [form] (if (symbol? form)
-                                 (util/fully-qualify-symbol (the-ns 'vase.actions)
-                                                            form)
-                                 form))
-                    (or properties []))]
-      (actions/validate-action name params headers rule-vec))))
+    (let [params (or params [])]
+      (actions/validate-action name params headers spec))))
 
 (defn validate [form]
   {:pre [(map? form)
@@ -119,16 +113,16 @@
 (defmethod print-method QueryAction [t ^java.io.Writer w]
   (.write w (str "#vase/query" (into {} t))))
 
-(defrecord TransactAction [name properties headers doc]
+(defrecord TransactAction [name properties db-op headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/transact-action name properties headers)))
+    (actions/transact-action name properties db-op headers)))
 
 (defn transact [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->TransactAction form))
+  (map->TransactAction (merge {:db-op :vase/assert-entity} form)))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
   (.write w (str "#vase/transact" (into {} t))))

@@ -1,10 +1,8 @@
 (ns vase.actions
   (:require [clojure.walk :as walk]
+            [clojure.spec :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as interceptor]
-            [themis.core :as themis]
-            [themis.validators :as validators]
-            [themis.predicates :as preds]
             [vase.util :as util])
   (:import java.net.URLDecoder))
 
@@ -116,8 +114,12 @@
      ~forms))
 
 (defn validation-result
-  [param-sym rule-vec]
-  (response-body `(themis/unfold-result (themis/validation ~param-sym ~rule-vec))))
+  [param-sym spec]
+  (response-body `(reduce (fn [a# [k# v#]]
+                            (assoc a# k# (dissoc v# :pred)))
+                        {}
+                        (:clojure.spec/problems (clojure.spec/explain-data ~spec ~param-sym)))))
+
 
 (defn bind-allowed-arguments
   [req-sym args-sym properties forms]
@@ -125,7 +127,7 @@
      ~forms))
 
 (defn process-lookup-ref [[str-attr val]]
-  [(keyword str-attr) val])
+  [(if (keyword? str-attr) str-attr (keyword str-attr)) val])
 
 (defn process-id [entity-data]
   (let [id (:db/id entity-data)]
@@ -133,10 +135,29 @@
           (nil? id) (assoc entity-data :db/id (d/tempid :db.part/user))
           :default entity-data)))
 
+(defmulti process-transaction
+  (fn [db-op args] db-op))
+
+(defmethod process-transaction :default
+  [db-op args]
+  ;; the default is to assume the maps are for entity assertions
+  (mapv process-id args))
+
+(defmethod process-transaction :vase/retract-entity
+  [db-op args]
+  ;; We assume the maps are for entity-lookups only
+  (mapv (fn [entity-data]
+          [:db.fn/retractEntity (:db/id entity-data)]) args))
+
+(defmethod process-transaction :vase/assert-entity
+  [db-op args]
+  ;; We assume the maps are for entity assertions
+  (mapv process-id args))
+
 (defn perform-transaction
-  [req-sym args-sym tx-result-sym forms]
+  [req-sym args-sym tx-result-sym db-op forms]
   `(let [conn#          (-> ~req-sym :conn)
-         tx-result#     (d/transact conn# (mapv process-id ~args-sym))
+         tx-result#     (d/transact conn# (process-transaction ~db-op ~args-sym))
          ~tx-result-sym (map (juxt :e :a :v) (:tx-data @tx-result#))]
      ~forms))
 
@@ -200,21 +221,21 @@
                        {:enter (redirect-action-exprs (or params []) body status headers (or url ""))}))
 
 (defn validate-action-exprs
-  [params headers rule-vec]
+  [params headers spec]
   (gensyms [ctx-sym resp-sym req-sym param-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (validation-result param-sym rule-vec))
+            (bind-response resp-sym (validation-result param-sym spec))
             (assign-headers resp-sym headers)
             (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn validate-action
-  [name params headers rule-vec]
+  [name params headers spec]
   (dynamic-interceptor name :validate
-                       {:enter (validate-action-exprs params headers rule-vec)}))
+                       {:enter (validate-action-exprs params headers spec)}))
 
 (defn query-action-exprs
   [query variables coercions constants headers]
@@ -237,19 +258,19 @@
                        {:enter (query-action-exprs query variables coercions constants headers)}))
 
 (defn transact-action-exprs
-  [properties headers]
+  [properties db-op headers]
   (gensyms [ctx-sym resp-sym req-sym args-sym tx-result-sym]
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
             (bind-allowed-arguments req-sym args-sym properties)
-            (perform-transaction req-sym args-sym tx-result-sym)
+            (perform-transaction req-sym args-sym tx-result-sym db-op)
             (bind-response resp-sym (tx-response-body tx-result-sym args-sym))
             (assign-headers resp-sym headers)
             (derive-status-code ctx-sym resp-sym)
             (attach-response ctx-sym resp-sym))))
 
 (defn transact-action
-  [name properties headers]
+  [name properties db-op headers]
   (dynamic-interceptor name :transact
-                       {:enter (transact-action-exprs properties headers)}))
+                       {:enter (transact-action-exprs properties db-op headers)}))
