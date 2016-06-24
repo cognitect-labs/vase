@@ -28,11 +28,12 @@
    http/json-body])
 
 (defn- app-interceptors
-  [{:keys [descriptor app-name version datomic-uri]}]
-  (let [datomic-conn       (datomic/connect datomic-uri)
-        headers-to-forward (get-in descriptor [app-name version :forward-headers] [])
+  [spec]
+  (let [{:keys [descriptor activated-apis datomic-uri]} spec
+        datomic-conn       (datomic/connect datomic-uri)
+        headers-to-forward (get-in descriptor [:vase/apis activated-apis :vase.api/forward-headers] [])
         headers-to-forward (conj headers-to-forward interceptor/request-id-header)
-        version-interceptors (mapv i/interceptor (get-in descriptor [app-name version :interceptors] []))
+        version-interceptors (mapv i/interceptor (get-in descriptor [:vase/apis activated-apis :vase.api/interceptors] []))
         base-interceptors (conj common-api-interceptors
                                 (datomic/insert-datomic datomic-conn)
                                 (body-params/body-params (body-params/default-parser-map :edn-options {:readers *data-readers*}))
@@ -41,8 +42,9 @@
           version-interceptors)))
 
 (defn- specified-routes
-  [{:keys [descriptor app-name version]}]
-  (get-in descriptor [app-name version :vase.routes]))
+  [spec]
+  (let [{:keys [activated-apis descriptor]} spec]
+    (get-in descriptor [:vase/apis activated-apis :vase.api/routes])))
 
 (defn- api-routes
   "Given a descriptor map, an app-name keyword, and a version keyword,
@@ -58,12 +60,16 @@
       [(str base path) verb (make-interceptors-fn interceptors)])))
 
 (defn- api-base
-  [base {:keys [app-name version]}]
-  (str base "/" (name app-name) "/" (name version)))
+  [api-root spec]
+  (let [{:keys [activated-apis]} spec]
+   (str api-root "/" (namespace activated-apis) "/" (name activated-apis))))
 
 (defn- api-description-route-name
-  [{:keys [app-name version]}]
-  (keyword (str (name app-name) "-" (name version)) "describe"))
+  [spec]
+  (let [{:keys [activated-apis]} spec]
+    (keyword (str (namespace activated-apis)
+                  "." (name activated-apis))
+             "describe")))
 
 (defn api-description-route
   [api-root make-interceptors-fn routes route-name]
@@ -79,5 +85,8 @@
   [api-root make-interceptors-fn spec]
   (let [app-version-root   (api-base api-root spec)
         app-version-routes (api-routes app-version-root spec make-interceptors-fn)
-        app-api-route      (api-description-route app-version-root make-interceptors-fn app-version-routes (api-description-route-name spec))]
+        app-api-route      (api-description-route app-version-root
+                                                  make-interceptors-fn
+                                                  app-version-routes
+                                                  (api-description-route-name spec))]
     (cons app-api-route app-version-routes)))

@@ -24,7 +24,7 @@
         ["/a" :get handler-fn :route-name :bar :constraints 1]))))
 
 (def test-spec (srt/test-spec))
-(def sample-spec (vase/load-descriptor "sample_descriptor.edn"))
+(def sample-spec (vase/load-edn-resource "sample_payload.edn"))
 
 (deftest vase-spec-tests
   (testing "full vase spec"
@@ -34,7 +34,7 @@
   (testing "descriptors"
     (doseq [d ["sample_descriptor.edn"
                "small_descriptor.edn"]]
-      (is (s/valid? ::vase.spec/descriptor (vase/load-descriptor d))
+      (is (s/valid? ::vase.spec/descriptor (vase/load-edn-resource d))
           (format "%s is not valid!" d)))))
 
 (use-fixtures :once (fn [f]

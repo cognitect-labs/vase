@@ -20,6 +20,7 @@
       (is (= 200 (:status get-response2)))
       ;(is (= 200 (:status delete-response)))
       (is (= 200 (:status get-response3)))
+      (is (string? (get-in get-response [:headers "vaserequest-id"])))
       (is (seq (helper/response-data post-response)))
       (is (= (seq (helper/response-data get-response))
              (seq (helper/response-data get-response2))))
