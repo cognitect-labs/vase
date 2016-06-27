@@ -37,27 +37,6 @@
                     "text/xml",
                     "text/html"
                 ],
-                "parameters": [
-                    {
-                        "name": "tags",
-                        "in": "query",
-                        "description": "tags to filter by",
-                        "required": false,
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv"
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "description": "maximum number of results to return",
-                        "required": false,
-                        "type": "integer",
-                        "format": "int32"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "pet response",
@@ -102,9 +81,36 @@
                     },
                     "default": {
                         "description": "unexpected error",
+                        "schema": null
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes pets by db/ids.",
+                "operationId": "deletePet",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "db/id",
+                        "in": "body",
+                        "description": "Pet id to delete from the store",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/errorModel"
+                            "$ref": "#/definitions/deletePet"
                         }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "pet delete response",
+                        "schema": {
+                            "$ref": "#/definitions/pet"
+                        }
+                    },
+                    "default": {
+                        "description": "unexpedted error"
                     }
                 }
             }
@@ -143,31 +149,6 @@
                         }
                     }
                 }
-            },
-            "delete": {
-                "description": "(NOT IMPLEMENTED YET) deletes a single pet based on the ID supplied",
-                "operationId": "deletePet",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID of pet to delete",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "pet deleted"
-                    },
-                    "default": {
-                        "description": "unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/errorModel"
-                        }
-                    }
-                }
             }
         }
     },
@@ -179,6 +160,10 @@
                 "pet-store.pet/name"
             ],
             "properties": {
+                "db/id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
                 "pet-store.pet/id": {
                     "type": "integer",
                     "format": "int64"
@@ -208,6 +193,23 @@
                             },
                             "pet-store.pet/tag": {
                                 "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "deletePet": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "db/id": {
+                                "type": "integer",
+                                "format": "int64"
                             }
                         }
                     }
