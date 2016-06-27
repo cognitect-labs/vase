@@ -4,36 +4,36 @@
             [io.pedestal.interceptor :as i]))
 
 (defn connect
-  "Given an API descriptor, attempt to create the database and connect to it.
-  Returns the connection."
-  [{:keys [vase.descriptor/datomic-uri]}]
-  (d/create-database datomic-uri)
-  (d/connect datomic-uri))
+  "Given a Datomic URI, attempt to create the database and connect to it,
+  returning the connection."
+  [uri]
+  (d/create-database uri)
+  (d/connect uri))
 
-(defn- reshape-norms
-  [{:keys [vase.descriptor/norms]}]
-  (apply merge
-         (map (fn [{:keys [vase.descriptor/ident vase.descriptor/txes vase.descriptor/requires]}]
-                {ident {:txes txes :requires requires}})
-              norms)))
-
-(defn- required-norms
-  [{:keys [vase.descriptor/endpoints]}]
-  (keep identity (mapcat :vase.descriptor/schemas endpoints)))
+(defn normalize-norm-keys
+  [norms]
+  (reduce
+    (fn [acc [k-title v-map]]
+      (assoc acc
+             k-title (reduce
+                       (fn [norm-acc [nk nv]]
+                         (assoc norm-acc
+                                (keyword (name nk)) nv))
+                       {} v-map)))
+    {}
+    norms))
 
 (defn ensure-schema
-  [descriptor]
-  (let [conn (connect descriptor)]
-    (c/ensure-conforms conn (reshape-norms descriptor) (required-norms descriptor))
-    conn))
+  [conn norms]
+  (c/ensure-conforms conn (normalize-norm-keys norms)))
 
 (defn insert-datomic
   "Provide a Datomic conn and db in all incoming requests"
-  [descriptor]
-  (let [conn (connect descriptor)]
-    (i/-interceptor
-     {:name ::insert-datomic
-      :enter (fn [context]
-               (-> context
-                   (assoc-in [:request :conn] conn)
-                   (assoc-in [:request :db]   (d/db conn))))})))
+  [conn]
+  (i/-interceptor
+    {:name ::insert-datomic
+     :enter (fn [context]
+              (-> context
+                  (assoc-in [:request :conn] conn)
+                  (assoc-in [:request :db]   (d/db conn))))}))
+

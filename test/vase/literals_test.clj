@@ -26,7 +26,7 @@
 
 #_(deftest validate-literal
   (let [response (helper/post-json "/api/example/v1/validate"
-                              {:age 22
+                              {:age 31
                                :name "paul"})]
     (is (= (:status response) 200))
     (is (empty? (helper/response-data response)))))
