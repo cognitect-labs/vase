@@ -83,10 +83,12 @@
 (defn spec-routes
   "Return a seq of route vectors from a single specification"
   [api-root make-interceptors-fn spec]
-  (let [app-version-root   (api-base api-root spec)
-        app-version-routes (api-routes app-version-root spec make-interceptors-fn)
-        app-api-route      (api-description-route app-version-root
-                                                  make-interceptors-fn
-                                                  app-version-routes
-                                                  (api-description-route-name spec))]
-    (cons app-api-route app-version-routes)))
+  (if (nil? (:activated-apis spec))
+    []
+    (let [app-version-root   (api-base api-root spec)
+          app-version-routes (api-routes app-version-root spec make-interceptors-fn)
+          app-api-route      (api-description-route app-version-root
+                                                    make-interceptors-fn
+                                                    app-version-routes
+                                                    (api-description-route-name spec))]
+      app-version-routes)))
