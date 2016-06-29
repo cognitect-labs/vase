@@ -120,7 +120,7 @@
 
 (defn- bad-request?
   [response errors]
-  (and (nil? (seq response)) (seq errors)))
+  (and (empty? response) (seq errors)))
 
 (defn- exception?
   [response]
@@ -133,3 +133,20 @@
     (bad-request?          response errors) 400
     (exception?            response)        500
     :else                                   200))
+
+(defn response
+  ([request payload]
+   (response request payload ""))
+  ([request payload doc]
+   (let [resp-body (dissoc payload :errors)
+         err-body (:errors payload {})]
+     {:body {:request {:body (get request :json-params
+                                  (get request :edn-params
+                                       (get request :query-string "")))
+                       :this_ (:uri request)
+                       :help (if (string? doc) doc "")
+                       :server_recv_time (str (:received-time request))}
+             :response resp-body
+             :errors err-body}
+      :status (status-code resp-body err-body)})))
+
