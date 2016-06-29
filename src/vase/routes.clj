@@ -91,4 +91,4 @@
                                                     make-interceptors-fn
                                                     app-version-routes
                                                     (api-description-route-name spec))]
-      app-version-routes)))
+      (cons app-api-route app-version-routes))))
