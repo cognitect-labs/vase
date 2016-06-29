@@ -20,8 +20,11 @@
   [spec-or-specs]
   (let [edn-specs (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
         uri-norms (reduce (fn [acc spec]
-                            (assoc acc (:datomic-uri spec)
-                                   (get-in spec [:descriptor :vase/norms])))
+                            (let [uri (:datomic-uri spec)
+                                  norms (get-in spec [:descriptor :vase/norms])]
+                              (if (contains? acc uri)
+                                (update-in acc [uri] #(merge-with concat % norms))
+                                (assoc acc uri norms))))
                           {}
                           edn-specs)]
     (reduce (fn [acc [uri norms]]
