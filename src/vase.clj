@@ -16,21 +16,25 @@
   "Given an api-spec or a collection of app-specs,
   extract the schema norms, ensure they conform, and idempotently
   transact them into the Datomic DB.
-  Returns a map of {'db-uri' datomic-conn}."
+  Returns a map of {'db-uri' {:connection datomic-conn, :norms {... all merged norms ..}}}."
   [spec-or-specs]
   (let [edn-specs (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
         uri-norms (reduce (fn [acc spec]
                             (let [uri (:datomic-uri spec)
                                   norms (get-in spec [:descriptor :vase/norms])]
                               (if (contains? acc uri)
-                                (update-in acc [uri] #(merge-with concat % norms))
+                                ;; It is expected that norm chunks are complete.
+                                ;;   A single chunk cannot be spread across files,
+                                ;;   which is why we're using `merge` and not `merge-with concat`
+                                (update-in acc [uri] #(merge % norms))
                                 (assoc acc uri norms))))
                           {}
                           edn-specs)]
     (reduce (fn [acc [uri norms]]
               (let [conn (datomic/connect uri)]
                 (datomic/ensure-schema conn norms)
-                (assoc acc uri conn)))
+                (assoc acc uri {:connection conn
+                                :norms norms})))
             {}
             uri-norms)))
 
