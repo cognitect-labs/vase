@@ -1,4 +1,4 @@
-{:activated-apis [:petstore-full/v1]
+{:activated-apis [:petstore-full/v1/orders :petstore-full/v1/order]
  :datomic-uri "datomic:dev://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
@@ -19,33 +19,37 @@
                       [:petstore.order/status :one :ref "Reference to one of :placed, :approved or :delivered"]
                       [:petstore.order/complete :one :boolean "completed or not"]]]}}
   :vase/apis
-  {:petstore-full/v1
+  {:petstore-full/v1/orders
    {:vase.api/routes
-    {"/orders" {:post #vase/transact {:name :petstore-full-v1/add-orders
-                                      :properties [:petstore.order/id
-                                                   :petstore.order/petId
-                                                   :petstore.order/quantity
-                                                   :petstore.order/shipDate
-                                                   :petstore.order/status
-                                                   :petstore.order/complete]}
-                :put #vase/transact {:name :petstore-full-v1/update-orders
-                                     :properties [:db/id
-                                                  :petstore.order/petId
-                                                  :petstore.order/quantity
-                                                  :petstore.order/shipDate
-                                                  :petstore.order/status
-                                                  :petstore.order/complete]}}
-     "/order/:id" {:get #vase/query {:name :petstore-full-v1/find-an-order
-                                     :params [id]
-                                     :edn-coerce [id]
-                                     :query [:find
-                                             (pull ?e
-                                                   [:petstore.order/id
-                                                    {:petstore.order/petId
-                                                     [:petstore.pet/id :petstore.pet/name]}
-                                                    :petstore.order/quantity
-                                                    :petstore.order/shipDate
-                                                    {:petstore.order/status [:db/ident]}
-                                                    :petstore.order/complete]) :in $ ?id :where [?e :petstore.order/id ?id]]}}}
+    {"/" {:post #vase/transact {:name :petstore-full-v1/add-orders
+                                :properties [:petstore.order/id
+                                             :petstore.order/petId
+                                             :petstore.order/quantity
+                                             :petstore.order/shipDate
+                                             :petstore.order/status
+                                             :petstore.order/complete]}
+          :put #vase/transact {:name :petstore-full-v1/update-orders
+                               :properties [:db/id
+                                            :petstore.order/petId
+                                            :petstore.order/quantity
+                                            :petstore.order/shipDate
+                                            :petstore.order/status
+                                            :petstore.order/complete]}}}
+    :vase.api/schemas [:petstore-full/order-status-schema
+                       :petstore-full/order-schema]}
+   :petstore-full/v1/order
+   {:vase.api/routes
+    {"/:id" {:get #vase/query {:name :petstore-full-v1/find-an-order
+                               :params [id]
+                               :edn-coerce [id]
+                               :query [:find
+                                       (pull ?e
+                                             [:petstore.order/id
+                                              {:petstore.order/petId
+                                               [:petstore.pet/id :petstore.pet/name]}
+                                              :petstore.order/quantity
+                                              :petstore.order/shipDate
+                                              {:petstore.order/status [:db/ident]}
+                                              :petstore.order/complete]) :in $ ?id :where [?e :petstore.order/id ?id]]}}}
     :vase.api/schemas [:petstore-full/order-status-schema
                        :petstore-full/order-schema]}}}}

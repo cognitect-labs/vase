@@ -1,4 +1,4 @@
-{:activated-apis [:petstore-full/v1]
+{:activated-apis [:petstore-full/v1/tags]
  :datomic-uri  "datomic:dev://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
@@ -7,16 +7,16 @@
                      [[:petstore.tag/id :one :long :unique "tag id"]
                       [:petstore.tag/name :one :string "tag name"]]]}}
   :vase/apis
-  {:petstore-full/v1
+  {:petstore-full/v1/tags
    {:vase.api/routes
-    {"/tags" {:get #vase/query {:name :petstore-full/find-tags
-                                :params []
-                                :query [:find ?id ?name
-                                        :in $
-                                        :where
-                                        [?e :petstore.tag/id ?id]
-                                        [?e :petstore.tag/name ?name]]}
-              :post #vase/transact {:name :petstore-full/add-tags
-                                    :properties [:petstore.tag/id
-                                                 :petstore.tag/name]}}}
+    {"/" {:get #vase/query {:name :petstore-full/find-tags
+                            :params []
+                            :query [:find ?id ?name
+                                    :in $
+                                    :where
+                                    [?e :petstore.tag/id ?id]
+                                    [?e :petstore.tag/name ?name]]}
+          :post #vase/transact {:name :petstore-full/add-tags
+                                :properties [:petstore.tag/id
+                                             :petstore.tag/name]}}}
     :vase.api/schemas [:petstore-full/tag-schema]}}}}

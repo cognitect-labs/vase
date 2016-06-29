@@ -41,15 +41,11 @@
   [descriptors]
   (reduce #(conj %1 (vase/load-edn-resource %2)) []  descriptors))
 
-(defn ensure-schemas
-  [specs]
-  (doall (map #(vase/ensure-schema %) specs)))
-
 (defn service
   []
   (let [descriptors (:descriptors (vase/load-edn-resource "vase-descriptors.edn"))
         specs (load-specs descriptors)]
-    (ensure-schemas specs)
+    (vase/ensure-schema specs)
     {:env :prod
      ::http/routes (routes specs)
      ::http/resource-path "/public"

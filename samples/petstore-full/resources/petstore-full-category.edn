@@ -1,4 +1,4 @@
-{:activated-apis [:petstore-full/v1]
+{:activated-apis [:petstore-full/v1/categories]
  :datomic-uri  "datomic:dev://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
@@ -8,15 +8,15 @@
                             [:petstore.category/name :one :string "name of category"]]]}}
 
   :vase/apis
-  {:petstore-full/v1
+  {:petstore-full/v1/categories
    {:vase.api/routes
-    {"/categories" {:get #vase/query {:name :petstore-full/find-categories
-                                      :params []
-                                      :query [:find (pull ?e [*])
-                                              :in $
-                                              :where
-                                              [?e :petstore.category/id ?id]]}
-                    :post #vase/transact {:name :petstore-full/add-categories
-                                          :properties [:petstore.category/id
-                                                       :petstore.category/name]}}}
+    {"/" {:get #vase/query {:name :petstore-full/find-categories
+                            :params []
+                            :query [:find (pull ?e [*])
+                                    :in $
+                                    :where
+                                    [?e :petstore.category/id ?id]]}
+          :post #vase/transact {:name :petstore-full/add-categories
+                                :properties [:petstore.category/id
+                                             :petstore.category/name]}}}
     :vase.api/schemas [:petstore-full/category-schema]}}}}

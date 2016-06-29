@@ -1,4 +1,4 @@
-{:activated-apis [:petstore-full/v1]
+{:activated-apis [:petstore-full/v1/users :petstore-full/v1/user]
  :datomic-uri "datomic:dev://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
@@ -13,9 +13,12 @@
                            [:petstore.user/phone :one :string "phone number"]
                            [:petstore.user/userStatus :one :long "User Status"]]]}}
   :vase/apis
-  {:petstore-full/v1
+  {:petstore-full/v1/users
    {:vase.api/routes
-    {"/users" {:get #vase/respond {:name :petstore-full.v1/find-users
-                                   :body "Users should be found"}}
-     "/user/:id" {:get #vase/respond {:name :petstore-full.v1/find-a-user}}}
+    {"/" {:get #vase/respond {:name :petstore-full.v1/find-users
+                              :body "Users should be found"}}}
+    :vase.api/schemas [:petstore-full/user-schema]}
+   :petstore-full/v1/user
+   {:vase.api/routes
+    {"/:id" {:get #vase/respond {:name :petstore-full.v1/find-a-user}}}
     :vase.api/schemas [:petstore-full/user-schema]}}}}
