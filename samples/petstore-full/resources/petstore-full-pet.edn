@@ -34,7 +34,10 @@
                                             :petstore.pet/name
                                             :petstore.pet/photoUrls
                                             :petstore.pet/tags
-                                            :petstore.pet/status]}}
+                                            :petstore.pet/status]}
+          :delete #vase/transact {:name :petstore-full-v1/delete-pets
+                                  :db-op :vase/retract-entity
+                                  :properties [:db/id]}}
      "/findByStatus" {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
                                         :params [statuses]
                                         :edn-coerce [statuses]
