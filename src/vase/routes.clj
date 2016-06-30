@@ -57,7 +57,9 @@
           :let [interceptors (if (vector? action)
                                (into common (map i/interceptor action))
                                (conj common (i/interceptor action)))]]
-      [(str base path) verb (make-interceptors-fn interceptors)])))
+      (if (= path "/")
+        [(str base) verb (make-interceptors-fn interceptors)]
+        [(str base path) verb (make-interceptors-fn interceptors)]))))
 
 (defn- api-base
   [api-root spec]
