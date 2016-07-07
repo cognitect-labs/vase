@@ -21,20 +21,22 @@
   :vase/apis
   {:petstore-full/v1/store/orders
    {:vase.api/routes
-    {"/" {:post #vase/transact {:name :petstore-full-v1/add-orders
-                                :properties [:petstore.order/id
+    {"/" {:post [petstore-full.service/date-conversion
+                 #vase/transact {:name :petstore-full-v1/add-orders
+                                 :properties [:petstore.order/id
+                                              :petstore.order/petId
+                                              :petstore.order/quantity
+                                              :petstore.order/shipDate
+                                              :petstore.order/status
+                                              :petstore.order/complete]}]
+          :put [petstore-full.service/date-conversion
+                #vase/transact {:name :petstore-full-v1/update-orders
+                                :properties [:db/id
                                              :petstore.order/petId
                                              :petstore.order/quantity
                                              :petstore.order/shipDate
                                              :petstore.order/status
-                                             :petstore.order/complete]}
-          :put #vase/transact {:name :petstore-full-v1/update-orders
-                               :properties [:db/id
-                                            :petstore.order/petId
-                                            :petstore.order/quantity
-                                            :petstore.order/shipDate
-                                            :petstore.order/status
-                                            :petstore.order/complete]}
+                                             :petstore.order/complete]}]
           :delete #vase/transact {:name :petstore-full-v1/delete-orders
                                   :db-op :vase/retract-entity
                                   :properties [:db/id]}}}

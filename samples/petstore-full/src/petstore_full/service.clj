@@ -1,8 +1,10 @@
 (ns petstore-full.service
-  (:require [io.pedestal.http :as http]
+  (:require [clojure.instant :as instant]
+            [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.definition.table :as table]
             [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.interceptor :as i]
             [ring.util.response :as ring-resp]
             [vase]
             [vase.datomic]))
@@ -19,11 +21,22 @@
 
 (def common-interceptors [(body-params/body-params) http/html-body])
 
+(def date-conversion
+  (i/interceptor
+   {:name ::my-interceptor
+    :enter (fn [context]
+             (let [payloads (get-in context [:request :json-params :payload])
+                   payloads (map (fn [m] (if (:petstore.order/shipDate m)
+                                          (update m :petstore.order/shipDate instant/read-instant-date)
+                                          m))
+                                 payloads)]
+               (assoc-in context [:request :json-params :payload] payloads)))}))
+
 (defn master-routes
   []
   (table/table-routes
    {}
-   [["/" :get [http/html-body home-page] :route-name ::home-page]
+   [["/" :get [http/log-request http/html-body home-page] :route-name ::home-page]
     ["/about" :get [http/html-body about-page] :route-name ::about-page]]))
 
 (defn app-routes
