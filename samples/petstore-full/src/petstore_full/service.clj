@@ -23,7 +23,7 @@
 
 (def date-conversion
   (i/interceptor
-   {:name ::my-interceptor
+   {:name ::date-conversion
     :enter (fn [context]
              (let [payloads (get-in context [:request :json-params :payload])
                    payloads (map (fn [m] (if (:petstore.order/shipDate m)
