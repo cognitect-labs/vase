@@ -24,6 +24,11 @@
   `(let [~req-sym (:request ~ctx-sym)]
      ~forms))
 
+(defn bind-custom-params
+  [ctx-sym req-sym forms]
+  `(let [~req-sym (merge ~req-sym (:custom-params ~ctx-sym))]
+     ~forms))
+
 (defn decode-map
   "URL Decode the values of a Map
   This opens up the potential for non-sanitized input to be rendered."
@@ -263,6 +268,7 @@
            (nesting
             (context-fn ctx-sym)
             (bind-request ctx-sym req-sym)
+            (bind-custom-params ctx-sym req-sym)
             (bind-allowed-arguments req-sym args-sym properties)
             (perform-transaction req-sym args-sym tx-result-sym db-op)
             (bind-response resp-sym (tx-response-body tx-result-sym args-sym))
