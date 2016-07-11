@@ -27,7 +27,19 @@
                                               :petstore.user/password
                                               :petstore.user/phone
                                               :petstore.user/userStatus]}
-                 petstore-full.interceptors/cipher-passwords]}}
+                 petstore-full.interceptors/cipher-passwords-after-post]
+          :delete [#vase/transact {:name :petstore-full.v1/delete-users
+                                   :db-op :vase/retract-entity
+                                   :properties [:db/id]}
+                   petstore-full.interceptors/cipher-passwords-after-delete]}
+     "/login" {:get [#vase/query {:name :petstore-full.v1/login
+                                  :params [username]
+                                  :query [:find ?username ?password
+                                          :in $ ?username
+                                          :where
+                                          [?e :petstore.user/username ?username]
+                                          [?e :petstore.user/password ?password]]}
+                     petstore-full.interceptors/authenticate-user]}}
     :vase.api/schemas [:petstore-full/user-schema]}
    :petstore-full/v1/user
    {:vase.api/routes

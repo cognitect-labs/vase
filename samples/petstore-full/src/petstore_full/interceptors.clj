@@ -53,9 +53,10 @@
                           user)]
                (assoc-in context [:response :body] user)))}))
 
-(def cipher-passwords
+(defn cipher-passwords
+  [name]
   (i/interceptor
-   {:name ::cipher-passwords
+   {:name name
     :leave (fn [context]
              (prn ::cipher-password (get-in context [:response :body]))
              (let [users (get-in context [:response :body :whitelist])
@@ -64,8 +65,20 @@
                                        m)) users)]
                (assoc-in context [:response :body] users)))}))
 
-(def decrypt-password
+(def cipher-passwords-after-post
+  (cipher-passwords ::cipher-passwords-after-post))
+
+(def cipher-passwords-after-delete
+  (cipher-passwords ::cipher-passwords-after-delete))
+
+(def authenticate-user
   (i/interceptor
-   {:name ::descrypt-password
+   {:name ::authenticate-user
     :leave (fn [context]
-             (prn ::decrypt-password (:response context)))}))
+             (let [[username encrypted] (-> context :response :body first)
+                   saved-password (decrypt encrypted)]
+               (if (= saved-password (get-in context [:request :params :password]))
+                 (assoc-in context [:response :body] "success")
+                 (-> context
+                     (assoc-in [:response :body] "failure")
+                     (assoc-in [:response :status] 400)))))}))
