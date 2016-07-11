@@ -564,8 +564,8 @@
                 "tags": [
                     "user"
                 ],
-                "summary": "Create user",
-                "description": "This can only be done by the logged in user.",
+                "summary": "Add new users",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"petstore.user/id\": 0,\n    \"petstore.user/username\": \"who\",\n    \"petstore.user/firstName\": \"John\",\n    \"petstore.user/lastName\": \"Doe\",\n    \"petstore.user/email\": \"who@example.com\",\n    \"petstore.user/password\": \"password0\",\n    \"petstore.user/phone\": \"123-456-7890\",\n    \"petstore.user/userStatus\": 0\n    }\n  ]\n}\n",
                 "operationId": "createUser",
                 "produces": [
                     "application/json",
@@ -585,6 +585,37 @@
                 "responses": {
                     "default": {
                         "description": "successful operation"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "user"
+                ],
+                "summary": "Delete users based on usernames",
+                "description": "Example post data looks like:\n{\n  \"payload\": [\n  {\n    \"db/id\": [\"petstore.user/username\", \"who\"]\n    }\n  ]\n}\n",
+                "operationId": "deleteUser",
+                "produces": [
+                    "application/json",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "The name that needs to be deleted",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/deleteUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Invalid username supplied"
+                    },
+                    "404": {
+                        "description": "User not found"
                     }
                 }
             }
@@ -649,12 +680,12 @@
                 }
             }
         },
-        "/users/{username}": {
+        "/user/{username}": {
             "get": {
                 "tags": [
                     "user"
                 ],
-                "summary": "Get user by user name",
+                "summary": "Get a user by username",
                 "description": "",
                 "operationId": "getUserByName",
                 "produces": [
@@ -689,7 +720,7 @@
                 "tags": [
                     "user"
                 ],
-                "summary": "Updated user",
+                "summary": "Updated a user",
                 "description": "This can only be done by the logged in user.",
                 "operationId": "updateUser",
                 "produces": [
@@ -717,35 +748,6 @@
                 "responses": {
                     "400": {
                         "description": "Invalid user supplied"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "user"
-                ],
-                "summary": "Delete user",
-                "description": "This can only be done by the logged in user.",
-                "operationId": "deleteUser",
-                "produces": [
-                    "application/json",
-                    "application/xml"
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "username",
-                        "description": "The name that needs to be deleted",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "400": {
-                        "description": "Invalid username supplied"
                     },
                     "404": {
                         "description": "User not found"
@@ -837,6 +839,29 @@
                                 "type": "integer",
                                 "format": "int32",
                                 "description": "User Status"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "deleteUser": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "db/id"
+                        ],
+                        "properties": {
+                            "db/id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "for example, {\"db/id\" [\"petstore.user/usernmae\" \"who\"]}"
                             }
                         }
                     }

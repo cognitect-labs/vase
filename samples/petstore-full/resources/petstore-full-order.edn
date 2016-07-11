@@ -21,7 +21,7 @@
   :vase/apis
   {:petstore-full/v1/store/orders
    {:vase.api/routes
-    {"/" {:post [petstore-full.service/date-conversion
+    {"/" {:post [petstore-full.interceptors/date-conversion
                  #vase/transact {:name :petstore-full-v1/add-orders
                                  :properties [:petstore.order/id
                                               :petstore.order/petId
@@ -29,7 +29,7 @@
                                               :petstore.order/shipDate
                                               :petstore.order/status
                                               :petstore.order/complete]}]
-          :put [petstore-full.service/date-conversion
+          :put [petstore-full.interceptors/date-conversion
                 #vase/transact {:name :petstore-full-v1/update-orders
                                 :properties [:db/id
                                              :petstore.order/petId
