@@ -15,9 +15,8 @@
   :vase/apis
   {:petstore-full/v1/users
    {:vase.api/routes
-    {"/" {:get #vase/respond {:name :petstore-full.v1/find-users
-                              :body "Users should be found"}
-          :post [petstore-full.interceptors/encrypt-password
+    {"/" {:post [petstore-full.interceptors/encrypt-passwords
+                 petstore-full.interceptors/cipher-passwords
                  #vase/transact {:name :petstore-full.v1/add-users
                                  :properties [:petstore.user/id
                                               :petstore.user/username
@@ -26,12 +25,21 @@
                                               :petstore.user/email
                                               :petstore.user/password
                                               :petstore.user/phone
-                                              :petstore.user/userStatus]}
-                 petstore-full.interceptors/cipher-passwords-after-post]
-          :delete [#vase/transact {:name :petstore-full.v1/delete-users
+                                              :petstore.user/userStatus]}]
+          :put [petstore-full.interceptors/encrypt-passwords
+                petstore-full.interceptors/cipher-passwords
+                #vase/transact {:name :petstore-full.v1/update-users
+                                :properties [:db/id
+                                             :petstore.user/firstName
+                                             :petstore.user/lastName
+                                             :petstore.user/email
+                                             :petstore.user/password
+                                             :petstore.user/phone
+                                             :petstore.user/userStatus]}]
+          :delete [petstore-full.interceptors/cipher-passwords
+                   #vase/transact {:name :petstore-full.v1/delete-users
                                    :db-op :vase/retract-entity
-                                   :properties [:db/id]}
-                   petstore-full.interceptors/cipher-passwords-after-delete]}
+                                   :properties [:db/id]}]}
      "/login" {:get [#vase/query {:name :petstore-full.v1/login
                                   :params [username]
                                   :query [:find ?username ?password
@@ -39,15 +47,18 @@
                                           :where
                                           [?e :petstore.user/username ?username]
                                           [?e :petstore.user/password ?password]]}
-                     petstore-full.interceptors/authenticate-user]}}
+                     petstore-full.interceptors/authenticate-user]}
+     "/logout" {:get [petstore-full.interceptors/log-off-user
+                      #vase/respond {:name :petstore-full.v1/logout-user
+                                     :body "logged out"}]}}
     :vase.api/schemas [:petstore-full/user-schema]}
    :petstore-full/v1/user
    {:vase.api/routes
-    {"/:username" {:get [#vase/query {:name :petstore-full.v1/find-a-user
+    {"/:username" {:get [petstore-full.interceptors/query-cipher-password
+                         #vase/query {:name :petstore-full.v1/find-a-user
                                       :params [username]
                                       :query [:find
                                               (pull ?e [*])
-                                              :in $ ?username :where [?e :petstore.user/username ?username]]}
-                         petstore-full.interceptors/cipher-password]}}
+                                              :in $ ?username :where [?e :petstore.user/username ?username]]}]}}
     :vase.api/schemas [:petstore-full/user-schema]}}}}
 

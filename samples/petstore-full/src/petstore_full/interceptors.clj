@@ -32,9 +32,9 @@
         bytes (.doFinal decryptor bytes)]
     (String. bytes)))
 
-(def encrypt-password
+(def encrypt-passwords
   (i/interceptor
-   {:name ::encrypt-password
+   {:name ::encrypt-passwords
     :enter (fn [context]
              (let [payloads (get-in context [:request :json-params :payload])
                    payloads (map (fn [m] (if (:petstore.user/password m)
@@ -42,34 +42,25 @@
                                           m)) payloads)]
                (assoc-in context [:request :json-params :payload] payloads)))}))
 
-(def cipher-password
+(def query-cipher-password
   (i/interceptor
-   {:name ::cipher-password
+   {:name ::query-cipher-password
     :leave (fn [context]
-             (prn ::cipher-password (get-in context [:response :body]))
              (let [user (ffirst (get-in context [:response :body]))
                    user (if (:petstore.user/password user)
                           (assoc user :petstore.user/password "**********")
                           user)]
                (assoc-in context [:response :body] user)))}))
 
-(defn cipher-passwords
-  [name]
+(def cipher-passwords
   (i/interceptor
-   {:name name
+   {:name ::cipher-passwords
     :leave (fn [context]
-             (prn ::cipher-password (get-in context [:response :body]))
              (let [users (get-in context [:response :body :whitelist])
                    users (map (fn [m] (if (:petstore.user/password m)
                                        (assoc m :petstore.user/password "**********")
                                        m)) users)]
                (assoc-in context [:response :body] users)))}))
-
-(def cipher-passwords-after-post
-  (cipher-passwords ::cipher-passwords-after-post))
-
-(def cipher-passwords-after-delete
-  (cipher-passwords ::cipher-passwords-after-delete))
 
 (def authenticate-user
   (i/interceptor
@@ -77,8 +68,18 @@
     :leave (fn [context]
              (let [[username encrypted] (-> context :response :body first)
                    saved-password (decrypt encrypted)]
+               ;; It's a good idea to add info in session or cookie
+               ;; if a user is succesfully logged in.
                (if (= saved-password (get-in context [:request :params :password]))
-                 (assoc-in context [:response :body] "success")
+                 (assoc-in context [:response :body] (str "logged in as: " username))
                  (-> context
-                     (assoc-in [:response :body] "failure")
+                     (assoc-in [:response :body] "login failed")
                      (assoc-in [:response :status] 400)))))}))
+
+(def log-off-user
+  (i/interceptor
+   {:name ::log-off-user
+    :enter (fn [context]
+             ;; Possibly, this function deletes some info about logged
+             ;; in state from session or cookie
+             context)}))

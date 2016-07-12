@@ -359,57 +359,6 @@
                         ]
                     }
                 ]
-            },
-            "post": {
-                "tags": [
-                    "pet"
-                ],
-                "summary": "Updates a pet in the store with form data",
-                "description": "WON'T SUPPORT. Vase doesn't support this feature.",
-                "operationId": "updatePetWithForm",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/xml"
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "petId",
-                        "description": "ID of pet that needs to be updated",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "name",
-                        "description": "Updated name of the pet",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "status",
-                        "description": "Updated status of the pet",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "405": {
-                        "description": "Invalid input"
-                    }
-                },
-                "security": [
-                    {
-                        "petstore_auth": [
-                            "write_pets",
-                            "read_pets"
-                        ]
-                    }
-                ]
             }
         },
         "/store/orders": {
@@ -588,6 +537,37 @@
                     }
                 }
             },
+            "put": {
+                "tags": [
+                    "user"
+                ],
+                "summary": "Updated existing users",
+                "description": "Example post data looks like: { \"payload\": [ { \"db/id\": [\"petstore.user/username\", \"who\"], \"petstore.user/firstName\": \"Wendi\", \"petstore.user/lastName\": \"Wade\", \"petstore.user/email\": \"wendi.wade@example.com\", \"petstore.user/password\": \"new-password\"} ] }\n",
+                "operationId": "updateUser",
+                "produces": [
+                    "application/json",
+                    "application/xml"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "users whose data need to be updated",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/updateUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Invalid user supplied"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "user"
@@ -715,44 +695,6 @@
                         "description": "User not found"
                     }
                 }
-            },
-            "put": {
-                "tags": [
-                    "user"
-                ],
-                "summary": "Updated a user",
-                "description": "This can only be done by the logged in user.",
-                "operationId": "updateUser",
-                "produces": [
-                    "application/json",
-                    "application/xml"
-                ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "username",
-                        "description": "name that need to be deleted",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Updated user object",
-                        "required": false,
-                        "schema": {
-                            "$ref": "#/definitions/User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "400": {
-                        "description": "Invalid user supplied"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
             }
         }
     },
@@ -812,6 +754,10 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "petstore.user/id",
+                            "petstore.user/username"
+                        ],
                         "properties": {
                             "petstore.user/id": {
                                 "type": "integer",
@@ -839,6 +785,47 @@
                                 "type": "integer",
                                 "format": "int32",
                                 "description": "User Status"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "updateUser": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "db/id"
+                        ],
+                        "properties": {
+                            "db/id": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "petstore.user/firstName": {
+                                "type": "string"
+                            },
+                            "petstore.user/lastName": {
+                                "type": "string"
+                            },
+                            "petstore.use/email": {
+                                "type": "string"
+                            },
+                            "petstore.user/password": {
+                                "type": "string"
+                            },
+                            "petstore.user/phone": {
+                                "type": "string"
+                            },
+                            "petstire.user/userStatus": {
+                                "type": "integer",
+                                "format": "int32"
                             }
                         }
                     }
@@ -887,6 +874,10 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "petstore.category/id",
+                            "petstore.category/name"
+                        ],
                         "properties": {
                             "petstore.category/id": {
                                 "type": "integer",
@@ -1088,6 +1079,10 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "petstore.tag/id",
+                            "petstore.tag/name"
+                        ],
                         "properties": {
                             "petstore.tag/id": {
                                 "type": "integer",
