@@ -44,16 +44,16 @@ If you want to use Datomic's transactor, you should complete a couple of prepara
 ## How to use the app
 
 Usages are the same for all models.
-Here's are basic usage:
+Here is a basic usage:
 
 1. Click a model (category, tag, pet, store, or user)
 2. Click a route ("POST /categories" or other)
 3. Fill body or write parameter(s)
 4. Click "Try it out!" button
 
-Depend on the models, there are slight differences.
+Depend on the models, there are some differences in paths or input data.
 The category and tag's model is simple, so Swagger UI fits well.
-You can use an example value as is. So, click example value, then edit in body window.
+You can use an example value on the ui as is. So, click example value, then edit values in body window.
 
 The pet and store(order) models have reference values.
 On Datomic, those are entity references and expressed in array forms.
@@ -61,7 +61,7 @@ The first value of the array must be an attribute ident.
 Swagger UI doesn't fit well for this kind of data.
 
 For this reason, many operations have an example data in "Implementation Notes" section.
-Copy and paste a map of example data in body window then edit the data.
+Copy and paste a map of example data in body window then edit values.
 
 For all models, id should be unique in each model.
 For example, you can't add more than one of category id 0, but category id 0 and tag id 0 don't conflict.
@@ -165,8 +165,9 @@ The date-conversion interceptor is included in the interceptor chain and works a
 The interceptor chain is defined in the descriptor, [petstore-full-order.edn](resources/petstore-full-order.edn).
 
 
-Additionally, be aware that paths to order have an extra layer.
-There's no real layer. This is done by route definitions in the descriptor.
+Additionally, be aware that paths to orders have an extra layer.
+There's no real layer such as store.
+This layer setting is done by route definitions in the descriptor.
 
 
 ### User
@@ -214,11 +215,10 @@ A couple of pre/post processes are done before/after transactions or queries.
 - During the user authentication, the password in the query result will be decrypted and compared to the input (post-process).
 
 
-This user management section shows how Vase users can add pre/post processes before/after transactions or queries.
+These pre/post processes are done by custom interceptors.
 See [petstore-full-user.edn](resources/petstore-full-user.edn) and [interceptors.clj](src/petstore_full/interceptors.clj) for details.
 Vase's core actions such as #vase/transact or #vase/query are also interceptors.
 Given that, to add another custom interceptors to the interceptor chain, list those in a vector including Vase's actions.
-This is done in the descriptor(s).
 
 
 This app's login/logout does nothing for other operations unlike original Swagger example.
@@ -274,5 +274,5 @@ There may be another better solution for this sort of route conflict.
 ## Links
 * [Vase docs](../../docs)
 * [Vase example descriptor](../../test/resources/test_descriptor.edn)
-* [Pedestal docs](https://github.com/pedestal/guides)
+* [Pedestal docs](https://github.com/pedestal/pedestal/tree/master/guides)
 
