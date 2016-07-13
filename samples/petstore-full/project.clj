@@ -10,7 +10,7 @@
                  [org.slf4j/jul-to-slf4j "1.7.21"]
                  [org.slf4j/jcl-over-slf4j "1.7.21"]
                  [org.slf4j/log4j-over-slf4j "1.7.21"]
-                 [com.datomic/datomic-pro "0.9.5372" :exclusions [[com.fasterxml.jackson.core/jackson-core]
+                 [com.datomic/datomic-pro "0.9.5380" :exclusions [[com.fasterxml.jackson.core/jackson-core]
                                                                   [com.fasterxml.jackson.core/jackson-databind]
                                                                   [joda-time]]]
                  [com.cognitect/vase "0.1.0-SNAPSHOT" :exclusions [com.datomic/datomic-free]]]
