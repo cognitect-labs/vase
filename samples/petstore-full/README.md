@@ -1,26 +1,44 @@
 # Pet store full version example
 
-This is a pet store full version app, Swagger ui on the client side and Vase app on the backend.
-The app is based on Swagger example, http://petstore.swagger.io/ with some tweaks to fit to Vase.
-It is an example of OpenAPI, https://openapis.org/, a specification for RESTful API.
+This is a pet store full version app, Swagger UI on the client side and Vase app on the backend.
+The app is based on Swagger example, http://petstore.swagger.io/ with some tweaks to fit in Vase.
+Swagger pet store is an example of OpenAPI, https://openapis.org/, a specification to describe and document RESTful APIs.
 
-This full version of pet store app is not like a simple version app, close to a real app.
-It may be complicated if it is the first app to look at.
-Just for understanding Vase concept, a simple version of pet store app is a better one.
+This full version of pet store app is not like a [simple version app](../pet-store), close to a real app.
+The full version may be complicated if it is the first app to look at.
+Just for understanding Vase concept, the simple version of pet store would be better to get started.
 
-There are multiple data models, many routes and data conversions for pre/post processes defined in descriptors.
-The descriptors are devided into five since a single descriptor would be quit long and hard to write and read.
-Each descriptor defines each model and routes to manage those, for example pet, order or user.
-Vase has an ability to handle multiple descriptors. There's an extra code to read five, but that's it.
-Vase users don't need to add any more code for multiple descriptors.
+The full version app has multiple data models, many routes and custom interceptors for pre/post processes.
+The models, routes and interceptor chains are defined in descriptors.
+The descriptors for this app could have been written in a single descriptor.
+However, if all were put together in the single descriptor, the descriptor would have grown big.
+A big descriptor makes it hard to track a nested structure, error prone to add a new definition in a correct nested level.
+For this reason, the descriptors are divided into five based on models.
 
+This app's each descriptor defines each model and routes to manage the model.
+The models are a category, tag, pet, order(store) and user.
+Vase has an ability to handle multiple descriptors.
+There's an extra code to read five,
+but that's the only difference in `service.clj` compared to a single descriptor Vase app.
+Vase users don't need to add any more code because of multiple descriptors.
+
+The descriptor consists of schema/route definitions with interceptor chains and a little more information.
 When a Vase app gets started, it transacts all schemas defined in the descriptors to Datomic database(s).
-Datomic uris are also defined in the descriptors. Those can be the same or different ones.
-If the app doesn't need an extra logic other than sending transact data or making queries,
-the app is ready to use with descriptor(s) only.
-If the app needs extra logics such as a conversion from RFC3339 datetime string to datomic friendly form,
-the app needs custom interceptors. Definitions of interceptor chains are also done in the descriptors.
-This full version of pet store app has a few interceptors for such pre/post processes.
+Datomic uris are also defined in the descriptors. Those can be the same or different ones,
+for example, descriptor A, B and C have uri1 while descriptor D has uri2.
+Vase recognizes what schema should be transacted to what database.
+This full version app has the same uri in all five descriptors.
+
+Since Vase is a RESTful API framework, routes definition should follow the manner of RESTful routes.
+This full version app is based on Swagger example, routes are RESTful.
+Each route is mapped to one interceptor or interceptor chain.
+Vase's actions take a specific notation, but those are interceptors also.
+The full version app has a few of custom interceptors for pre/post processes
+which work before and after transactions and queries.
+For example, datetime needs a conversion from RFC3339 datetime string to Datomic friendly form.
+Such custom interceptors are included in interceptor chains which are defined in the descriptors.
+As this app does, more than one custom interceptors can be added in the single interceptor chain,
+in another words, in the single RESTful route.
 
 
 ## Datomic preparation
@@ -30,7 +48,7 @@ Vase pulls Datomic from its dependency.
 If you want to use Datomic's transactor, you should complete a couple of preparations.
 
 1. Download Datomic Pro archive and extract.
-2. Go to Datomic Pro's top directoy and type `bin/maven-install` to install Datomic to a local maven repo.
+2. Go to Datomic Pro's top directoy and type `bin/maven-install` to install libraries to a local maven repo.
 3. Edit `project.clj` to use Datomic pro, also exclude Datomic free from Vase dependency.
    See, [project.clj](project.clj) for details.
 4. Start up Datomic transactor.
@@ -48,19 +66,20 @@ Here is a basic usage:
 
 1. Click a model (category, tag, pet, store, or user)
 2. Click a route ("POST /categories" or other)
-3. Fill body or write parameter(s)
+3. Fill body or input parameter(s)
 4. Click "Try it out!" button
 
-Depend on the models, there are some differences in paths or input data.
-The category and tag's model is simple, so Swagger UI fits well.
-You can use an example value on the ui as is. So, click example value, then edit values in body window.
+Depend on the models, there are some odds to match Swagger UI and Vase.
+The category and tag's models are simple, so Swagger UI fits well.
+You can use an example value on the ui as is.
+So, click a text portion of example value, then edit values in body window.
 
 The pet and store(order) models have reference values.
 On Datomic, those are entity references and expressed in array forms.
 The first value of the array must be an attribute ident.
 Swagger UI doesn't fit well for this kind of data.
 
-For this reason, many operations have an example data in "Implementation Notes" section.
+Because of this, many operations have an example data in "Implementation Notes" section.
 Copy and paste a map of example data in body window then edit values.
 
 For all models, id should be unique in each model.
@@ -69,7 +88,7 @@ For example, you can't add more than one of category id 0, but category id 0 and
 
 ### Category and Tag
 
-Before adding a pet, at least one of category and tag should be added
+Before adding a pet, at least one category and tag should be added.
 These two models are quit simple. Operations are POST and GET only.
 You can add multiple categories/tags at the same time by POST.
 GET will return all categories or tags.
@@ -118,7 +137,7 @@ The pet schema has three reference types:
 Like normal Datomic transact data, entity references are expressed by arrays.
 
 A schema of petstore.pet/photoUrls is cardinality many, string type.
-So, this data is given by an array of string.
+So, this data expects an array of string in input.
 
 
 The pet section has two kinds of queries: findByStatus and find by an id.
