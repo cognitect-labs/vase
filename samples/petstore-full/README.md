@@ -88,13 +88,30 @@ For example, you can't add more than one of category id 0, but category id 0 and
 
 ### Category and Tag
 
+#### Usage
+
 Before adding a pet, at least one category and tag should be added.
-These two models are quit simple. Operations are POST and GET only.
-You can add multiple categories/tags at the same time by POST.
-GET will return all categories or tags.
+
+- POST /categories
+- POST /tags
+
+      You can add multiple categories/tags at the same time.
+      Input data format is the exactly the same as Example Value.
+
+- GET /categories
+- GET /tags
+
+      You can find all categories/tags
+
+#### What to see in category/tag section
+
+Those sections are very basic. It's good to see how Swagger UI works.
+Also, if you look at the descriptor, you can easily figure out how Vase works.
 
 
 ### Pet
+
+#### Usage
 
 Once more than one categories and tags are added, you can add pets.
 If you add at least one pet, you can update(PUT), delete or make a queries.
@@ -147,6 +164,8 @@ The routes are slightly different: `/pets` and `/pet`.
 
 ### Store
 
+#### Usage
+
 Once more than one pets are added, you can add orders.
 If you add at least one pet, you can update(PUT), delete or make a queries.
 
@@ -190,6 +209,8 @@ This layer setting is done by route definitions in the descriptor.
 
 
 ### User
+
+#### Usage
 
 A user model doesn't have any reference to other models. You can add users without adding any other models.
 In this app, whether a user is logged in or not doesn't affect on other operations.
