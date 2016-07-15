@@ -3,6 +3,7 @@
             [vase]
             [vase.service-route-table :as srt]
             [clojure.spec :as s]
+            [clojure.spec.test :as stest]
             [clojure.test :refer :all]
             [io.pedestal.interceptor :as interceptor]))
 
@@ -38,9 +39,9 @@
           (format "%s is not valid!" d)))))
 
 (use-fixtures :once (fn [f]
-                      (s/instrument #'vase/routes)
+                      (stest/instrument `vase/routes)
                       (f)
-                      (s/unstrument #'vase/routes)))
+                      (stest/unstrument `vase/routes)))
 
 (deftest vase-routes-fn-tests
   (is (vase/routes "/api" test-spec))
