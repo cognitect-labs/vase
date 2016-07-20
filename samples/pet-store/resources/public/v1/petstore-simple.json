@@ -3,7 +3,7 @@
     "info": {
         "version": "1.0.0",
         "title": "Swagger Petstore (Simple)",
-        "description": "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification",
+        "description": "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification and Vase microservice.",
         "termsOfService": "http://helloreverb.com/terms/",
         "contact": {
             "name": "Swagger API team",
@@ -76,17 +76,22 @@
                     "200": {
                         "description": "pet response",
                         "schema": {
-                            "$ref": "#/definitions/pet"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/pet"
+                            }
                         }
                     },
                     "default": {
                         "description": "unexpected error",
-                        "schema": null
+                        "schema": {
+                            "$ref": "#/definitions/errorModel"
+                        }
                     }
                 }
             },
             "delete": {
-                "description": "Deletes pets by db/ids.",
+                "description": "Deletes pets based on db/id. Post data looks like:\n\n{\"payload\": [{\"db/id\": [\"pet-store.pet/id\": 0]}]}\n",
                 "operationId": "deletePet",
                 "produces": [
                     "application/json"
@@ -110,7 +115,10 @@
                         }
                     },
                     "default": {
-                        "description": "unexpedted error"
+                        "description": "unexpedted error",
+                        "schema": {
+                            "$ref": "#/definitions/errorModel"
+                        }
                     }
                 }
             }
@@ -155,10 +163,6 @@
     "definitions": {
         "pet": {
             "type": "object",
-            "required": [
-                "pet-store.pet/id",
-                "pet-store.pet/name"
-            ],
             "properties": {
                 "db/id": {
                     "type": "integer",
@@ -183,6 +187,10 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "pet-store.pet/id",
+                            "pet-store.pet/name"
+                        ],
                         "properties": {
                             "pet-store.pet/id": {
                                 "type": "integer",
@@ -206,6 +214,9 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "required": [
+                            "db/id"
+                        ],
                         "properties": {
                             "db/id": {
                                 "type": "integer",
