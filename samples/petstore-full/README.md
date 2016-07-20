@@ -273,6 +273,15 @@ Still, we can define the path `/user/login` in the Vase descriptor,
 however, Pedestal sees `login` as a username when a client requests this path.
 There may be another better solution for this sort of route conflict.
 
+## Configuration
+
+### Port number
+
+A port number is defined in both Swagger UI and Vase app.
+If you want to use other port number:
+
+- Change `"host": "localhost:8888",` in `resources/public/v1/petstore-full.json` for Swagger UI.
+- Change `::http/port 8888` in `src/petstore_full/services.clj` for Vase app.
 
 
 ## Read code
