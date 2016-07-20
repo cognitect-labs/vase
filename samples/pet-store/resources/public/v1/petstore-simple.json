@@ -91,7 +91,7 @@
                 }
             },
             "delete": {
-                "description": "Deletes pets based on db/id. Post data looks like:\n\n{\"payload\": [{\"db/id\": [\"pet-store.pet/id\": 0]}]}\n",
+                "description": "Deletes pets based on db/id. Post data looks like:\n\n{ \"payload\": [ { \"db/id\": [\"pet-store.pet/id\", 0] } ] }\n",
                 "operationId": "deletePet",
                 "produces": [
                     "application/json"
