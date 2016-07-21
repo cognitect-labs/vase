@@ -12,7 +12,7 @@
   string value"
   [routes]
   (i/interceptor
-   {:name (keyword (str (gensym) "-describe-api"))
+   {:name (keyword "vase" (str (gensym "describe-api-")))
     :enter (fn [context]
              (let [{:keys [f sep edn]
                     :or {f "" sep "<br/>" edn false}} (get-in context [:request :query-params])
