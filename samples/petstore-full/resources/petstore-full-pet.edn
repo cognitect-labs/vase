@@ -1,0 +1,73 @@
+{:activated-apis [:petstore-full/v1/pets :petstore-full/v1/pet]
+ :datomic-uri "datomic:dev://localhost:4334/petstore-full"
+ :descriptor
+ {:vase/norms
+  {:petstore-full/pet-status-schema
+   {:vase.norm/txes [[{:db/id #db/id[:db.part/user -5]
+                       :db/ident :petstore.pet.status/available}
+                      {:db/id #db/id[:db.part/user -6]
+                       :db/ident :petstore.pet.status/pending}
+                      {:db/id #db/id[:db.part/user -7]
+                       :db/ident :petstore.pet.status/sold}]]}
+   :petstore-full/pet-schema
+   {:vase.norm/requires [:petsotre-full/pet-status-schema]
+    :vase.norm/txes [#vase/short-schema-tx
+                     [[:petstore.pet/id :one :long :unique "pet id"]
+                      [:petstore.pet/category :one :ref "Reference to :pet-stpre.category"]
+                      [:petstore.pet/name :one :string "pet's name"]
+                      [:petstore.pet/photoUrls :many :string "photoURL"]
+                      [:petstore.pet/tags :many :ref "Reference to :pet-store.tag"]
+                      [:petstore.pet/status :one :ref "Reference to one of :available :pending :sold"]]]}}
+  :vase/apis
+  {:petstore-full/v1/pets
+   {:vase.api/routes
+    {"/" {:post #vase/transact {:name :petstore-full-v1/add-pets
+                                :properties [:petstore.pet/id
+                                             :petstore.pet/category
+                                             :petstore.pet/name
+                                             :petstore.pet/photoUrls
+                                             :petstore.pet/tags
+                                             :petstore.pet/status]}
+          :put #vase/transact {:name :petstore-full-v1/update-pets
+                               :properties [:db/id
+                                            :petstore.pet/category
+                                            :petstore.pet/name
+                                            :petstore.pet/photoUrls
+                                            :petstore.pet/tags
+                                            :petstore.pet/status]}}
+     "/findByStatus" {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
+                                        :params [statuses]
+                                        :edn-coerce [statuses]
+                                        :query [:find
+                                                (pull ?e
+                                                      [:petstore.pet/id
+                                                       :petstore.pet/name
+                                                       {:petstore.pet/category [:petstore.category/id :petstore.category/name]}
+                                                       :petstore.pet/photoUrls
+                                                       {:petstore.pet/tags [:petstore.tag/id :petstore.tag/name]}
+                                                       {:petstore.pet/status [:db/ident]}])
+                                                :in $ [?statuses ...]
+                                                :where
+                                                [?e :petstore.pet/status ?se]
+                                                [?se :db/ident ?statuses]]}}}
+    :vase.api/schemas [:petstore-full/pet-status-schema
+                       :petstore-full/pet-schema]}
+   :petstore-full/v1/pet
+   {:vase.api/routes
+    {"/:id" {:get #vase/query {:name :petstore-full-v1/find-a-pet
+                               :params [id]
+                               :edn-coerce [id]
+                               :query [:find
+                                       (pull ?e
+                                             [:petstore.pet/id
+                                              :petstore.pet/name
+                                              {:petstore.pet/category [:petstore.category/id :petstore.category/name]}
+                                              :petstore.pet/photoUrls
+                                              {:petstore.pet/tags [:petstore.tag/id :petstore.tag/name]}
+                                              {:petstore.pet/status [:db/ident]}]) :in $ ?id :where [?e :petstore.pet/id ?id]]}
+             :post #vase/transact {:name :petstore-full-v1/update-a-pet
+                                   :properties [:petstore.pet/id
+                                                :petstore.pet/name
+                                                :petstore.pet/status]}}}
+    :vase.api/schemas [:petstore-full/pet-status-schema
+                       :petstore-full/pet-schema]}}}}

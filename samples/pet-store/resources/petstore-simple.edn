@@ -1,0 +1,32 @@
+{:activated-apis [:pet-store/v1]
+ :datomic-uri "datomic:mem://pet-store"
+ :descriptor
+ {:vase/norms
+  {:pet-store/pet-schema
+   {:vase.norm/txes [#vase/short-schema-tx
+                     [[:pet-store.pet/id :one :long :unique "The id of a pet"]
+                      [:pet-store.pet/name :one :string "The name of a pet"]
+                      [:pet-store.pet/tag :one :string "The tag of a pet"]]]}}
+  :vase/apis
+  {:pet-store/v1
+   {:vase.api/routes {"/pets" {:get #vase/query {:name :pet-store-v1/find-pets
+                                                 :params []
+                                                 :query [:find (pull ?e [*])
+                                                         :in $
+                                                         :where
+                                                         [?e :pet-store.pet/id ?id]]}
+                               :post #vase/transact {:name :pet-store-v1/add-pets
+                                                     :properties [:pet-store.pet/id
+                                                                  :pet-store.pet/name
+                                                                  :pet-store.pet/tag]}
+                               :delete #vase/transact {:name :pet-store-v1/delete-a-pet
+                                                      :db-op :vase/retract-entity
+                                                      :properties [:db/id]}}
+                      "/pet/:id" {:get #vase/query {:name :pet-store-v1/find-a-pet
+                                                    :params [id]
+                                                    :edn-coerce [id]
+                                                    :query [:find (pull ?e [*])
+                                                            :in $ ?id
+                                                            :where
+                                                            [?e :pet-store.pet/id ?id]]}}}}
+   :vase.api/schemas [:pet-store/pet-schema]}}}
