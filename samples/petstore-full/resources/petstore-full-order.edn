@@ -1,4 +1,4 @@
-{:activated-apis [:petstore-full/v1/orders :petstore-full/v1/order]
+{:activated-apis [:petstore-full/v1/store/orders :petstore-full/v1/store/order]
  :datomic-uri "datomic:dev://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
@@ -19,25 +19,30 @@
                       [:petstore.order/status :one :ref "Reference to one of :placed, :approved or :delivered"]
                       [:petstore.order/complete :one :boolean "completed or not"]]]}}
   :vase/apis
-  {:petstore-full/v1/orders
+  {:petstore-full/v1/store/orders
    {:vase.api/routes
-    {"/" {:post #vase/transact {:name :petstore-full-v1/add-orders
-                                :properties [:petstore.order/id
+    {"/" {:post [petstore-full.interceptors/date-conversion
+                 #vase/transact {:name :petstore-full-v1/add-orders
+                                 :properties [:petstore.order/id
+                                              :petstore.order/petId
+                                              :petstore.order/quantity
+                                              :petstore.order/shipDate
+                                              :petstore.order/status
+                                              :petstore.order/complete]}]
+          :put [petstore-full.interceptors/date-conversion
+                #vase/transact {:name :petstore-full-v1/update-orders
+                                :properties [:db/id
                                              :petstore.order/petId
                                              :petstore.order/quantity
                                              :petstore.order/shipDate
                                              :petstore.order/status
-                                             :petstore.order/complete]}
-          :put #vase/transact {:name :petstore-full-v1/update-orders
-                               :properties [:db/id
-                                            :petstore.order/petId
-                                            :petstore.order/quantity
-                                            :petstore.order/shipDate
-                                            :petstore.order/status
-                                            :petstore.order/complete]}}}
+                                             :petstore.order/complete]}]
+          :delete #vase/transact {:name :petstore-full-v1/delete-orders
+                                  :db-op :vase/retract-entity
+                                  :properties [:db/id]}}}
     :vase.api/schemas [:petstore-full/order-status-schema
                        :petstore-full/order-schema]}
-   :petstore-full/v1/order
+   :petstore-full/v1/store/order
    {:vase.api/routes
     {"/:id" {:get #vase/query {:name :petstore-full-v1/find-an-order
                                :params [id]

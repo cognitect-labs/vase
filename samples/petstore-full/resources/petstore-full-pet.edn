@@ -10,7 +10,7 @@
                       {:db/id #db/id[:db.part/user -7]
                        :db/ident :petstore.pet.status/sold}]]}
    :petstore-full/pet-schema
-   {:vase.norm/requires [:petsotre-full/pet-status-schema]
+   {:vase.norm/requires [:petstore-full/pet-status-schema]
     :vase.norm/txes [#vase/short-schema-tx
                      [[:petstore.pet/id :one :long :unique "pet id"]
                       [:petstore.pet/category :one :ref "Reference to :pet-stpre.category"]
@@ -34,7 +34,10 @@
                                             :petstore.pet/name
                                             :petstore.pet/photoUrls
                                             :petstore.pet/tags
-                                            :petstore.pet/status]}}
+                                            :petstore.pet/status]}
+          :delete #vase/transact {:name :petstore-full-v1/delete-pets
+                                  :db-op :vase/retract-entity
+                                  :properties [:db/id]}}
      "/findByStatus" {:get #vase/query {:name :petstore-full-v1/find-pets-by-status
                                         :params [statuses]
                                         :edn-coerce [statuses]

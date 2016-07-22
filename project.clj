@@ -27,7 +27,6 @@
                    :resource-paths ["config"
                                     "resources"
                                     "test/resources"]
-
                    :dependencies [[org.clojure/tools.trace "0.7.9"]
                                   [org.clojure/tools.namespace "0.2.10"]
                                   [io.pedestal/pedestal.jetty "0.5.0"]

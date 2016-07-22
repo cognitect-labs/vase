@@ -24,7 +24,7 @@
        (:body (helper/GET "/api/example/v1/hello"))
        "Hello World")))
 
-#_(deftest validate-literal
+(deftest validate-literal
   (let [response (helper/post-json "/api/example/v1/validate"
                               {:age 31
                                :name "paul"})]
