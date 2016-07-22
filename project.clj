@@ -1,8 +1,8 @@
 (defproject com.cognitect/vase "0.1.0-SNAPSHOT"
   :description "Vase: Pedestal API Container"
   :url "https://github.com/relevance/vase"
-  :dependencies [ ;; Platform
-                 [org.clojure/clojure "1.9.0-alpha7"]
+  :dependencies [;; Platform
+                 [org.clojure/clojure "1.9.0-alpha10"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5372" :exclusions [[com.fasterxml.jackson.core/jackson-core]

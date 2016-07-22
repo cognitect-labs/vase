@@ -17,7 +17,7 @@
 (s/def ::interceptor #(satisfies? interceptor/IntoInterceptor %))
 (s/def ::route-table-route (s/cat :path valid-uri?
                             :verb #{:any :get :put :post :delete :patch :options :head}
-                            :handler (s/alt :fn fn? :interceptors (s/coll-of ::interceptor []))
+                            :handler (s/alt :fn fn? :interceptors (s/coll-of ::interceptor :kind vector?))
                             :route-name (s/? (s/cat :_ #(= :route-name %) :name keyword?))
                             :constraints (s/? (s/cat :_ #(= :constraints %)
                                                      :constraints (s/map-of keyword?
@@ -68,7 +68,7 @@
 (s/def :vase/norms (s/map-of qualified-keyword? (s/keys :req [:vase.norm/txes]
                                                         :opt [:vase.norm/requires])))
 
-(s/def :vase/specs (s/map-of qualified-keyword? ::s/any))
+(s/def :vase/specs (s/map-of qualified-keyword? any?))
 
 ;; -- The descriptor spec --
 (s/def ::descriptor (s/keys :req [:vase/apis]
