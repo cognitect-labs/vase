@@ -18,7 +18,7 @@ lein install
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 
 ```clj
- [org.clojure/clojure "1.9.0-alpha7"]
+ [org.clojure/clojure "1.9.0-alpha10"]
  [com.cognitect/vase  "0.1.0-SNAPSHOT"]
 ```
 
