@@ -51,7 +51,7 @@ This should become...
    {}
    [["/" :get [bootstrap/html-body home-page] :route-name ::home-page]
     ["/about" :get [bootstrap/html-body about-page] :route-name ::about-page]]))
-    
+
 (defn app-routes
   [api-root spec]
   (table/table-routes
@@ -65,7 +65,7 @@ This should become...
 (defn service-map
   []
   (let [db "datomic:mem://vase-sample"
-        descriptor (vase/load-descriptor "sample.edn")
+        descriptor (vase/load "sample.edn")
         conn (vase.datomic/connect db)]
     (vase.datomic/ensure-schema conn (-> descriptor :example :norms))
     {:env :prod
@@ -88,4 +88,3 @@ Update `runnable-service` and `run-dev` to invoke the `service/service-map` fn.
 Your Pedestal application is now Vase-enabled.  You should now setup any
 necessary configuration files.  Once Vase is configured, you can begin
 [creating services](./your_first_api.mkd)
-

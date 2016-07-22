@@ -1,21 +1,6 @@
 <!-- Logback configuration. See http://logback.qos.ch/manual/index.html -->
 <configuration scan="true" scanPeriod="10 seconds">
 
-  <!-- High performance file output -->
-  <!-- <appender name="CHRONICLE" class="net.openhft.chronicle.logger.logback.TextVanillaChronicleAppender">
-    <path>logs/chronicle</path> -->
-    <!-- <includeCallerData>true</includeCallerData> -->
-    <!-- <includeMappedDiagnosticContext>true</includeMappedDiagnosticContext> -->
-
-    <!--
-    Configure the underlying VanillaChronicle, for a list of the options have
-    a look at net.openhft.chronicle.VanillaChronicleConfig
-    -->
-    <!-- <chronicleConfig>
-        <dataCacheCapacity>128</dataCacheCapacity>
-    </chronicleConfig> -->
-  <!-- </appender> -->
-
   <!-- Simple file output -->
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <!-- encoder defaults to ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
@@ -25,7 +10,7 @@
 
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- rollover daily -->
-      <fileNamePattern>logs/vase-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      <fileNamePattern>logs/pet-store-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
       <timeBasedFileNamingAndTriggeringPolicy
           class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
         <!-- or whenever the file size reaches 64 MB -->

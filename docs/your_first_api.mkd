@@ -190,10 +190,10 @@ Datomic.
 Save your descriptor as `resources/accounts.edn`. If you haven't
 already added Vase to your Pedestal service, follow the ["Adding
 Vase"](docs/adding_vase.mkd) guide. Update the descriptor name in the
-`vase/load-descriptor` call to:
+`vase/load` call to:
 
 ```clojure
-(vase/load-descriptor "accounts.edn")
+(vase/load "accounts.edn")
 ```
 
 Also update the value for `:app-name` to `:accounts`
