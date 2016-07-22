@@ -1,8 +1,7 @@
-## Pet Store Example
+# Pet Store Example
 
-_Reshaped Descriptor_
+This is a simple version of pet store app, Swagger UI on the front-end and Vase app on the back-end. This app is for Vase newcommers to understand how Vase app is configured. If you want to learn more to build a real app, [a full version of pet store app](../petstore-full), is a good example.
 
-This example contains Swagger UI and Vase example which uses a reshaped style of descriptor.
 
 ## Datomic Setup
 
@@ -25,15 +24,15 @@ you may need to fix a dependency.
 2. Go to [localhost:8080/index.html](http://localhost:8080/index.html) to see Swagger UI.
 3. Click `default`
     - GET /pets will get all pets
-    
+
       click "Try it out!" button.
-  
+
     - POST /pets will transact new pet(s)
-    
+
       click "Examble Value" and edit id, name and tag values, then click "Try it out!" button.
-  
+
     - GET /pet/{id} will get a single pet by id
-  
+
       input id, then click "Try it out!" button
 
 4. Read your app's spec at resources/pet-store.edn and source code at src/pet_store/service.clj.
@@ -41,9 +40,12 @@ you may need to fix a dependency.
 
 ## Port number
 
-This app assumes the port number is fixed to 8080.
-When you change the port number in `src/pet_store/service.clj`,
-you need to change `"host": "localhost:8080"` in `resources/public/v1/petstore-simple.json` as well.
+A port number is defined in both Swagger UI and Vase app.
+If you want to use other port number:
+
+- Change `"host": "localhost:8080",` in `resources/public/v1/petstore-simple.json` for Swagger UI.
+- Change `::http/port 8080` in `src/pet_store/services.clj` for Vase app.
+
 
 ## [Docker](https://www.docker.com/) container support
 
