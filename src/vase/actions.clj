@@ -115,11 +115,8 @@
 
 (defn validation-result
   [param-sym spec]
-  (response-body `(reduce (fn [a# [k# v#]]
-                            (assoc a# k# (dissoc v# :pred)))
-                        {}
-                        (:clojure.spec/problems (clojure.spec/explain-data ~spec ~param-sym)))))
-
+  (response-body `(map (fn [e#] (dissoc e# :pred))
+                       (:clojure.spec/problems (clojure.spec/explain-data ~spec ~param-sym)))))
 
 (defn bind-allowed-arguments
   [req-sym args-sym properties forms]
