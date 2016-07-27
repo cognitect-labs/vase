@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.interceptor :as interceptor]
             [vase.actions :as actions]
-            [vase.test-helper :as helper]))
+            [vase.test-helper :as helper]
+            [clojure.spec :as s]))
 
 (deftest dynamic-interceptor-creation
   (testing "at least one function is required"
@@ -71,3 +72,30 @@
 
     (are [headers action ctx] (execute-and-expect ctx action 302 "" headers)
       {"Location" "https://donotreply.com"} (make-redirect '[p1] 302 "" {} 'p1) (with-query-params {:p1 "https://donotreply.com"}))))
+
+
+(defn make-validate
+  [spec]
+  (actions/validate-action :validator [] {} spec))
+
+(defn- with-body [body]
+  (assoc-in (helper/new-ctx) [:request :edn-params] body))
+
+(s/def ::a string?)
+(s/def ::b boolean?)
+(s/def ::request-body (s/keys :req-un #{::a} :opt-un #{::b}))
+
+(deftest validate-action
+  (testing "Passing validation"
+    (are [body-out body-in action] (execute-and-expect (with-body body-in) action 200 body-out {})
+      '() {:a "one"}          (make-validate `(s/keys :req-un #{::a} :opt-un #{::b}))
+      '() {:a "one" :b false} (make-validate `(s/keys :req-un #{::a} :opt-un #{::b}))
+      '() {:a "one" :b false} (make-validate `::request-body)))
+
+  (testing "Failing validation"
+    (are [body-out body-in action] (execute-and-expect (with-body body-in) action 200 body-out {})
+      '({:path []   :val {}           :via []                   :in []})   {}           (make-validate `(s/keys :req-un #{::a} :opt-un #{::b}))
+      '({:path []   :val {:b 12345}   :via []                   :in []}
+        {:path [:b] :val 12345        :via [::b]                :in [:b]}) {:b 12345}   (make-validate `(s/keys :req-un #{::a} :opt-un #{::b}))
+      '({:path []   :val {:b "false"} :via [::request-body]     :in []}
+        {:path [:b] :val "false"      :via [::request-body ::b] :in [:b]}) {:b "false"} (make-validate `::request-body))))
