@@ -133,3 +133,21 @@
     (bad-request?          response errors) 400
     (exception?            response)        500
     :else                                   200))
+
+
+(defn empty-value [[_ _ v]] (or (nil? v) (and (coll? v) (empty? v))))
+(defn eseq? [v] (and (sequential? v) (every? map? v)))
+
+(defn emap->datoms
+  [idx e emap]
+  (mapcat
+   (fn [[a v]]
+     (if (eseq? v)
+       (mapcat
+        #(let [next-id (swap! idx inc)]
+           (list*
+            [e a next-id]
+            (emap->datoms idx next-id %)))
+        v)
+       [[e a v]]))
+   emap))

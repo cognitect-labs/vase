@@ -1,10 +1,11 @@
 (ns vase
   (:require [clojure.spec :as spec]
-            [vase.routes :as routes]
+            [io.pedestal.http.route :as route]
             [vase.datomic :as datomic]
-            [vase.util :as util]
-            [vase.literals]
-            [vase.spec]))
+            vase.literals
+            [vase.routes :as routes]
+            vase.spec
+            [vase.util :as util]))
 
 (defn load-edn-resource
   "Given a resource name, loads a descriptor or app-spec,
@@ -94,3 +95,19 @@
                                                                           :multiple-specs (spec/* ::vase.spec/spec))
                                                   :opts map?))
            :ret  ::vase.spec/route-table)
+
+(defn routes-datoms
+  "Return a collection of datoms that describe the routes created from the given app spec(s).
+   Routes are created exactly as in `routes`, but are then flattened into
+   [e a v] triples. Collections of interceptors are represented as if
+   by a multi-valued attribute on the route entity.
+
+   `spec-or-specs` is either a single app-spec (as a map) or a
+    collection of app-specs."
+  [api-root spec-or-specs opts]
+  (let [rts (route/expand-routes (into #{} (routes api-root spec-or-specs opts)))
+        idx (atom 0)]
+    (remove util/empty-value
+            (mapcat
+             #(util/emap->datoms idx (swap! idx inc) %)
+             rts))))
