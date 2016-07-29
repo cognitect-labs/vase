@@ -2,9 +2,10 @@
   (:require [clojure.spec :as spec]
             [io.pedestal.http.route :as route]
             [vase.datomic :as datomic]
-            vase.literals
+            [vase.descriptor :as descriptor]
+            [vase.literals :as literals]
             [vase.routes :as routes]
-            vase.spec
+            [vase.spec :as vspec]
             [vase.util :as util]))
 
 (defn load-edn-resource
@@ -96,7 +97,29 @@
                                                   :opts map?))
            :ret  ::vase.spec/route-table)
 
-(defn routes-datoms
+(defn expand-api-routes-individually
+  [descriptor api-root opts]
+  (update-in descriptor [:descriptor :vase/apis]
+             (fn [apis]
+               (mapcat
+                (fn [[api-name apimap]]
+                  (let [focused-descriptor (-> descriptor
+                                               (assoc-in [:descriptor :vase/apis] {api-name apimap})
+                                               (assoc :activated-apis [api-name]))
+                        table              (routes api-root focused-descriptor opts)]
+                    [(assoc apimap
+                            :vase/name       api-name
+                            :vase.api/routes (route/expand-routes (into #{opts} table)))]))
+                apis))))
+
+(defn descriptor->emap
+  [spec api-root opts]
+  (-> spec
+      (update-in [:descriptor :vase/norms] util/push-down-names)
+      (update-in [:descriptor :vase/specs] util/name-value-entities :vase/spec)
+      (expand-api-routes-individually api-root opts)))
+
+(defn descriptor-facts
   "Return a collection of datoms that describe the routes created from the given app spec(s).
    Routes are created exactly as in `routes`, but are then flattened into
    [e a v] triples. Collections of interceptors are represented as if
@@ -105,9 +128,9 @@
    `spec-or-specs` is either a single app-spec (as a map) or a
     collection of app-specs."
   [api-root spec-or-specs opts]
-  (let [rts (route/expand-routes (into #{} (routes api-root spec-or-specs opts)))
-        idx (atom 0)]
+  (let [specs (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
+        idx   (atom 0)]
     (remove util/empty-value
             (mapcat
-             #(util/emap->datoms idx (swap! idx inc) %)
-             rts))))
+             #(util/emap->datoms idx (swap! idx inc) (:descriptor (descriptor->emap % api-root opts)))
+             specs))))
