@@ -133,3 +133,32 @@
     (bad-request?          response errors) 400
     (exception?            response)        500
     :else                                   200))
+
+
+(defn empty-value [[_ _ v]] (or (nil? v) (and (coll? v) (empty? v))))
+(defn eseq? [v] (and (sequential? v) (every? map? v)))
+
+(defn emap->datoms
+  [idx e emap]
+  (mapcat
+   (fn [[a v]]
+     (cond (eseq? v)
+           (mapcat
+            #(let [next-id (swap! idx inc)]
+               (list*
+                [e a next-id]
+                (emap->datoms idx next-id %)))
+            v)
+
+           (and (sequential? v) (not (sequential? (first v))))
+           (map #(vector e a %) v)
+
+           :else
+           [[e a v]]))
+   emap))
+
+(defn push-down-names [m]
+  (mapv (fn [[k v]] (assoc v :vase/name k)) m))
+
+(defn name-value-entities [m val-key]
+  (mapv (fn [[n v]] {:vase/name n val-key v}) m))

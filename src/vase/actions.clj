@@ -198,7 +198,8 @@
   [name params body status headers]
   (dynamic-interceptor name
                        :respond
-                       {:enter (respond-action-exprs params body status headers)}))
+                       {:enter (respond-action-exprs params body status headers)
+                        :action-literal :vase/respond}))
 
 (defn redirect-action-exprs
   [params body status headers url]
@@ -215,7 +216,8 @@
 (defn redirect-action
   [name params body status headers url]
   (dynamic-interceptor name :redirect
-                       {:enter (redirect-action-exprs (or params []) body status headers (or url ""))}))
+                       {:enter (redirect-action-exprs (or params []) body status headers (or url ""))
+                        :action-literal :vase/redirect}))
 
 (defn validate-action-exprs
   [params headers spec]
@@ -232,7 +234,8 @@
 (defn validate-action
   [name params headers spec]
   (dynamic-interceptor name :validate
-                       {:enter (validate-action-exprs params headers spec)}))
+                       {:enter (validate-action-exprs params headers spec)
+                        :action-literal :vase/validate}))
 
 (defn query-action-exprs
   [query variables coercions constants headers]
@@ -252,7 +255,8 @@
 (defn query-action
   [name query variables coercions constants headers]
   (dynamic-interceptor name :query
-                       {:enter (query-action-exprs query variables coercions constants headers)}))
+                       {:enter (query-action-exprs query variables coercions constants headers)
+                        :action-literal :vase/query}))
 
 (defn transact-action-exprs
   [properties db-op headers]
@@ -270,4 +274,5 @@
 (defn transact-action
   [name properties db-op headers]
   (dynamic-interceptor name :transact
-                       {:enter (transact-action-exprs properties db-op headers)}))
+                       {:enter (transact-action-exprs properties db-op headers)
+                        :action-literal :vase/transact}))
