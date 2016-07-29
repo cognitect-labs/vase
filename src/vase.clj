@@ -2,7 +2,6 @@
   (:require [clojure.spec :as spec]
             [io.pedestal.http.route :as route]
             [vase.datomic :as datomic]
-            [vase.descriptor :as descriptor]
             [vase.literals :as literals]
             [vase.routes :as routes]
             [vase.spec :as vspec]

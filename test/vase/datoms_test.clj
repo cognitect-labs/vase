@@ -3,7 +3,6 @@
             [clojure.test :refer :all]
             [datomic.api :as d]
             vase
-            [vase.descriptor :as desc]
             [vase.service-route-table :as srt]
             [vase.util :as util]))
 
