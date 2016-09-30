@@ -18,10 +18,13 @@
                     :or {f "" sep "<br/>" edn false}} (get-in context [:request :query-params])
                    results (mapv #(take 2 %) routes)]
                (assoc context :response
-                      (if edn
-                        (http/edn-response results)
-                        {:status 200
-                         :body   (string/join sep (map #(string/join " " %) results))}))))}))
+                      (cond
+                        edn (http/edn-response results)
+                        (string/starts-with? sep "<") {:status 200
+                                                       :headers {"Content-Type" "text/html"}
+                                                       :body (string/join sep (map #(string/join " " %) results))}
+                        :else {:status 200
+                               :body   (string/join sep (map #(string/join " " %) results))}))))}))
 
 (def ^:private common-api-interceptors
   [interceptor/attach-received-time
