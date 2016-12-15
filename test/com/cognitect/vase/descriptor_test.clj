@@ -4,7 +4,7 @@
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.service-route-table :as srt]
             [com.cognitect.vase.util :as util]
-            [com.cognitect.vase]))
+            [com.cognitect.vase :as vase]))
 
 (deftest exercise-descriptored-service
   (helper/with-service (srt/service-map)
@@ -72,7 +72,7 @@
     (testing "routes merge cleanly; Only activated routes are included"
       (let [routes (vase/routes "/api" specs)
             paths (map (fn [[path verb]]
-                              [path verb]) routes)
+                           [path verb]) routes)
             more-routes (vase/routes "/api" (assoc-in specs [1 :activated-apis] [:example/vnew]))
             more-paths (map (fn [[path verb]]
                               [path verb]) more-routes)]

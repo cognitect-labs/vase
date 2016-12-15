@@ -2,7 +2,7 @@
   (:require [clojure.set :as set]
             [clojure.test :refer :all]
             [datomic.api :as d]
-            com.cognitect.vase
+            [com.cognitect.vase :as vase]
             [com.cognitect.vase.service-route-table :as srt]
             [com.cognitect.vase.util :as util]))
 

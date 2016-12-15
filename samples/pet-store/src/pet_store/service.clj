@@ -4,8 +4,8 @@
             [io.pedestal.http.route.definition.table :as table]
             [io.pedestal.http.body-params :as body-params]
             [ring.util.response :as ring-resp]
-            [vase]
-            [vase.datomic]))
+            [com.cognitect.vase :as vase]
+            [com.cognitect.vase.datomic]))
 
 (defn about-page
   [request]

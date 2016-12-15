@@ -1,6 +1,6 @@
 (ns com.cognitect.vase.spec-test
-  (:require [com.cognitect.vase.spec]
-            [com.cognitect.vase]
+  (:require [com.cognitect.vase.spec :as vase.spec]
+            [com.cognitect.vase :as vase]
             [com.cognitect.vase.service-route-table :as srt]
             [clojure.spec :as s]
             [clojure.spec.test :as stest]

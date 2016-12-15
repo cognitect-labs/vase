@@ -3,7 +3,7 @@
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.definition.table :as table]
-            [com.cognitect.vase]))
+            [com.cognitect.vase :as vase]))
 
 (defn make-master-routes
   [spec]
@@ -37,5 +37,4 @@
   (let [s (test-spec)]
     (vase.datomic/normalize-norm-keys (get-in s [:descriptor :vase/norms])))
 
-  (vase/routes "/api" (test-spec))
-  )
+  (vase/routes "/api" (test-spec)))

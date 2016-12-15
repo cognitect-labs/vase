@@ -77,9 +77,9 @@
   "Return the parsed payload data from a vase api http response."
   ([response] (response-data response util/read-json))
   ([response reader]
-     (-> response
-         :body
-         reader)))
+   (-> response
+       :body
+       reader)))
 
 (defn run-interceptor
   ([i]     (run-interceptor {} i))

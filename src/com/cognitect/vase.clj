@@ -4,7 +4,7 @@
             [com.cognitect.vase.datomic :as datomic]
             [com.cognitect.vase.literals :as literals]
             [com.cognitect.vase.routes :as routes]
-            [com.cognitect.vase.spec :as vspec]
+            [com.cognitect.vase.spec :as vase.spec]
             [com.cognitect.vase.util :as util]))
 
 (defn load-edn-resource

@@ -5,8 +5,8 @@
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.interceptor :as i]
             [ring.util.response :as ring-resp]
-            [vase]
-            [vase.datomic]
+            [com.cognitect.vase :as vase]
+            [com.cognitect.vase.datomic]
             [petstore-full.interceptors]))  ;; for descriptors
 
 (defn about-page

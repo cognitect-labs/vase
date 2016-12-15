@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
             [com.cognitect.vase.test-helper :as helper]
-            [com.cognitect.vase]
+            [com.cognitect.vase :as vase]
             [com.cognitect.vase.service-route-table :as srt]))
 
 (defn selected-headers
@@ -53,7 +53,7 @@
     :example.v2/intercept})
 
 (deftest all-route-names-present
-  (let [service     (vase.service-route-table/service-map)
+  (let [service     (srt/service-map)
         routes      (:io.pedestal.http/routes service)
         route-names (set (map :route-name routes))]
     (is (= known-route-names route-names))))
