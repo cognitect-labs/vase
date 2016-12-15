@@ -1,6 +1,6 @@
-(defproject com.cognitect/vase "0.1.0-SNAPSHOT"
+(defproject com.cognitect/pedestal.vase "0.9.0-SNAPSHOT"
   :description "Vase: Pedestal API Container"
-  :url "https://github.com/relevance/vase"
+  :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
                  [org.clojure/clojure "1.9.0-alpha13"]
 
