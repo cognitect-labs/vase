@@ -1,9 +1,9 @@
-(ns vase.service-test
+(ns com.cognitect.vase.service-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
-            [vase.test-helper :as helper]
-            [vase]
-            [vase.service-route-table :as srt]))
+            [com.cognitect.vase.test-helper :as helper]
+            [com.cognitect.vase]
+            [com.cognitect.vase.service-route-table :as srt]))
 
 (defn selected-headers
   "Return a map with selected-keys out of the headers of a request to url"

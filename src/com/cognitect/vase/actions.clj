@@ -1,9 +1,9 @@
-(ns vase.actions
+(ns com.cognitect.vase.actions
   (:require [clojure.walk :as walk]
             [clojure.spec :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as interceptor]
-            [vase.util :as util])
+            [com.cognitect.vase.util :as util])
   (:import java.net.URLDecoder))
 
 ;; Code generation tools

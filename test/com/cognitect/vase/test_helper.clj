@@ -1,10 +1,10 @@
-(ns vase.test-helper
+(ns com.cognitect.vase.test-helper
   (:require [io.pedestal.test :refer [response-for]]
             [io.pedestal.http :as http]
             [io.pedestal.log :as log]
-            [vase.interceptor :as interceptor]
-            [vase.util :as util]
-            [vase.service-route-table :as srt]
+            [com.cognitect.vase.interceptor :as interceptor]
+            [com.cognitect.vase.util :as util]
+            [com.cognitect.vase.service-route-table :as srt]
             [io.pedestal.interceptor.chain :as chain]))
 
 (defn new-service

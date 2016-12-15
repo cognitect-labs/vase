@@ -1,10 +1,10 @@
-(ns vase.descriptor-test
+(ns com.cognitect.vase.descriptor-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
-            [vase.test-helper :as helper]
-            [vase.service-route-table :as srt]
-            [vase.util :as util]
-            [vase]))
+            [com.cognitect.vase.test-helper :as helper]
+            [com.cognitect.vase.service-route-table :as srt]
+            [com.cognitect.vase.util :as util]
+            [com.cognitect.vase]))
 
 (deftest exercise-descriptored-service
   (helper/with-service (srt/service-map)

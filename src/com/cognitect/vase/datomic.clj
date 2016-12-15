@@ -1,4 +1,4 @@
-(ns vase.datomic
+(ns com.cognitect.vase.datomic
   (:require [datomic.api :as d]
             [io.rkn.conformity :as c]
             [io.pedestal.interceptor :as i]))
@@ -36,4 +36,3 @@
               (-> context
                   (assoc-in [:request :conn] conn)
                   (assoc-in [:request :db]   (d/db conn))))}))
-

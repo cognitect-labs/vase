@@ -1,7 +1,7 @@
-(ns vase.interceptor-test
+(ns com.cognitect.vase.interceptor-test
   (:require [clojure.test :refer :all]
-            [vase.test-helper :as helper :refer [run-interceptor new-ctx]]
-            [vase.interceptor :refer :all]))
+            [com.cognitect.vase.test-helper :as helper :refer [run-interceptor new-ctx]]
+            [com.cognitect.vase.interceptor :refer :all]))
 
 (deftest stock-interceptors
   (testing "attach-received-time"

@@ -1,8 +1,8 @@
-(ns vase.actions-test
+(ns com.cognitect.vase.actions-test
   (:require [clojure.test :refer :all]
             [io.pedestal.interceptor :as interceptor]
-            [vase.actions :as actions]
-            [vase.test-helper :as helper]
+            [com.cognitect.vase.actions :as actions]
+            [com.cognitect.vase.test-helper :as helper]
             [clojure.spec :as s]))
 
 (deftest dynamic-interceptor-creation
