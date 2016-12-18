@@ -54,7 +54,7 @@
   "Given a descriptor map, an app-name keyword, and a version keyword,
   return route vectors in Pedestal's tabular format. Routes will all be
   subordinated under `base`"
-  [base spec make-interceptors-fn]
+  [base spec]
   (let [common (app-interceptors spec)]
     (for [[path verb-map] (specified-routes spec)
           [verb action]   verb-map
@@ -62,8 +62,8 @@
                                (into common (map i/interceptor action))
                                (conj common (i/interceptor action)))]]
       (if (= path "/")
-        [(str base) verb (make-interceptors-fn interceptors)]
-        [(str base path) verb (make-interceptors-fn interceptors)]))))
+        [(str base) verb interceptors]
+        [(str base path) verb interceptors]))))
 
 (defn- api-base
   [api-root spec]
@@ -78,23 +78,21 @@
              "describe")))
 
 (defn api-description-route
-  [api-root make-interceptors-fn routes route-name]
+  [api-root routes route-name]
   [api-root
    :get
-   (make-interceptors-fn
-     (conj common-api-interceptors (describe-api routes)))
+   (conj common-api-interceptors (describe-api routes))
    :route-name
    route-name])
 
 (defn spec-routes
   "Return a seq of route vectors from a single specification"
-  [api-root make-interceptors-fn spec]
+  [api-root spec]
   (if (nil? (:activated-apis spec))
     []
     (let [app-version-root   (api-base api-root spec)
-          app-version-routes (api-routes app-version-root spec make-interceptors-fn)
+          app-version-routes (api-routes app-version-root spec)
           app-api-route      (api-description-route app-version-root
-                                                    make-interceptors-fn
                                                     app-version-routes
                                                     (api-description-route-name spec))]
       (cons app-api-route app-version-routes))))

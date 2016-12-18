@@ -17,7 +17,7 @@
 
 (deftest datoms
   (testing "transforms routes in a spec to datoms"
-    (let [datoms (vase/descriptor-facts "/api" (srt/test-spec) {})]
+    (let [datoms (vase/descriptor-facts "/api" (srt/test-spec))]
       (is (every? vector? datoms))
       (is (every? #(= 3 (count %)) datoms))
       (is (every? (comp (complement util/eseq?) last) datoms))
@@ -25,7 +25,7 @@
         (is (empty? (set/difference attr-names known-attributes)))))))
 
 (deftest schema-query
-  (let [ddb (vase/descriptor-facts "/api" (srt/test-spec) {})
+  (let [ddb (vase/descriptor-facts "/api" (srt/test-spec))
         res (d/q '[:find ?schema-name
                    :in   $
                    :where
@@ -44,7 +44,7 @@
     ["/api/example/v1/users"]})
 
 (deftest route-query
-  (let [ddb     (vase/descriptor-facts "/api" (srt/test-spec) {})
+  (let [ddb     (vase/descriptor-facts "/api" (srt/test-spec))
         get-res (d/q '[:find ?p
                        :in $
                        :where
@@ -71,7 +71,7 @@
 
 (deftest apis-using-schema
   (testing "direct usage"
-    (let [ddb (vase/descriptor-facts "/api" (srt/test-spec) {})
+    (let [ddb (vase/descriptor-facts "/api" (srt/test-spec))
           results (d/q '[:find ?api-name
                          :in $ ?schema-name
                          :where
@@ -82,7 +82,7 @@
       (is (= #{[:example/v1]} results))))
 
   (testing "recursive rules"
-    (let [ddb (vase/descriptor-facts "/api" (srt/test-spec) {})
+    (let [ddb (vase/descriptor-facts "/api" (srt/test-spec))
           results (d/q '[:find ?schema-name
                          :in $ % ?api-name
                          :where
