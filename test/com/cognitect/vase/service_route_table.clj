@@ -1,9 +1,9 @@
-(ns vase.service-route-table
+(ns com.cognitect.vase.service-route-table
   (:import [java.util UUID])
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.definition.table :as table]
-            [vase]))
+            [com.cognitect.vase :as vase]))
 
 (defn make-master-routes
   [spec]
@@ -37,5 +37,4 @@
   (let [s (test-spec)]
     (vase.datomic/normalize-norm-keys (get-in s [:descriptor :vase/norms])))
 
-  (vase/routes "/api" (test-spec))
-  )
+  (vase/routes "/api" (test-spec)))

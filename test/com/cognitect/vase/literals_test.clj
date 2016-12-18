@@ -1,9 +1,9 @@
-(ns vase.literals-test
+(ns com.cognitect.vase.literals-test
   (:require [clojure.test :refer :all]
-            [vase.literals :as lit]
+            [com.cognitect.vase.literals :as lit]
             [io.pedestal.test :refer :all]
-            [vase.test-helper :as helper]
-            [vase.actions :as actions]
+            [com.cognitect.vase.test-helper :as helper]
+            [com.cognitect.vase.actions :as actions]
             [clojure.string :as str]))
 
 (deftest test-data-massging

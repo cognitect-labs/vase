@@ -1,10 +1,10 @@
-(ns vase.datoms-test
+(ns com.cognitect.vase.datoms-test
   (:require [clojure.set :as set]
             [clojure.test :refer :all]
             [datomic.api :as d]
-            vase
-            [vase.service-route-table :as srt]
-            [vase.util :as util]))
+            [com.cognitect.vase :as vase]
+            [com.cognitect.vase.service-route-table :as srt]
+            [com.cognitect.vase.util :as util]))
 
 (def known-attributes
   #{:vase/name

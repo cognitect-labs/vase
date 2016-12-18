@@ -1,9 +1,9 @@
-(ns vase.interceptor
+(ns com.cognitect.vase.interceptor
   (:require [io.pedestal.interceptor.helpers :as helpers :refer [defon-request]]
             [io.pedestal.interceptor :as i]
             [clojure.stacktrace :as ctrace]
             [clj-time.core :as clj-time]
-            [vase.util :as util]))
+            [com.cognitect.vase.util :as util]))
 
 (def request-id-header"vaserequest-id")
 

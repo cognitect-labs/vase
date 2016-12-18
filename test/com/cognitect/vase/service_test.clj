@@ -1,9 +1,9 @@
-(ns vase.service-test
+(ns com.cognitect.vase.service-test
   (:require [clojure.test :refer :all]
             [io.pedestal.test :refer :all]
-            [vase.test-helper :as helper]
-            [vase]
-            [vase.service-route-table :as srt]))
+            [com.cognitect.vase.test-helper :as helper]
+            [com.cognitect.vase :as vase]
+            [com.cognitect.vase.service-route-table :as srt]))
 
 (defn selected-headers
   "Return a map with selected-keys out of the headers of a request to url"
@@ -53,7 +53,7 @@
     :example.v2/intercept})
 
 (deftest all-route-names-present
-  (let [service     (vase.service-route-table/service-map)
+  (let [service     (srt/service-map)
         routes      (:io.pedestal.http/routes service)
         route-names (set (map :route-name routes))]
     (is (= known-route-names route-names))))

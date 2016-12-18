@@ -1,4 +1,4 @@
-(ns vase.db
+(ns com.cognitect.vase.db
   (:require [datomic.api :as d]
             [io.pedestal.interceptor :as i]))
 

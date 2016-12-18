@@ -1,10 +1,10 @@
-(ns vase.literals
+(ns com.cognitect.vase.literals
   (:require [clojure.walk :as walk]
             [datomic.api :as d]
             [io.pedestal.http.route.definition :as definition]
             [io.pedestal.interceptor :as i]
-            [vase.actions :as actions]
-            [vase.util :as util]))
+            [com.cognitect.vase.actions :as actions]
+            [com.cognitect.vase.util :as util]))
 
 ;; TODO: All these literals should be Types/Records that support print-method
 ;;       to enable full serialization (right now only reading works)

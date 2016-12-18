@@ -1,9 +1,9 @@
-(ns vase.routes
+(ns com.cognitect.vase.routes
   (:require [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]
             [io.pedestal.http.body-params :as body-params]
-            [vase.datomic :as datomic]
-            [vase.interceptor :as interceptor]
+            [com.cognitect.vase.datomic :as datomic]
+            [com.cognitect.vase.interceptor :as interceptor]
             [clojure.string :as string]))
 
 (defn- describe-api

@@ -1,4 +1,4 @@
-(ns vase.util
+(ns com.cognitect.vase.util
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as cstr]

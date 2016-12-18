@@ -1,11 +1,11 @@
-(ns vase
+(ns com.cognitect.vase
   (:require [clojure.spec :as spec]
             [io.pedestal.http.route :as route]
-            [vase.datomic :as datomic]
-            [vase.literals :as literals]
-            [vase.routes :as routes]
-            [vase.spec :as vspec]
-            [vase.util :as util]))
+            [com.cognitect.vase.datomic :as datomic]
+            [com.cognitect.vase.literals :as literals]
+            [com.cognitect.vase.routes :as routes]
+            [com.cognitect.vase.spec :as vase.spec]
+            [com.cognitect.vase.util :as util]))
 
 (defn load-edn-resource
   "Given a resource name, loads a descriptor or app-spec,
