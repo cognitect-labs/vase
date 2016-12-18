@@ -18,8 +18,7 @@ lein install
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 
 ```clj
- [org.clojure/clojure "1.9.0-alpha10"]
- [com.cognitect/vase  "0.1.0-SNAPSHOT"]
+ [com.cognitect/vase  "0.9.0-SNAPSHOT"]
 ```
 
 [Maven](http://maven.apache.org/) dependency information:
@@ -28,7 +27,7 @@ lein install
 <dependency>
   <groupId>com.cognitect</groupId>
   <artifactId>vase</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.9.0-SNAPSHOT</version>
 </dependency>
 ```
 
