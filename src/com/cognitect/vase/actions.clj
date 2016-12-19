@@ -1,4 +1,34 @@
 (ns com.cognitect.vase.actions
+  "Functions to construct interceptors dynamically.
+
+  The functions with names that end in '-action' compile Pedestal
+  interceptors. These are the main public entry points, and are used
+  by the `literals` namespace when loading Vase descriptors.
+
+  Take care to avoid code generation during requst processing. It is
+  time consuming, so it should be done at application startup time
+  instead.
+
+  Actions are created by emitting code (in the functions named
+  `-exprs`) which gets evaluated to build an interceptor. Arguments to
+  the `-exprs` functions are interpolated into the emitted code. These
+  arguments can contain literals or one s-expression each.
+
+  For example, `respond-action-exprs` has an argument `body` that will
+  be used as the HTTP response body. It may be a string or an
+  s-expression.
+
+  When s-expression arguments are evaluated, they have some bindings
+  available in scope:
+
+  - `request` - contains the Pedestal request map
+  - `context` - contains the Pedestal context map
+  - request parameters captured from path-params or parsed body
+    parameters _and_ named in the `params` seq
+
+  E.g., if `params` holds `['userid]` and the request matched a route
+  with \"/users/:userid\", then the s-expression will have the symbol
+  `'userid` bound to the value of that request parameter."
   (:require [clojure.walk :as walk]
             [clojure.spec :as s]
             [datomic.api :as d]
@@ -8,271 +38,281 @@
 
 ;; Code generation tools
 ;;
-
-(defn tap [where xs forms]
-  `(do
-     ~@(for [x xs]
-        `(println ~where  ~x))
-    ~forms))
-
-(defn context-fn
-  [ctx-sym forms]
-  `(fn [~ctx-sym] ~forms))
-
-(defn bind-request
-  [ctx-sym req-sym forms]
-  `(let [~req-sym (:request ~ctx-sym)]
-     ~forms))
-
 (defn decode-map
   "URL Decode the values of a Map
   This opens up the potential for non-sanitized input to be rendered."
   [m]
-  (walk/postwalk (fn [x] (if (string? x) (URLDecoder/decode x) x)) m))
-
-(defn bind-params
-  [ctx-sym req-sym param-sym params forms]
-  `(let [{:keys ~(or params []) :as ~param-sym} (merge
-                                                 (decode-map (:path-params ~req-sym))
-                                                 (:params ~req-sym)
-                                                 (:json-params ~req-sym)
-                                                 (:edn-params ~req-sym))]
-     ~forms))
-
-(defn bind-args
-  [req-sym args-sym forms]
-  `(let [~args-sym (merge (:path-params ~req-sym)
-                          (:params ~req-sym)
-                          (:json-params ~req-sym)
-                          (:edn-params ~req-sym))]
-     ~forms))
-
-(defn response-body
-  [body]
-  `{:body ~(or body "")})
-
-(defn query-response-body
-  [query-result-sym]
-  (response-body `(into [] ~query-result-sym)))
-
-(defn tx-response-body
-  [tx-result-sym args-sym]
-  (response-body `{:transaction ~tx-result-sym :whitelist ~args-sym}))
-
-(defn bind-response
-  [resp-sym resp-forms forms]
-  `(let [~resp-sym ~resp-forms]
-     ~forms))
-
-(defn derive-status-code
-  [ctx-sym resp-sym forms]
-  `(let [~resp-sym (assoc ~resp-sym :status (util/status-code (:body ~resp-sym) (:errors ~ctx-sym)))]
-     ~forms))
-
-(defn assign-headers
-  [resp-sym headers forms]
-  `(let [~resp-sym (update ~resp-sym :headers merge ~headers)]
-     ~forms))
-
-(defn assign-status-code
-  [resp-sym status forms]
-  `(let [~resp-sym (assoc ~resp-sym :status ~status)]
-     ~forms))
-
-(defn attach-response
-  [ctx-sym forms]
-  `(assoc ~ctx-sym :response ~forms))
-
-(defn bind-db
-  [req-sym db-sym forms]
-  `(let [~db-sym (:db ~req-sym)]
-     ~forms))
-
-(defn bind-query-results
-  [result-sym query db-sym vals-sym constants forms]
-  `(let [~result-sym (apply d/q '~query ~db-sym (concat ~vals-sym ~constants))]
-     ~forms))
+  (walk/postwalk
+   #(cond-> %
+      (string? %)
+      (URLDecoder/decode %))
+   m))
 
 (defn coerce-arg-val
-  [args-sym k]
-  `(let [inv# (get ~args-sym ~k)]
-     (try (util/read-edn inv#)
-          (catch Exception e# inv#))))
+  [args k]
+  (let [v (get args k)]
+    (try
+      (util/read-edn v)
+      (catch Exception e v))))
 
-(defn arg-val
-  [args-sym k]
-  `(get ~args-sym ~k))
+(defn process-lookup-ref
+  [r]
+  (update r 0 keyword))
 
-(defn bind-vals
-  [args-sym vals-sym variables coercions forms]
-  `(let [~vals-sym [~(mapcat
-                      (fn [k]
-                        (if (contains? coercions k)
-                          (coerce-arg-val args-sym k)
-                          (arg-val args-sym k)))
-                      variables)]]
-     ~forms))
+(defn process-id
+  [entity-data]
+  (cond-> entity-data
+    (vector? (:db/id entity-data))
+    (assoc :db/id (process-lookup-ref (:db/id entity-data)))
 
-(defn validation-result
-  [param-sym spec]
-  (response-body `(map (fn [e#] (dissoc e# :pred))
-                       (:clojure.spec/problems (clojure.spec/explain-data ~spec ~param-sym)))))
+    (nil? (:db/id entity-data))
+    (assoc :db/id (d/tempid :db.part/user))))
 
-(defn bind-allowed-arguments
-  [req-sym args-sym properties forms]
-  `(let [~args-sym (map #(select-keys % ~(vec properties)) (get-in ~req-sym [:json-params :payload]))]
-     ~forms))
-
-(defn process-lookup-ref [[str-attr val]]
-  [(if (keyword? str-attr) str-attr (keyword str-attr)) val])
-
-(defn process-id [entity-data]
-  (let [id (:db/id entity-data)]
-    (cond (vector? id) (assoc entity-data :db/id (process-lookup-ref id))
-          (nil? id) (assoc entity-data :db/id (d/tempid :db.part/user))
-          :default entity-data)))
-
-(defmulti process-transaction
-  (fn [db-op args] db-op))
-
-(defmethod process-transaction :default
-  [db-op args]
-  ;; the default is to assume the maps are for entity assertions
+(defn process-assert
+  [args]
   (mapv process-id args))
 
-(defmethod process-transaction :vase/retract-entity
-  [db-op args]
-  ;; We assume the maps are for entity-lookups only
-  (mapv (fn [entity-data]
-          [:db.fn/retractEntity (:db/id entity-data)]) args))
+(defn process-retract
+  [args]
+  (mapv #(vector :db.fn/retractEntity (:db/id %)) args))
 
-(defmethod process-transaction :vase/assert-entity
-  [db-op args]
-  ;; We assume the maps are for entity assertions
-  (mapv process-id args))
+(def db-ops
+  {:vase/assert-entity  `process-assert
+   :vase/retract-entity `process-retract})
 
-(defn perform-transaction
-  [req-sym args-sym tx-result-sym db-op forms]
-  `(let [conn#          (-> ~req-sym :conn)
-         tx-result#     (d/transact conn# (process-transaction ~db-op ~args-sym))
-         ~tx-result-sym (map (juxt :e :a :v) (:tx-data @tx-result#))]
-     ~forms))
+(defn tx-processor
+  [op]
+  (get db-ops op `process-assert))
 
-(defmacro nesting
-  [& forms]
-  `(->> ~@(reverse forms)))
+(defn response
+  [body headers status]
+  {:body    body
+   :headers headers
+   :status  status})
 
-(defmacro gensyms
-  [[:as syms] & forms]
-  (let [bindings (vec (interleave syms (map (fn [s] `(gensym ~(name s))) syms)))]
-    `(let ~bindings
-       ~@forms)))
+(defn merged-decoded-parameters
+  [{:keys [path-params params json-params edn-params]}]
+  (merge (decode-map path-params) params json-params edn-params))
+
+;; @ohpauleez - Should this really be different than merged-decoded-parameters?
+(defn merged-parameters
+  [{:keys [path-params params json-params edn-params]}]
+  (merge path-params params json-params edn-params))
+
+(def eav (juxt :e :a :v))
+
+;; @ohpauleez - is 'args' the right thing for the whitelist key here?
+(defn apply-tx
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (->> tx-data
+        (d/transact conn)
+        deref
+        (map eav))})
 
 ;; Building Interceptors
 ;;
-
 (defn dynamic-interceptor
-  "Build an interceptor/interceptor from a map of keys to expressions. The
-  expressions will be evaluated and must evaluate to a function of 1
-  argument (the interceptor/interceptor context.)"
+  "Build an interceptor/interceptor from a map of keys to
+  expressions. The expressions will be evaluated and must evaluate to
+  a function of 1 argument. At runtime the function will be called
+  with a Pedestal context map."
   [name literal exprs]
   (with-meta
-    (interceptor/interceptor (merge {:name name} (util/map-vals eval exprs)))
+    (interceptor/interceptor
+     (merge
+      {:name name}
+      (util/map-vals eval exprs)))
     {:action-literal literal}))
 
 ;; Interceptors for common cases
 ;;
+(defn bind
+  [params]
+  `{:keys ~(or params [])})
+
 (defn respond-action-exprs
+  "Return code for a Pedestal interceptor that will respond with a
+  canned response. The same `body`, `status`, and `headers` arguments
+  are returned for every HTTP request."
   [params body status headers]
-  (gensyms [ctx-sym resp-sym req-sym param-sym]
-           (nesting
-            (context-fn ctx-sym)
-            (bind-request ctx-sym req-sym)
-            (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (response-body body))
-            (assign-headers resp-sym headers)
-            (assign-status-code resp-sym (or status 200))
-            (attach-response ctx-sym resp-sym))))
+  `(fn [{~'request :request :as ~'context}]
+     (let [req-params#    (merged-parameters ~'request)
+           ~(bind params) req-params#
+           resp#          (response
+                           ~(or body "")
+                           ~headers
+                           ~(or status 200))]
+       (assoc ~'context :response resp#))))
 
 (defn respond-action
+  "Return a Pedestal interceptor that responds with a canned
+  response."
   [name params body status headers]
-  (dynamic-interceptor name
-                       :respond
-                       {:enter (respond-action-exprs params body status headers)
-                        :action-literal :vase/respond}))
+  (dynamic-interceptor
+   name
+   :respond
+   {:enter
+    (respond-action-exprs params body status headers)
+
+    :action-literal
+    :vase/respond}))
 
 (defn redirect-action-exprs
+  "Return code for a Pedestal interceptor function that returns a
+  redirect response."
   [params body status headers url]
-  (gensyms [ctx-sym resp-sym req-sym param-sym]
-           (nesting
-            (context-fn ctx-sym)
-            (bind-request ctx-sym req-sym)
-            (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (response-body body))
-            (assign-headers resp-sym (merge headers {"Location" url}))
-            (assign-status-code resp-sym (or status 302))
-            (attach-response ctx-sym resp-sym))))
+  `(fn [{~'request :request :as ~'context}]
+     (let [req-params#    (merged-parameters ~'request)
+           ~(bind params) req-params#
+           resp#          (response
+                           ~(or body "")
+                           (merge ~headers {"Location" ~(or url "")})
+                           ~(or status 302))]
+       (assoc ~'context :response resp#))))
 
 (defn redirect-action
+  "Return a Pedestal interceptor that redirects to a static URL."
   [name params body status headers url]
-  (dynamic-interceptor name :redirect
-                       {:enter (redirect-action-exprs (or params []) body status headers (or url ""))
-                        :action-literal :vase/redirect}))
+  (dynamic-interceptor
+   name
+   :redirect
+   {:enter
+    (redirect-action-exprs params body status headers url)
+
+    :action-literal
+    :vase/redirect}))
 
 (defn validate-action-exprs
+  "Return code for a Pedestal interceptor function that performs
+  clojure.spec validation on the parameters."
   [params headers spec]
-  (gensyms [ctx-sym resp-sym req-sym param-sym]
-           (nesting
-            (context-fn ctx-sym)
-            (bind-request ctx-sym req-sym)
-            (bind-params ctx-sym req-sym param-sym params)
-            (bind-response resp-sym (validation-result param-sym spec))
-            (assign-headers resp-sym headers)
-            (derive-status-code ctx-sym resp-sym)
-            (attach-response ctx-sym resp-sym))))
+  `(fn [{~'request :request :as ~'context}]
+     (let [req-params#    (merged-parameters ~'request)
+           ~(bind params) req-params#
+           problems#      (map
+                           #(dissoc % :pred)
+                           (:clojure.spec/problems
+                            (clojure.spec/explain-data ~spec req-params#)))
+           resp#          (response
+                           problems#
+                           ~headers
+                           (util/status-code problems# (:errors ~'context)))]
+       (assoc ~'context :response resp#))))
 
 (defn validate-action
+  "Returns a Pedestal interceptor that performs validations on the
+  parameters.
+
+  The response body will be a list of data structures as returned by
+  clojure.spec/explain-data."
   [name params headers spec]
-  (dynamic-interceptor name :validate
-                       {:enter (validate-action-exprs params headers spec)
-                        :action-literal :vase/validate}))
+  (dynamic-interceptor
+   name
+   :validate
+   {:enter
+    (validate-action-exprs params headers spec)
+
+    :action-literal
+    :vase/validate}))
 
 (defn query-action-exprs
+  "Return code for a Pedestal interceptor function that performs a
+  Datomic query.
+
+  `query` holds a query expression in any supported Datomic
+  format. Required.
+
+  `variables` is a vector of the query variables (expressed as
+  keywords) that should arrive in the Pedestal request map. These will
+  be supplied to the query as inputs. May be nil.
+
+  `coercions` is a set of variable names (expressed as keywords) that
+  should be read as EDN values from the Pedestal request map. (I.e.,
+  anything that needs to be converted from String to Date, Long, etc.)
+  May be nil.
+
+  `constants` is a vector of extra inputs to the query. These will be
+  appended to the query inputs _after_ the variables. May be nil.
+
+  `headers` is an expression that evaluates to a map of header
+  name (string) to header value (string). May be nil."
   [query variables coercions constants headers]
-  (gensyms [ctx-sym resp-sym req-sym args-sym db-sym vals-sym query-result-sym]
-           (nesting
-            (context-fn ctx-sym)
-            (bind-request ctx-sym req-sym)
-            (bind-args req-sym args-sym)
-            (bind-vals args-sym vals-sym variables coercions)
-            (bind-db req-sym db-sym)
-            (bind-query-results query-result-sym query db-sym vals-sym constants)
-            (bind-response resp-sym (query-response-body query-result-sym))
-            (assign-headers resp-sym headers)
-            (derive-status-code ctx-sym resp-sym)
-            (attach-response ctx-sym resp-sym))))
+  (let [args-sym (gensym 'args)]
+    `(fn [{~'request :request :as ~'context}]
+       (let [~args-sym      (merged-parameters ~'request)
+             vals#          [~(mapcat
+                               (fn [k]
+                                 (if (contains? coercions k)
+                                   `(coerce-arg-val ~args-sym ~k)
+                                   `(get ~args-sym ~k)))
+                                variables)]
+             db#            (:db ~'request)
+             query-result#  (apply d/q '~query db# (concat vals# ~constants))
+             response-body# (into [] query-result#)
+             resp#          (response
+                             response-body#
+                             ~headers
+                             (util/status-code response-body# (:errors ~'context)))]
+         (assoc ~'context :response resp#)))))
 
 (defn query-action
+  "Returns a Pedestal interceptor that executes a Datomic query on
+  entry."
   [name query variables coercions constants headers]
-  (dynamic-interceptor name :query
-                       {:enter (query-action-exprs query variables coercions constants headers)
-                        :action-literal :vase/query}))
+  (dynamic-interceptor
+   name
+   :query
+   {:enter
+    (query-action-exprs query variables coercions constants headers)
+
+    :action-literal
+    :vase/query}))
 
 (defn transact-action-exprs
+  "Return code for a Pedestal context function that executes a
+  transaction.
+
+  `properties` is a collection of keywords that name Datomic
+  attributes. When an HTTP request arrives, these keywords are matched
+  with their parameter values in the request to form an entity map.
+
+  `db-op` may be either :vase/assert-entity, :vase/retract-entity, or
+  nil. When `nil`, Vase will assume the transaction body is a
+  collection of Datomic entity maps.
+
+  `headers` is an expression that evaluates to a map of header
+  name (string) to header value (string). May be nil."
   [properties db-op headers]
-  (gensyms [ctx-sym resp-sym req-sym args-sym tx-result-sym]
-           (nesting
-            (context-fn ctx-sym)
-            (bind-request ctx-sym req-sym)
-            (bind-allowed-arguments req-sym args-sym properties)
-            (perform-transaction req-sym args-sym tx-result-sym db-op)
-            (bind-response resp-sym (tx-response-body tx-result-sym args-sym))
-            (assign-headers resp-sym headers)
-            (derive-status-code ctx-sym resp-sym)
-            (attach-response ctx-sym resp-sym))))
+  `(fn [{~'request :request :as ~'context}]
+     (let [args#          (merged-parameters ~'request)
+           args#          (map
+                           #(select-keys % ~(vec properties))
+                           (get-in ~'request [:json-params :payload]))
+           tx-data#       (~(tx-processor db-op) args#)
+           conn#          (:conn ~'request)
+           response-body# (apply-tx
+                           conn#
+                           tx-data#
+                           args#)
+           resp#          (response
+                           response-body#
+                           ~headers
+                           (util/status-code response-body# (:errors ~'context)))]
+       (assoc ~'context :response resp#))))
 
 (defn transact-action
+  "Returns a Pedestal interceptor that executes a Datomic transaction
+  on entry."
   [name properties db-op headers]
-  (dynamic-interceptor name :transact
-                       {:enter (transact-action-exprs properties db-op headers)
-                        :action-literal :vase/transact}))
+  (dynamic-interceptor
+   name
+   :transact
+   {:enter
+    (transact-action-exprs properties db-op headers)
+
+    :action-literal
+    :vase/transact}))
