@@ -49,11 +49,16 @@
    m))
 
 (defn coerce-arg-val
-  [args k]
-  (let [v (get args k)]
-    (try
-      (util/read-edn v)
-      (catch Exception e v))))
+  ([args k]
+   (let [v (get args k)]
+     (try
+       (util/read-edn v)
+       (catch Exception e v))))
+  ([args k default-v]
+   (let [v (get args k default-v)]
+     (try
+       (util/read-edn v)
+       (catch Exception e v)))))
 
 (defn process-lookup-ref
   [r]
@@ -90,14 +95,9 @@
    :headers headers
    :status  status})
 
-(defn merged-decoded-parameters
-  [{:keys [path-params params json-params edn-params]}]
-  (merge (decode-map path-params) params json-params edn-params))
-
-;; @ohpauleez - Should this really be different than merged-decoded-parameters?
 (defn merged-parameters
   [{:keys [path-params params json-params edn-params]}]
-  (merge path-params params json-params edn-params))
+  (merge (decode-map path-params) params json-params edn-params))
 
 (def eav (juxt :e :a :v))
 
@@ -193,7 +193,7 @@
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) req-params#
-           problems#      (map
+           problems#      (mapv
                            #(dissoc % :pred)
                            (:clojure.spec/problems
                             (clojure.spec/explain-data ~spec req-params#)))
@@ -201,7 +201,10 @@
                            problems#
                            ~headers
                            (util/status-code problems# (:errors ~'context)))]
-       (assoc ~'context :response resp#))))
+       (if (or (empty? (:io.pedestal.interceptor.chain/queue ~'context))
+               (seq problems#))
+         (assoc ~'context :response resp#)
+         ~'context))))
 
 (defn validate-action
   "Returns a Pedestal interceptor that performs validations on the
@@ -228,7 +231,9 @@
 
   `variables` is a vector of the query variables (expressed as
   keywords) that should arrive in the Pedestal request map. These will
-  be supplied to the query as inputs. May be nil.
+  be supplied to the query as inputs. May be nil.  Values within the
+  `variables` vector may also be pair-vectors, in the form `[key default-value]`,
+  allowing for default values if the key/keyword is not found in the request map.
 
   `coercions` is a set of variable names (expressed as keywords) that
   should be read as EDN values from the Pedestal request map. (I.e.,
@@ -245,18 +250,29 @@
     `(fn [{~'request :request :as ~'context}]
        (let [~args-sym      (merged-parameters ~'request)
              vals#          [~(mapcat
-                               (fn [k]
-                                 (if (contains? coercions k)
-                                   `(coerce-arg-val ~args-sym ~k)
-                                   `(get ~args-sym ~k)))
+                               (fn [x]
+                                 (let
+                                   [[k default-v] (if (vector? x) x [x nil])]
+                                   (if (contains? coercions k)
+                                   `(coerce-arg-val ~args-sym ~k ~default-v)
+                                   `(get ~args-sym ~k ~default-v))))
                                 variables)]
              db#            (:db ~'request)
-             query-result#  (apply d/q '~query db# (concat vals# ~constants))
-             response-body# (into [] query-result#)
+             query-params# (concat vals# ~constants)
+             query-result#  (when (every? some? query-params#)
+                              (apply d/q '~query db# query-params#))
+             response-body# (if query-result#
+                              (into [] query-result#)
+                              (str
+                                "Missing required query parameters; One or more parameters was `nil`."
+                                "  Got: " (keys ~args-sym)
+                                "  Required: " ~variables))
              resp#          (response
                              response-body#
                              ~headers
-                             (util/status-code response-body# (:errors ~'context)))]
+                             (if query-result#
+                               (util/status-code response-body# (:errors ~'context))
+                               400))]
          (assoc ~'context :response resp#)))))
 
 (defn query-action
