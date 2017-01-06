@@ -82,19 +82,19 @@ describe them.
   :accounts {
     :norms {
       :accounts/item-schema {
-        :txes [#vase/short-schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
+        :txes [#vase/schema-tx [[:item/itemId :one :long :unique "The unique identifier for an item"]
                                       [:item/name :one :string "The name of an item"]
                                       [:item/description :one :string :fulltext "A short description of the item"]]]}
       :accounts/user-schema {
         :requires [:accounts/item-schema]
-        :txes [#vase/short-schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
+        :txes [#vase/schema-tx [[:user/userId :one :long :unique "The unique identifier for a user"]
                                       [:user/email :one :string :unique "The email address for a given user"]
                                       [:user/items :many :ref "The collection of items a user owns"]]]}}}
 }
 ```
 
 Vase offers a shorthand for defining Datomic schema transactions with the
-literal tag `#vase/short-schema-tx`.  This tag marks a vector of vectors.
+literal tag `#vase/schema-tx`.  This tag marks a vector of vectors.
 Each subvector defines an attribute, its cardinality, its type, an
 optional qualifier (unique, index, or fulltext), and a doc string.  Attribute
 names are *namespaced* with the entity name to which they apply.

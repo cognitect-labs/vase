@@ -11,7 +11,7 @@
                        :db/ident :petstore.pet.status/sold}]]}
    :petstore-full/pet-schema
    {:vase.norm/requires [:petstore-full/pet-status-schema]
-    :vase.norm/txes [#vase/short-schema-tx
+    :vase.norm/txes [#vase/schema-tx
                      [[:petstore.pet/id :one :long :unique "pet id"]
                       [:petstore.pet/category :one :ref "Reference to :pet-stpre.category"]
                       [:petstore.pet/name :one :string "pet's name"]

@@ -58,7 +58,7 @@
                                    :datomic-uri datomic-uri}
                                   path v))
                       {[:descriptor :vase/norms] {:example/animal-schema
-                                                  {:vase.norm/txes [#vase/short-schema-tx [[:animal/type :one :string :identity "The type of animal"]
+                                                  {:vase.norm/txes [#vase/schema-tx [[:animal/type :one :string :identity "The type of animal"]
                                                                                            [:animal/pack-name :one :string "The word for a 'pack' of the animal"]]]}}
                        [:descriptor :vase/apis] {:example/vnew
                                                  {:vase.api/routes

@@ -3,7 +3,7 @@
  :descriptor
  {:vase/norms
   {:petstore-full/user-schema
-   {:vase.norms/txes [#vase/short-schema-tx
+   {:vase.norms/txes [#vase/schema-tx
                           [[:petstore.user/id :one :long :unique "user id"]
                            [:petstore.user/username :one :string :unique "username"]
                            [:petstore.user/firstName :one :string "first name"]

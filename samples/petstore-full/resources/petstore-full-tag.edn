@@ -3,7 +3,7 @@
  :descriptor
  {:vase/norms
   {:petstore-full/tag-schema
-   {:vase.norm/txes [#vase/short-schema-tx
+   {:vase.norm/txes [#vase/schema-tx
                      [[:petstore.tag/id :one :long :unique "tag id"]
                       [:petstore.tag/name :one :string "tag name"]]]}}
   :vase/apis

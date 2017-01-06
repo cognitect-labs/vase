@@ -11,7 +11,7 @@
                        :db/ident :petstore.order.status/delivered}]]}
    :petstore-full/order-schema
    {:vase.norm/requires [:petstore-full/order-status-schema]
-    :vase.norm/txes [#vase/short-schema-tx
+    :vase.norm/txes [#vase/schema-tx
                      [[:petstore.order/id :one :long :unique "order id"]
                       [:petstore.order/petId :one :ref "pet id of this order"]
                       [:petstore.order/quantity :one :long "quantiy of pets"]

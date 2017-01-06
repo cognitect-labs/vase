@@ -335,7 +335,7 @@ The schema above using the short form would look like:
 
 ```clojure
 {:norms {:example-app/base-schema
-           {:txes [#vase/short-schema-tx [[:something/title :one :string "A simple title"]]]}
+           {:txes [#vase/schema-tx [[:something/title :one :string "A simple title"]]]}
            ;; End :example-app/base-schema
          ...}
  :v1 {:routes [[ ... ]]
