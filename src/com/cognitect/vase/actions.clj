@@ -292,7 +292,9 @@
                              (if query-result#
                                (util/status-code response-body# (:errors ~'context))
                                400))]
-         (assoc ~'context :response resp#)))))
+         (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
+           (assoc ~'context :response resp#)
+           (assoc ~'context ::query-data response-body#))))))
 
 (defn query-action
   "Returns a Pedestal interceptor that executes a Datomic query on
@@ -324,7 +326,7 @@
   [properties db-op headers]
   `(fn [{~'request :request :as ~'context}]
      (let [args#          (merged-parameters ~'request)
-           args#          (map
+           args#          (mapv
                            #(select-keys % ~(vec properties))
                            (get-in ~'request [:json-params :payload]))
            tx-data#       (~(tx-processor db-op) args#)
@@ -337,7 +339,11 @@
                            response-body#
                            ~headers
                            (util/status-code response-body# (:errors ~'context)))]
-       (assoc ~'context :response resp#))))
+       (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
+         (assoc ~'context :response resp#)
+         (-> ~'context
+             (assoc ::transact-data response-body#)
+             (assoc-in [:request :db] (d/db conn#)))))))
 
 (defn transact-action
   "Returns a Pedestal interceptor that executes a Datomic transaction

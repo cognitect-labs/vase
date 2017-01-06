@@ -5,7 +5,7 @@
             [clj-time.core :as clj-time]
             [com.cognitect.vase.util :as util]))
 
-(def request-id-header"vaserequest-id")
+(def request-id-header "vaserequest-id")
 
 (def attach-received-time
   (i/-interceptor
