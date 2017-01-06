@@ -23,7 +23,11 @@
                  [com.fasterxml.jackson.core/jackson-databind "2.8.3"]
                  [com.fasterxml.jackson.datatype/jackson-datatype-json-org "2.8.3"]
                  [cheshire "5.6.3" :exclusions [[com.fasterxml.jackson.core/jackson-core]]]]
-  :profiles {:dev {:source-paths ["dev"]
+  :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
+                                          "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
+             :dev {:aliases {"dumbrepl" ["trampoline" "run" "-m" "clojure.main/main"]
+                             "srepl" ["with-profile" "srepl" "trampoline" "run" "-m" "clojure.main/main"]}
+                   :source-paths ["dev"]
                    :resource-paths ["config"
                                     "resources"
                                     "test/resources"]
