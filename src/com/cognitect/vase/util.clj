@@ -13,6 +13,10 @@
   [f m]
   (reduce-kv (fn [m k v] (assoc m k (f v))) m m))
 
+;; This function is useful when writing your own action literals,
+;; allowing you to expand symbol names within the descriptors.
+;; It's not used within the Vase source, but has been used on projects
+;; built with Vase.
 (defn fully-qualify-symbol
   ([sym] (fully-qualify-symbol *ns* sym))
   ([ns sym]
@@ -29,31 +33,6 @@
       (string? x) (keyword x)
       (symbol? x) (keyword (namespace x) (name x))
       :else (keyword (str x))))
-
-(defn short-hash []
-  (subs
-    (DatatypeConverter/printBase64Binary
-      (byte-array (loop [i 0
-                         ret (transient [])]
-                    (if (< i 8)
-                      (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
-                      (persistent! ret)))))
-    0 11))
-
-(defn str->inputstream
-  ([^String text]
-   (str->inputstream text "UTF-8"))
-  ([^String text ^String encoding]
-   (ByteArrayInputStream. (.getBytes text encoding))))
-
-(defn re-findall
-  ([matcher]
-   (loop [res (transient [])]
-     (if-let [found (re-find matcher)]
-       (recur (conj res found))
-       (persistent! res))))
-  ([regex s]
-   (re-findall (re-matcher regex s))))
 
 (def write-edn pr-str)
 
@@ -141,6 +120,25 @@
     (exception?            response)        500
     :else                                   200))
 
+(defn payload-response
+  ([request response-data errors-data]
+   (payload-response request response-data errors-data))
+  ([request response-data errors-data headers]
+   (payload-response request response-data errors-data headers (status-code response-data errors-data)))
+  ([request response-data errors-data headers status]
+   {:body (merge {:request {:body (get request :json-params
+                                       (get request :edn-params
+                                            (get request :params
+                                                 (get request :body-string ""))))
+                            :this_ (:uri request)
+                            :doc (:vase-doc request "")
+                            :server_received_time (str (:received-time request))}}
+                 (when (seq response-data)
+                   {:response response-data})
+                 (when (seq errors-data)
+                   {:errors errors-data}))
+    :headers headers
+    :status status}))
 
 (defn empty-value [[_ _ v]] (or (nil? v) (and (coll? v) (empty? v))))
 (defn eseq? [v] (and (sequential? v) (every? map? v)))
