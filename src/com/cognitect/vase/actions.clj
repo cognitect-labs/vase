@@ -89,12 +89,6 @@
   [op]
   (get db-ops op `process-assert))
 
-(defn response
-  [body headers status]
-  {:body    body
-   :headers headers
-   :status  status})
-
 (defn merged-parameters
   [request]
   (let [{:keys [path-params params json-params edn-params]} request]
@@ -149,9 +143,6 @@
     `{:keys ~(or param-keys [])
       :or ~param-defaults}))
 
-;; TODO `bind` needs to filter out overrides and also coerce;
-;; Consider lifting up code from
-
 ;; Interceptors for common cases
 ;;
 (defn respond-action-exprs
@@ -162,7 +153,7 @@
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) (coerce-params req-params# ~(mapv util/ensure-keyword (or edn-coerce [])))
-           resp#          (response
+           resp#          (util/response
                            ~(or body "")
                            ~headers
                            ~(or status 200))]
@@ -196,7 +187,7 @@
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) req-params#
-           resp#          (response
+           resp#          (util/response
                            ~(or body "")
                            (merge ~headers {"Location" ~(or url "")})
                            ~(or status 302))]
@@ -225,7 +216,7 @@
                            #(dissoc % :pred)
                            (:clojure.spec/problems
                             (clojure.spec/explain-data ~spec req-params#)))
-           resp#          (response
+           resp#          (util/response
                            problems#
                            ~headers
                            (util/status-code problems# (:errors ~'context)))]
@@ -295,7 +286,7 @@
                                 "Missing required query parameters; One or more parameters was `nil`."
                                 "  Got: " (keys ~args-sym)
                                 "  Required: " ~variables))
-             resp#          (response
+             resp#          (util/response
                              response-body#
                              ~headers
                              (if query-result#
@@ -342,7 +333,7 @@
                            conn#
                            tx-data#
                            args#)
-           resp#          (response
+           resp#          (util/response
                            response-body#
                            ~headers
                            (util/status-code response-body# (:errors ~'context)))]

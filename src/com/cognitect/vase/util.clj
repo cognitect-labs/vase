@@ -136,25 +136,31 @@
     (exception?            response)        500
     :else                                   200))
 
+(defn response
+  [body headers status]
+  {:body    body
+   :headers headers
+   :status  status})
+
 (defn payload-response
   ([request response-data errors-data]
    (payload-response request response-data errors-data))
   ([request response-data errors-data headers]
    (payload-response request response-data errors-data headers (status-code response-data errors-data)))
   ([request response-data errors-data headers status]
-   {:body (merge {:request {:body (get request :json-params
-                                       (get request :edn-params
-                                            (get request :params
-                                                 (get request :body-string ""))))
-                            :this_ (:uri request)
-                            :doc (:vase-doc request "")
-                            :server_received_time (str (:received-time request))}}
-                 (when (seq response-data)
-                   {:response response-data})
-                 (when (seq errors-data)
-                   {:errors errors-data}))
-    :headers headers
-    :status status}))
+   (response (merge {:request {:body (get request :json-params
+                                          (get request :edn-params
+                                               (get request :params
+                                                    (get request :body-string ""))))
+                               :this_ (:uri request)
+                               :doc (:vase-doc request "")
+                               :server_received_time (str (:received-time request))}}
+                    (when (seq response-data)
+                      {:response response-data})
+                    (when (seq errors-data)
+                      {:errors errors-data}))
+             headers
+             status)))
 
 (defn empty-value [[_ _ v]] (or (nil? v) (and (coll? v) (empty? v))))
 (defn eseq? [v] (and (sequential? v) (every? map? v)))
