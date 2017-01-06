@@ -13,6 +13,22 @@
   [f m]
   (reduce-kv (fn [m k v] (assoc m k (f v))) m m))
 
+(defn str->inputstream
+  ([^String text]
+   (str->inputstream text "UTF-8"))
+  ([^String text ^String encoding]
+   (ByteArrayInputStream. (.getBytes text encoding))))
+
+(defn short-hash []
+  (subs
+    (DatatypeConverter/printBase64Binary
+      (byte-array (loop [i 0
+                         ret (transient [])]
+                    (if (< i 8)
+                      (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
+                      (persistent! ret)))))
+    0 11))
+
 ;; This function is useful when writing your own action literals,
 ;; allowing you to expand symbol names within the descriptors.
 ;; It's not used within the Vase source, but has been used on projects
