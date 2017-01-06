@@ -3,5 +3,4 @@
  vase/query           com.cognitect.vase.literals/query
  vase/transact        com.cognitect.vase.literals/transact
  vase/validate        com.cognitect.vase.literals/validate
- vase/short-schema-tx com.cognitect.vase.literals/short-schema-tx
- vase/regex           com.cognitect.vase.literals/regex}
+ vase/short-schema-tx com.cognitect.vase.literals/short-schema-tx}

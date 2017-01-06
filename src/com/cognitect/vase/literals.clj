@@ -6,18 +6,8 @@
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.util :as util]))
 
-;; TODO: All these literals should be Types/Records that support print-method
-;;       to enable full serialization (right now only reading works)
-
 ;; Data literals
 ;; -------------
-(defn regex
-  "A non-auto-escaping regex literal.
-  This is like Regex strings in Clojure pre-1.0.
-  If we want the short form, we'll need to come up with a different convention"
-  [s]
-  {:pre (string? s)}
-  (re-pattern s))
 
 ;; Schema literals
 ;; ---------------
@@ -126,3 +116,4 @@
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
   (.write w (str "#vase/transact" (into {} t))))
+
