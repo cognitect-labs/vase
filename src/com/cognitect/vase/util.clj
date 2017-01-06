@@ -23,6 +23,13 @@
            sym))
        sym)))
 
+(defn ensure-keyword [x]
+    (cond
+      (keyword? x) x
+      (string? x) (keyword x)
+      (symbol? x) (keyword (namespace x) (name x))
+      :else (keyword (str x))))
+
 (defn short-hash []
   (subs
     (DatatypeConverter/printBase64Binary

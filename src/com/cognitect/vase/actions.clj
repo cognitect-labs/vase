@@ -49,16 +49,16 @@
    m))
 
 (defn coerce-arg-val
+  ([v]
+   (try
+       (util/read-edn v)
+       (catch Exception e v)))
   ([args k]
    (let [v (get args k)]
-     (try
-       (util/read-edn v)
-       (catch Exception e v))))
+     (coerce-arg-val v)))
   ([args k default-v]
    (let [v (get args k default-v)]
-     (try
-       (util/read-edn v)
-       (catch Exception e v)))))
+     (coerce-arg-val v))))
 
 (defn process-lookup-ref
   [r]
@@ -96,8 +96,9 @@
    :status  status})
 
 (defn merged-parameters
-  [{:keys [path-params params json-params edn-params]}]
-  (merge (decode-map path-params) params json-params edn-params))
+  [request]
+  (let [{:keys [path-params params json-params edn-params]} request]
+    (merge (decode-map path-params) params json-params edn-params)))
 
 (def eav (juxt :e :a :v))
 
@@ -128,35 +129,62 @@
       (util/map-vals eval exprs)))
     {:action-literal literal}))
 
+;; Auxiliary functions for interceptor internals
+;;
+(defn coerce-params
+  [req-params coercions]
+  (reduce (fn [params-acc k]
+             ;; Params are all string values, which allows if-let to be safe to use
+             ;; We can't use just `coerce-arg-value` because we don't want to add missing/not-found keys
+             (if-let [v (get params-acc k)]
+               (assoc params-acc k (coerce-arg-val v))
+               params-acc))
+           req-params
+           coercions))
+
+(defn bind
+  [param-syms]
+  (let [param-keys (mapv #(if (vector? %) (first %) %) param-syms)
+        param-defaults (into {} (filter vector? param-syms))]
+    `{:keys ~(or param-keys [])
+      :or ~param-defaults}))
+
+;; TODO `bind` needs to filter out overrides and also coerce;
+;; Consider lifting up code from
+
 ;; Interceptors for common cases
 ;;
-(defn bind
-  [params]
-  `{:keys ~(or params [])})
-
 (defn respond-action-exprs
   "Return code for a Pedestal interceptor that will respond with a
   canned response. The same `body`, `status`, and `headers` arguments
   are returned for every HTTP request."
-  [params body status headers]
+  [params edn-coerce body status headers]
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
-           ~(bind params) req-params#
+           ~(bind params) (coerce-params req-params# ~(mapv util/ensure-keyword (or edn-coerce [])))
            resp#          (response
                            ~(or body "")
                            ~headers
                            ~(or status 200))]
        (assoc ~'context :response resp#))))
 
+(comment
+  (clojure.pprint/pprint
+    (respond-action-exprs '[url-thing]
+                          '[url-thing]
+                          '(str "You said: " url-thing " which is a " (type url-thing))
+                          200 {}))
+  )
+
 (defn respond-action
   "Return a Pedestal interceptor that responds with a canned
   response."
-  [name params body status headers]
+  [name params edn-coerce body status headers]
   (dynamic-interceptor
    name
    :respond
    {:enter
-    (respond-action-exprs params body status headers)
+    (respond-action-exprs params edn-coerce body status headers)
 
     :action-literal
     :vase/respond}))

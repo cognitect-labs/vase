@@ -50,10 +50,10 @@
 ;; Routing/Action literals
 ;; -----------------------
 
-(defrecord RespondAction [name params edn-coerce body status headers enforce-format doc]
+(defrecord RespondAction [name params edn-coerce body status headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/respond-action name params body status headers)))
+    (actions/respond-action name params edn-coerce body status headers)))
 
 (defn respond [form]
   {:pre [(map? form)
