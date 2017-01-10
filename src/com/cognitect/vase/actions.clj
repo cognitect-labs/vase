@@ -249,12 +249,13 @@
   format. Required.
 
   `variables` is a vector of the query variables (expressed as
-  keywords) that should arrive in the Pedestal request map. These will
-  be supplied to the query as inputs. May be nil.  Values within the
-  `variables` vector may also be pair-vectors, in the form `[key default-value]`,
+  symbols) that should arrive in the Pedestal request map (as keywords).
+  These will be supplied to the query as inputs. Values within the
+  `variables` vector may also be pair-vectors, in the form `[sym-key default-value]`,
   allowing for default values if the key/keyword is not found in the request map.
+  `variables` may be nil.
 
-  `coercions` is a set of variable names (expressed as keywords) that
+  `coercions` is a set of variable names (expressed as symbols) that
   should be read as EDN values from the Pedestal request map. (I.e.,
   anything that needs to be converted from String to Date, Long, etc.)
   May be nil.
@@ -271,8 +272,9 @@
              vals#          [~(mapcat
                                (fn [x]
                                  (let
-                                   [[k default-v] (if (vector? x) x [x nil])]
-                                   (if (contains? coercions k)
+                                   [[k-sym default-v] (if (vector? x) x [x nil])
+                                    k (util/ensure-keyword k-sym)]
+                                   (if (contains? coercions k-sym)
                                    `(coerce-arg-val ~args-sym ~k ~default-v)
                                    `(get ~args-sym ~k ~default-v))))
                                 variables)]
@@ -285,7 +287,7 @@
                               (str
                                 "Missing required query parameters; One or more parameters was `nil`."
                                 "  Got: " (keys ~args-sym)
-                                "  Required: " ~variables))
+                                "  Required: " ~(mapv util/ensure-keyword variables)))
              resp#          (util/response
                              response-body#
                              ~headers
@@ -295,6 +297,19 @@
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
            (assoc ~'context ::query-data response-body#))))))
+
+(comment
+  (clojure.pprint/pprint
+    (query-action-exprs '[:find ?e
+                                 :in $ ?someone ?fogus
+                                 :where
+                                 [(list ?someone ?fogus) [?emails ...]]
+                                 [?e :user/userEmail ?emails]]
+                               '[someone]
+                               []
+                               ["mefogus@gmail.com"]
+                               {}))
+  )
 
 (defn query-action
   "Returns a Pedestal interceptor that executes a Datomic query on

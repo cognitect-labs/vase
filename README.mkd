@@ -2,8 +2,8 @@
 
 # Vase: Data-driven microservices
 
-This system provides a data-driven way to describe and run RESTful APIs that
-are backed by a durable database (Datomic).
+This system provides a data-driven and extensible way to describe and run RESTful APIs
+that are backed by a durable database (Datomic).
 
 ## Releases and Dependency Information
 
@@ -31,11 +31,6 @@ lein install
 </dependency>
 ```
 
-## Features
-
-* Describe Pedestal routes as data
-* Create and update Datomic schema
-
 ## Getting Started
 
 Vase turns API descriptions into Pedestal routes. The API descriptions
@@ -47,7 +42,7 @@ returns can be used directly by pedestal like this:
 
 ```clj
 (require '[io.pedestal.http.route.definition.table :as table])
-(require '[vase]))
+(require '[com.cognitect.vase]))
 
 (defn make-master-routes
   [spec]
@@ -62,7 +57,7 @@ hand-written Pedestal routes by concatenating the input to
 
 ```clj
 (require '[io.pedestal.http.route.definition.table :as table])
-(require '[vase]))
+(require '[com.cognitect.vase]))
 
 (defn make-master-routes
   [spec]
@@ -81,4 +76,4 @@ hand-written Pedestal routes by concatenating the input to
 
 ## Copyright
 
-Copyright ©2016 Cognitect, Inc. All rights reserved.
+Copyright ©2017 Cognitect, Inc. All rights reserved.

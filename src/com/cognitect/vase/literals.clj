@@ -88,9 +88,7 @@
 (defrecord QueryAction [name params query edn-coerce constants headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (let [variables (vec (map #(-> % clojure.core/name keyword) (or params [])))
-          coercions (set (map #(-> % clojure.core/name keyword) (or edn-coerce [])))]
-      (actions/query-action name query variables coercions constants headers))))
+    (actions/query-action name query params (into #{} edn-coerce) constants headers)))
 
 (defn query [form]
   {:pre [(map? form)
