@@ -33,12 +33,22 @@ lein install
 
 ## Getting Started
 
+### Using the template
+
+This repository also includes a Leiningen [template](./template) for getting started.
+Look at the [template's README](./template/README.md) for local/developer setup,
+otherwise
+
+`lein new vase my-service`
+
+### Adding Vase to a Pedestal project
+
 Vase turns API descriptions into Pedestal routes. The API descriptions
 specify actions for routes, these are turned into interceptors in the
 Pedestal routes. This is done by `vase/routes`.
 
-`vase/routes` takes an API base URL and a description. The routes it
-returns can be used directly by pedestal like this:
+`vase/routes` takes an API base URL and an API specification. The routes it
+returns can be used directly by Pedestal like this:
 
 ```clj
 (require '[io.pedestal.http.route.definition.table :as table])
@@ -77,3 +87,4 @@ hand-written Pedestal routes by concatenating the input to
 ## Copyright
 
 Copyright ©2017 Cognitect, Inc. All rights reserved.
+
