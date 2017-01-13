@@ -1,0 +1,106 @@
+{:activated-apis [:{{namespace}}/v1]
+ :datomic-uri "datomic:mem://example"
+ :descriptor
+ ;; Datomic Schema Norms
+ ;; --------------------
+ {:vase/norms
+  {:{{namespace}}/base-schema
+   ;; Supports full/long Datomic schemas
+   {:vase.norm/txes [[{:db/id #db/id[:db.part/db]
+                       :db/ident :company/name
+                       :db/unique :db.unique/value
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one
+                       :db.install/_attribute :db.part/db}]]}
+   :{{namespace}}/user-schema
+   {:vase.norm/requires [:{{namespace}}/base-schema] ;; Also supports schema dependencies
+    ;; and supports short/basic schema definitions
+    :vase.norm/txes [#vase/schema-tx [[:user/userId :one :long :identity "A User's unique identifier"]
+                                      [:user/userEmail :one :string :unique "The user's email"]
+                                      ;; :fulltext also implies :index
+                                      [:user/userBio :one :string :fulltext "A short blurb about the user"]
+                                      [:user/company :one :ref "The user's employer"]]]}}
+
+  ;; Global Specs for the API
+  ;; ------------------------
+  :vase/specs
+  {:{{namespace}}.test/age (fn [age] (> age 21))
+   :{{namespace}}.test/name (clojure.spec/and string? not-empty)
+   :{{namespace}}.test/person (clojure.spec/keys :req-un [:{{namespace}}.test/name
+                                                     :{{namespace}}.test/age])}
+
+  ;; API Tagged Chunks/Versions
+  ;; --------------------------
+  :vase/apis
+  {:{{namespace}}/v1
+   {:vase.api/routes
+    {"/hello" {:get #vase/respond {:name :{{namespace}}.v1/simple-response
+                                   :body "Hello World"}}
+     "/hello2" {:get #vase/respond {:name :{{namespace}}.v1/param-response
+                                    ;; POST bodies and query string args are bound in :params
+                                    :params [user]
+                                    ;; `edn-coerce` will edn/read-string on params, with all active data readers
+                                    :edn-coerce [user]
+                                    :body (if user
+                                            (str "Hello " user ". You are a: " (type user))
+                                            "Hello World!")}}
+     "/redirect-to-google" {:get #vase/redirect {:name :{{namespace}}.v1/r-page
+                                                 :url "http://www.google.com"}}
+     "/redirect-to-param" {:get #vase/redirect {:name :{{namespace}}.v1/ar-page
+                                                :params [someurl]
+                                                :url someurl}}
+     ;; Validate (with clojure.spec) happens on the entire `param` map
+     "/validate" {:post #vase/validate {:name :{{namespace}}.v1/validate-page
+                                        :spec :{{namespace}}.test/person}}
+     ;; Just use datomic queries
+     "/db" {:get #vase/query {:name :{{namespace}}.v1/db-page
+                              :params []
+                              :query [:find ?e ?v
+                                      :where [?e :db/ident ?v]]}}
+
+     "/users" {:get #vase/query {:name :{{namespace}}.v1/users-page
+                                 :params []
+                                 :query [:find ?id ?email
+                                         :where
+                                         [?e :user/userId ?id]
+                                         [?e :user/userEmail ?email]]}}
+
+     "/users/:id" {:get #vase/query {:name :{{namespace}}.v1/user-id-page
+                                     :params [id]
+                                     :edn-coerce [id]
+                                     :query [:find ?e
+                                             :in $ ?id
+                                             :where
+                                             [?e :user/userId ?id]]}}
+
+     "/user" {:get #vase/query {:name :{{namespace}}.v1/user-page
+                                ;; All params are required to perform the query
+                                :params [email]
+                                :query [:find ?e
+                                        :in $ ?email
+                                        :where
+                                        [?e :user/userEmail ?email]]}
+              :post #vase/transact {:name :{{namespace}}.v1/user-create
+                                    ;; `:properties` are pulled from the parameters
+                                    :properties [:db/id
+                                                 :user/userId
+                                                 :user/userEmail
+                                                 :user/userBio]}
+              :delete #vase/transact {:name :{{namespace}}.v1/user-delete
+                                      :db-op :vase/retract-entity
+                                      ;; :vase/retract-entity requires :db/id to be supplied
+                                      :properties [:db/id]}}
+
+     "/jane-and-someone" {:get #vase/query {:name :{{namespace}}.v1/fogussomeone-page
+                                            ;; Params can have default values, using the "default pair" notation
+                                            :params [[someone "jill@example.com"]]
+                                            :constants ["jane@example.com"]
+                                            :query [:find ?e
+                                                    :in $ ?someone ?jane
+                                                    :where
+                                                    [(list ?someone ?jane) [?emails ...]]
+                                                    [?e :user/userEmail ?emails]]}}}
+    ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
+    :vase.api/schemas [:{{namespace}}/user-schema]
+    :vase.api/forward-headers ["vaserequest-id"]}}}}
+
