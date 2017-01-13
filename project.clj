@@ -5,7 +5,8 @@
                  [org.clojure/clojure "1.9.0-alpha13"]
 
                  ;; Datomic
-                 [com.datomic/datomic-free "0.9.5544" :exclusions [[org.slf4j/slf4j-nop]]]
+                 [com.datomic/datomic-free "0.9.5544" :exclusions [[org.slf4j/slf4j-api]
+                                                                   [org.slf4j/slf4j-nop]]]
                  [io.rkn/conformity "0.4.0" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal
