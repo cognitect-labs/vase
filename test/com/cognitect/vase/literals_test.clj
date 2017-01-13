@@ -4,7 +4,7 @@
             [io.pedestal.test :refer :all]
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.actions :as actions]
-            [clojure.string :as str]))
+            [clojure.string :as string]))
 
 (deftest test-data-massging
   "This test ensures that data received can be transformed into a form
@@ -32,7 +32,7 @@
     (is (empty? (helper/response-data response)))))
 
 (defn- reader-literal [a]
-  (first (str/split (pr-str a) #"\{")))
+  (first (string/split (pr-str a) #"\{")))
 
 (deftest printing-literals
   (testing "actions print as reader literals"

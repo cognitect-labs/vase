@@ -14,7 +14,9 @@
           get-response2  (helper/GET "/api/example/v1/users/42")
           delete-response (helper/json-request
                             :delete "/api/example/v1/user"
-                            {:payload [{:db/id [:user/userId 42]}]})
+                            ;; In Datomic 5544, lookup-ids no longer automatically get prepended with `:`
+                            ;;  Use a string instead...VV
+                            {:payload [{:db/id [":user/userId" 42]}]})
           get-response3 (helper/GET "/api/example/v1/fogus")]
       (is (= 200 (:status post-response)))
       (is (= 200 (:status get-response)))

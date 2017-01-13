@@ -21,9 +21,10 @@
               :db/ident ident
               :db/valueType (keyword "db.type" (name kind))
               :db/cardinality (keyword "db.cardinality" (name card))
-              :db/doc (str doc-string)
               :db.install/_attribute :db.part/db}
-             (condp = opt-toggle
+             (when (string? doc-string)
+              {:db/doc (str doc-string)})
+             (case opt-toggle
                :unique   {:db/unique :db.unique/value}
                :identity {:db/unique :db.unique/identity}
                :index    {:db/index true}
