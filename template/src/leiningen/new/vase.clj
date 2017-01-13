@@ -26,6 +26,8 @@
     (->files data
              ["README.md" (render "README.md" data)]
              ["project.clj" (render "project.clj" data)]
+             ["build.boot" (render "build.boot" data)]
+             ["boot.properties" (render "boot.properties" data)]
              ["Capstanfile" (render "Capstanfile" data)]
              ["Dockerfile" (render "Dockerfile" data)]
              [".gitignore" (render ".gitignore" data)]
@@ -35,3 +37,4 @@
              ["test/{{sanitized}}/test_helper.clj" (render "test_helper.clj" data)]
              ["resources/{{namespace}}_service.edn" (render "vase_service.edn" data)]
              ["config/logback.xml" (render "logback.xml" data)])))
+
