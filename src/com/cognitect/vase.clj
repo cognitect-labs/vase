@@ -11,13 +11,17 @@
   "Given a resource name, loads a descriptor or app-spec,
   using the proper readers to get support for Vase literals."
   [res]
-  (util/edn-resource res))
+  (if (coll? res)
+    res
+    (util/edn-resource res)))
 
 (defn load-edn-file
   "Given a path, loads a descriptor using the proper readers to get
   support for Vase literals."
   [file-path]
-  (util/edn-file file-path))
+  (if (coll? file-path)
+    file-path
+    (util/edn-file file-path)))
 
 (defn ensure-schema
   "Given an api-spec or a collection of app-specs,

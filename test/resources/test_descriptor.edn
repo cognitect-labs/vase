@@ -45,7 +45,7 @@
                                                 :url "http://www.google.com"}}
     "/redirect-to-param" {:get #vase/redirect {:name :example.v1/ar-page
                                                ;; POST bodies and query string args are bound in :params
-                                               :params [someurl]
+                                               :params [[someurl "http://www.google.com"]]
                                                :url someurl}}
     "/capture-s/:url-thing" {:get #vase/respond {:name :example.v1/url-param-example
                                                  ;; URL parameters are also bound in :params
@@ -97,18 +97,18 @@
                                 :query [:find ?e
                                         :in $
                                         :where
-                                        [?e :user/userEmail "mefogus@gmail.com"]]}}
+                                        [?e :user/userEmail "jane@example.com"]]}}
 
     "/fogus-and-paul" {:get #vase/query {:name :example.v1/foguspaul-page
                                          :params []
-                                         :constants [["mefogus@gmail.com" "paul.degrandis@gmail.com"]]
+                                         :constants [["jane@example.com" "jill@example.com"]]
                                          :query [:find ?e
                                                  :in $ [?emails ...]
                                                  :where
                                                  [?e :user/userEmail ?emails]]}}
     "/fogus-and-someone" {:get #vase/query {:name :example.v1/fogussomeone-page
                                             :params [someone]
-                                            :constants ["mefogus@gmail.com"]
+                                            :constants ["jane@example.com"]
                                             :query [:find ?e
                                                     :in $ ?someone ?fogus
                                                     :where
