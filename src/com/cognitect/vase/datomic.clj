@@ -3,6 +3,9 @@
             [io.rkn.conformity :as c]
             [io.pedestal.interceptor :as i]))
 
+(defn new-db-uri []
+  (str "datomic:mem://" (d/squuid)))
+
 (defn connect
   "Given a Datomic URI, attempt to create the database and connect to it,
   returning the connection."
@@ -30,9 +33,10 @@
 (defn insert-datomic
   "Provide a Datomic conn and db in all incoming requests"
   [conn]
-  (i/-interceptor
+  (i/interceptor
     {:name ::insert-datomic
      :enter (fn [context]
               (-> context
                   (assoc-in [:request :conn] conn)
                   (assoc-in [:request :db]   (d/db conn))))}))
+
