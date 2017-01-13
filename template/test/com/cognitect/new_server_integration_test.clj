@@ -10,7 +10,7 @@
 ;
 ; You must not remove this notice, or any other, from this software.
 
-(ns pedestal.new-server-integration-test
+(ns com.cognitect.vase.new-server-integration-test
   (:require [clojure.test :refer :all]
             [clojure.java.shell :as sh]
             [clojure.string :as string]
@@ -56,7 +56,7 @@
   (let [app-name "test-app"
         full-app-name (.getPath (io/file tempdir app-name))]
     (println (sh/with-sh-dir project-dir (sh/sh lein "install")))
-    (println (sh/with-sh-dir tempdir (sh/sh lein "new" "pedestal-service" app-name)))
+    (println (sh/with-sh-dir tempdir (sh/sh lein "new" "vase" app-name)))
     (println "Created app at" full-app-name)
     (is (.exists (io/file full-app-name "project.clj")))
     (is (.exists (io/file full-app-name "README.md")))
@@ -69,7 +69,7 @@
   (let [app-name "pedestal.test/test-ns-app"
         full-app-name (.getPath (io/file tempdir "test-ns-app"))]
    (println (sh/with-sh-dir project-dir (sh/sh lein "install")))
-   (println (sh/with-sh-dir tempdir (sh/sh lein "new" "pedestal-service" app-name)))
+   (println (sh/with-sh-dir tempdir (sh/sh lein "new" "vase" app-name)))
    (println "Created app at" full-app-name)
    (is (.exists (io/file full-app-name "project.clj")))
    (is (.exists (io/file full-app-name "README.md")))
