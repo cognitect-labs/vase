@@ -138,9 +138,9 @@
 
 (defn response
   [body headers status]
-  {:body    body
-   :headers headers
-   :status  status})
+  {:body    (or body "")
+   :headers (or headers {})
+   :status  (or status 200)})
 
 (defn payload-response
   ([request response-data errors-data]
