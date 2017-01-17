@@ -1,0 +1,68 @@
+{:activated-apis [:omnext-todo/main]
+ :datomic-uri "datomic:mem://example"
+ :descriptor
+ ;; Datomic Schema Norms
+ ;; --------------------
+ {:vase/norms
+  {:omnext-todo/todo-categories
+   {:vase.norm/txes [[{:db/id #db/id[:db.part/db]
+                       :db/ident :todo.category/personal}
+                      {:db/id #db/id[:db.part/db]
+                       :db/ident :todo.category/work}]]}
+   :omnext-todo/base-schema
+   {:vase.norm/requires [:omnext-todo/todo-categories]
+    :vase.norm/txes [#vase/schema-tx [[:todo/created :one :instant "A todo's creation timestamp"]
+                                      [:todo/title :one :string :fulltext "A todo's title/description"]
+                                      [:todo/completed :one :boolean "A todo's completion status/state"]
+                                      [:todo/category :one :ref "The tag/group/category of the todo"]]]}}
+
+  ;; Global Specs for the API
+  ;; ------------------------
+  :vase/specs
+  {:todo/category keyword?
+   :todo/title (clojure.spec/and string? not-empty)
+   :omnext-todo/todo (clojure.spec/keys :req [:todo/title]
+                                        :opt [:todo/category])
+   :omnext-todo/todos (clojure.spec/+ :omnext-todo/todo)}
+
+  ;; API Tagged Chunks/Versions
+  ;; --------------------------
+  :vase/apis
+  {:omnext-todo/main
+   {:vase.api/routes
+    {"/todos" {:get #vase/query {:name :omnext-todo.main/todos-list
+                                 :params [[selector [:* {:todo/category [:db/ident]}]]]
+                                 :edn-coerce [selector]
+                                 :query [:find [(pull ?todo selector) ...]
+                                         :in $ selector
+                                         :where [?todo :todo/title]]}
+               :post [#vase/validate {:name :omnext-todo.main/todos-create-validation
+                                      :spec :omnext-todo/todos
+                                      :request-params-path [:json-params :payload]}
+                      #vase/intercept {:name :omnext-todo.main/todos-create-shaping
+                                       :enter (fn [ctx]
+                                                (update-in ctx [:request :json-params :payload]
+                                                           (fn [tx]
+                                                             (mapv (fn [ent]
+                                                                     (when ent
+                                                                       (merge {:todo/category :todo.category/personal
+                                                                               :todo/created (java.util.Date.)}
+                                                                              ent)))
+                                                                   tx))))}
+                      #vase/transact {:name :omnext-todo.main/todos-create
+                                      ;; `:properties` are pulled from the `payload` parameters
+                                      :properties [:db/id
+                                                   :todo/title
+                                                   :todo/created
+                                                   :todo/category
+                                                   :todo/completed]}]
+              :delete #vase/transact {:name :omnext-todo.main/todos-delete
+                                      :db-op :vase/retract-entity
+                                      ;; :vase/retract-entity requires :db/id to be supplied
+                                      :properties [:db/id]}}
+     "/todos/validate" {:post #vase/validate {:name :omnext-todo.main/validate-page
+                                              :spec :omnext-todo/todo}}}
+    ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
+    :vase.api/schemas [:omnext-todo/base-schema]
+    :vase.api/forward-headers ["vaserequest-id"]}}}}
+
