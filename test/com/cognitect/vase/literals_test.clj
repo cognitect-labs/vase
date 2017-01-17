@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [com.cognitect.vase.literals :as lit]
             [io.pedestal.test :refer :all]
+            [io.pedestal.log :as log]
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.actions :as actions]
             [clojure.string :as string]))
@@ -26,8 +27,8 @@
 
 (deftest validate-literal
   (let [response (helper/post-json "/api/example/v1/validate"
-                              {:age 31
-                               :name "paul"})]
+                                   {:age 31
+                                    :name "paul"})]
     (is (= (:status response) 200))
     (is (empty? (helper/response-data response)))))
 
