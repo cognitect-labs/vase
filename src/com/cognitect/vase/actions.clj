@@ -91,8 +91,9 @@
 
 (defn merged-parameters
   [request]
+  {:post [(map? %)]}
   (let [{:keys [path-params params json-params edn-params]} request]
-    (merge (decode-map path-params) params json-params edn-params)))
+    (merge (if (empty? path-params) {} (decode-map path-params)) params json-params edn-params)))
 
 (def eav (juxt :e :a :v))
 
@@ -208,9 +209,11 @@
 (defn validate-action-exprs
   "Return code for a Pedestal interceptor function that performs
   clojure.spec validation on the parameters."
-  [params headers spec]
+  [params headers spec request-params-path]
   `(fn [{~'request :request :as ~'context}]
-     (let [req-params#    (merged-parameters ~'request)
+     (let [req-params#    ~(if request-params-path
+                             `(get-in ~'request ~request-params-path)
+                             `(merged-parameters ~'request))
            ~(bind params) req-params#
            problems#      (mapv
                            #(dissoc % :pred)
@@ -231,15 +234,17 @@
 
   The response body will be a list of data structures as returned by
   clojure.spec/explain-data."
-  [name params headers spec]
-  (dynamic-interceptor
-   name
-   :validate
-   {:enter
-    (validate-action-exprs params headers spec)
+  ([name params headers spec]
+   (validate-action name params headers spec nil))
+  ([name params headers spec request-params-path]
+   (dynamic-interceptor
+     name
+     :validate
+     {:enter
+      (validate-action-exprs params headers spec request-params-path)
 
-    :action-literal
-    :vase/validate}))
+      :action-literal
+      :vase/validate})))
 
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
@@ -301,14 +306,15 @@
 (comment
   (clojure.pprint/pprint
     (query-action-exprs '[:find ?e
-                                 :in $ ?someone ?fogus
-                                 :where
-                                 [(list ?someone ?fogus) [?emails ...]]
-                                 [?e :user/userEmail ?emails]]
-                               '[someone]
-                               []
-                               ["mefogus@gmail.com"]
-                               {}))
+                          :in $ ?someone ?fogus
+                          :where
+                          [(list ?someone ?fogus) [?emails ...]]
+                          [?e :user/userEmail ?emails]]
+                        '[[selector [*]]
+                          someone]
+                        '[selector]
+                        ["mefogus@gmail.com"]
+                        {}))
   )
 
 (defn query-action
@@ -340,7 +346,7 @@
   name (string) to header value (string). May be nil."
   [properties db-op headers]
   `(fn [{~'request :request :as ~'context}]
-     (let [args#          (merged-parameters ~'request)
+     (let [;args#          (merged-parameters ~'request)
            args#          (mapv
                            #(select-keys % ~(vec properties))
                            (get-in ~'request [:json-params :payload]))
