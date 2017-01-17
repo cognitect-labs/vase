@@ -71,11 +71,11 @@
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#vase/redirect" (into {} t))))
 
-(defrecord ValidateAction [name params headers spec doc]
+(defrecord ValidateAction [name params headers spec request-params-path doc]
   i/IntoInterceptor
   (-interceptor [_]
     (let [params (or params [])]
-      (actions/validate-action name params headers spec))))
+      (actions/validate-action name params headers spec request-params-path))))
 
 (defn validate [form]
   {:pre [(map? form)
@@ -115,4 +115,23 @@
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
   (.write w (str "#vase/transact" (into {} t))))
+
+(defn- handle-intercept-option [x]
+  (cond
+    (list? x) (eval x)
+    (symbol? x) (resolve x)
+    (var? x) (deref x)
+    :else x))
+
+(defn intercept [form]
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
+   (let [enter (handle-intercept-option (:enter form))
+         leave (handle-intercept-option (:leave form))
+         error (handle-intercept-option (:leave form))]
+     (i/interceptor {:name (:name form)
+                     :enter enter
+                     :leave leave
+                     :error error})))
 
