@@ -34,7 +34,7 @@
    :find-cardinality - Either '. or '... -- defaults to '...
 
   Example:
-   (demand-query my-db '[*] '[?node :node/ip] {})"
+   (demand-query my-db '[*] '[?todo :todo/title] {})"
   ([db selector eid-slice]
    (demand-query db selector eid-slice nil))
   ([db selector eid-slice opts]
