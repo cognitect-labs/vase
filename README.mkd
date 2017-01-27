@@ -5,6 +5,12 @@
 This system provides a data-driven and extensible way to describe and run RESTful APIs
 that are backed by a durable database (Datomic).
 
+### Vase should be considered beta technology
+
+Vase has been used on real-world projects, but we're continuing to improve its
+utility and usability.  Expect that you may hit some rough edges when using Vase,
+and help us make it better.
+
 
 ## Releases and Dependency Information
 
