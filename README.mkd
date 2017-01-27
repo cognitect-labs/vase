@@ -5,6 +5,7 @@
 This system provides a data-driven and extensible way to describe and run RESTful APIs
 that are backed by a durable database (Datomic).
 
+
 ## Releases and Dependency Information
 
 There are no released versions of Vase. You will need to clone this repository and install it locally:
@@ -30,6 +31,7 @@ lein install
   <version>0.9.0-SNAPSHOT</version>
 </dependency>
 ```
+
 
 ## Getting Started
 
@@ -78,11 +80,24 @@ hand-written Pedestal routes by concatenating the input to
      (vase/routes "/api" spec))))
 ```
 
+
 ## Documentation
 
 * [Adding Vase to an existing Pedestal service](docs/adding_vase.mkd)
 * [Building Your First API](docs/your_first_api.mkd)
 * [Design document](docs/design_doc.mkd)
+
+
+## Contributing
+
+Contributing guidelines for Vase are the same as [Pedestal](https://github.com/pedestal/pedestal/blob/master/CONTRIBUTING.md).
+
+For code contribution, you'll need a signed [Cognitect Contributor Agreement](https://secure.echosign.com/public/hostedForm?formid=8JU33Z7A7JX84U).
+For small changes and doc updates, no CA is required.
+
+If you're proposing a significant change, please open an Issue to
+discuss the design of the change before submitting a Pull Request.
+
 
 ## Copyright
 
