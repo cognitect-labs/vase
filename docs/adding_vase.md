@@ -147,4 +147,4 @@ You've seen how to:
 - Activate a Vase API in the service map
 - Add one or more API descriptors
 
-The next step is to begin [defining APIs](./your_first_api.mkd)
+The next step is to begin [defining APIs](./your_first_api.md)

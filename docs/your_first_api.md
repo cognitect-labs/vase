@@ -15,7 +15,7 @@ After reading this guide, you will be able to:
 
 ## Getting Started
 
-You should understand the [design](./design_doc.mkd) of the system and
+It may help to understand the [design](./design.md) of the system and
 the file formats used before you begin. The most important pieces:
 
 * Vase descriptors are usually stored in [Extensible Data Notation](https://github.com/edn-format/edn).

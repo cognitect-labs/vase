@@ -90,9 +90,9 @@ hand-written Pedestal routes by concatenating the input to
 
 ## Documentation
 
-* [Adding Vase to an existing Pedestal service](docs/adding_vase.mkd)
-* [Building Your First API](docs/your_first_api.mkd)
-* [Design document](docs/design_doc.mkd)
+* [Adding Vase to an existing Pedestal service](docs/adding_vase.md)
+* [Building Your First API](docs/your_first_api.md)
+* [Design document](docs/design.md)
 
 
 ## Contributing
