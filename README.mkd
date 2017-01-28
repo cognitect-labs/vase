@@ -2,19 +2,20 @@
 
 # Vase: Data-driven microservices
 
-This system provides a data-driven and extensible way to describe and run RESTful APIs
-that are backed by a durable database (Datomic).
+This system provides a data-driven and extensible way to describe and
+run HTTP APIs that are backed by a durable database (Datomic).
 
 ### Vase should be considered beta technology
 
-Vase has been used on real-world projects, but we're continuing to improve its
-utility and usability.  Expect that you may hit some rough edges when using Vase,
-and help us make it better.
-
+Vase has been used on real-world projects. Each new project teaches us
+something more about what Vase can do. We're continuing to improve its
+utility and usability. You may find some rough edges here and
+there. When you do, raise an issue so we can make it better.
 
 ## Releases and Dependency Information
 
-There are no released versions of Vase. You will need to clone this repository and install it locally:
+There are no released versions of Vase. You will need to clone this
+repository and install it locally:
 
 ```
 git clone https://github.com/cognitect-labs/vase
@@ -43,9 +44,9 @@ lein install
 
 ### Using the template
 
-This repository also includes a Leiningen [template](./template) for getting started.
-Look at the [template's README](./template/README.md) for local/developer setup,
-otherwise
+This repository also includes a Leiningen [template](./template) for
+getting started.  Look at the [template's
+README](./template/README.md) for local/developer setup, otherwise
 
 `lein new vase my-service`
 
@@ -96,16 +97,16 @@ hand-written Pedestal routes by concatenating the input to
 
 ## Contributing
 
-Contributing guidelines for Vase are the same as [Pedestal](https://github.com/pedestal/pedestal/blob/master/CONTRIBUTING.md).
+Contributing guidelines for Vase are the same as
+[Pedestal](https://github.com/pedestal/pedestal/blob/master/CONTRIBUTING.md).
 
-For code contribution, you'll need a signed [Cognitect Contributor Agreement](https://secure.echosign.com/public/hostedForm?formid=8JU33Z7A7JX84U).
+For code contribution, you'll need a signed [Cognitect Contributor
+Agreement](https://secure.echosign.com/public/hostedForm?formid=8JU33Z7A7JX84U).
 For small changes and doc updates, no CA is required.
 
 If you're proposing a significant change, please open an Issue to
 discuss the design of the change before submitting a Pull Request.
 
-
 ## Copyright
 
-Copyright ©2017 Cognitect, Inc. All rights reserved.
-
+Copyright 2015-2017 Cognitect, Inc. All rights reserved.
