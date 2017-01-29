@@ -1,393 +1,463 @@
-
-Design Documentation and Vision
-================================
+# Design Documentation and Vision
 
 ## Introduction
 
-This document describes the design of the service template and tooling system - Vase.
+This document describes the design of the data-driven microservice
+container "Vase."
 
-It describes the basic service model and provides detailed documentation
-for all operations, including URIs/destinations and input/output data formats.
+It describes the service model and describes all operations,
+URIs/destinations, and input/output formats.
 
-### Commonly used terms
-
- * **Core Service** - The main Vase container service, which hosts other data-described APIs
- * **API** - A service contained within the container; a hosted service within the core service
- * **edn** - Also EDN; [Extensible Data Notation](https://github.com/edn-format/edn); a data serialization notation, like JSON
-
-
-### Goals
-
-The goal of this document is to elaborate on the constraints, trade-offs, formats,
-and general architecture of the system.  These decisions ensure the system can
-easily evolve and adapt, while achieving the target quality attributes and
-auxiliary goals.
+This document elaborates on the constraints, trade-offs, formats, and
+general architecture of the system.
 
 **This is a living document, it should evolve along with the system.**
 
+### Commonly used terms
 
-# Vase: An On-demand Container Service on top of Pedestal
+ * **Core Service** - The main Vase container service, which hosts
+   other data-described APIs
+ * **API** - A service contained within the container; a hosted
+   service within the core service
+ * **edn** - Also EDN;
+   [Extensible Data Notation](https://github.com/edn-format/edn); a
+   data serialization notation, like JSON
 
-**Vase** is an evolving API Container.  It itself is also a RESTful service,
-allowing one to create, update, and prototype running APIs that perform
-validation, data persistence/durability, and query/data retrieval tasks.  The
-main service (`vase`), is a clean addition to Pedestal, allowing developers
-to fallback on using Pedestal directly when Vase is insufficient.
+# Vase
 
-The APIs that Vase hosts are all described in data and transacted with the
-service.  Core validation endpoints ensure the integrity and correctness of
-these application-description files (routing, schema, validation, and core-app
-configurations).
+## Motivation
 
-The **architecture diagram** below serves as an example upon which to base a mental model.
+For many reasons, we are moving into a world of
+microservices.  We have found that the majority of microservices
+contain duplicated, mechanical code. All microservices must perform
+similar functions:
 
-TODO Diagram
+ * Define HTTP routes
+ * Map input bodies and parameters into transaction
+ * Run queries and format results
+ * Validate inputs
 
-The **sequence diagram** below shows the simplest usage of the container service.
+In fact, most such services can be described in a data format. We
+wanted to take that data format from a static artifact to something
+you could actually run. With Vase, we can take a data definition of
+what a service should do and turn it into a running service.
 
-TODO Diagram
+## Design Goals
 
+Our design objectives are as follows, in priority order:
+
+   1. Radically shorten the time needed to deliver microservices.
+   1. Achieve production quality
+   1. To ensure the system can easily evolve and adapt
+
+## Design Non-goals
+
+These are the things we have decided not to work towards in Vase. That
+doesn't mean we expect to prevent them. Indeed, some may "fall out" of
+our implementation. However, we are not considering them when making
+trade offs.
+
+   1. Solving the general problem of mapping data into databases.
+   2. Supporting arbitrary input formats.
+   3. Supporting arbitrary output formats.
+   4. Accommodating legacy schemata from existing applications.
+   5. Databases other than Datomic.
+   6. Web servers other than Pedestal.
+   7. Java API
+
+## Prototyping or Production?
+
+Early prototypes of Vase allowed APIs to be submitted at runtime. That
+is, Vase itself had an API to create APIs. We have removed that
+feature for the present, for three reasons:
+
+   1. While it is very helpful for prototyping, that approach
+      conflicts with release management practices for production level
+      software.
+   2. We only want to commit to a limited "surface area" at this
+      time. We can re-add dynamic APIs in the future, but if we
+      release them now we're stuck with them forever.
+   3. We did not have a good means to synchronize changes to APIs
+      across multiple instances of Vase. This also reflects it's
+      origin as a rapid prototyping tool.
+
+
+# Design
+
+Vase is an on-demand container service, using Pedestal and Datomic,
+that allows us to write concise descriptions of data formats and API
+definitions, then have a generic service bring that description to life.
+
+Vase will be delivered as a library that can be incorporated into an
+existing Pedestal service.
+
+Vase will also deliver an application template that can create an
+entire service from scratch.
+
+## On-demand Container Service
+
+**Vase** is an API Container. It allows us to create microservice APIs
+from just a description of the routes, data model, and actions to
+execute. This description is itself stored as data. The Vase runtime
+should not need modification for the majority of "CRUD" services.
+
+## Using Pedestal
+
+Vase is an addition to Pedestal. Vase creates routes that Pedestal
+then serves. The interface between Vase and Pedestal is just data.
+
+The main service is purely additive to Pedestal. Developers can
+incorporate Vase in an existing Pedestal service. Likewise, developers
+can use Vase and add route written in a traditional means.
+
+Vase will not provide every capability needed to build an
+application. Its purpose is fast delivery of simple services.
+
+Vase allows "mixing in" features via Pedestal interceptors. A Vase
+service can have arbitrary developer-provided interceptors in its
+routes.
+
+## Using Datomic
+
+Vase maps its data to Datomic. Schema for the data model is expressed
+in terms of Datomic attributes. Transactions return Datomic
+tx-results. Queries are written in Datomic's datalog format. Queries
+will support Datomic's "pull" syntax as well as "tuple" syntax.
+
+We have no plan to extend Vase for other databases at this time.
+
+## Concise Description
+
+Vase uses Clojure data structures, written in EDN and stored in files
+to describe its data models, specifications, and APIs.
+
+One Vase instance can use multiple description files.
+
+One Vase instance can support multiple APIs.
+
+Complete specifications for a Vase description can be found in
+`src/com/cognitect/vase/spec.clj`.
+`:com.cognitect.vase.spec/spec` is the root of a description file.
+
+Description files are nested maps. At even-numbered levels of the map,
+the keys are predefined by Vase. At odd-numbered levels, excluding the
+first level, keys are user-provided names of APIs, schemas, and specs.
+
+Example:
+
+```clojure
+{:activated-apis [ ,,, ]
+ :datomic-uri    " ,,, "
+ :descriptor
+ {:vase/norms {:user.provided/name {:vase.norm/txes [ ,,, ] } }
+  :vase/apis  {:user.provided/api  {:vase.api/routes { ,,, } } }
+  :vase/specs { ,,, }}}
+```
+
+## Validation Using Clojure.spec
+
+The APIs that Vase hosts are all described in data. Vase functions use
+clojure.spec to ensure the integrity and correctness of API
+descriptions.
 
 ## State and data management
 
-The core service and APIs are largely stateless - request identity is only
-maintained for that given request.  The core service and the hosted APIs do not
-remember anything about previous requests (beyond what was transacted into
-persistent/durable data).  Data is only transacted into persistent storage if
-it is submitted.  Routes that accept POST submissions are configured per API.
-*Please clearly document the actions of the individual APIs*.
+The core service and APIs are largely stateless - request identity is
+only maintained for that given request.  The core service and the
+hosted APIs do not remember anything about previous requests (beyond
+what was transacted into persistent/durable data).  Data is only
+transacted into persistent storage if it is submitted.  Routes that
+accept POST submissions are configured per API.
 
-API-specific data that is persisted in the database is owned by that API.
-An API may only reference data that it owns.  Consumers of the API (other
-services, mobile apps, etc), may choose to integrate data from various APIs.
-Unifying data across APIs is a design challenge for API designers.  There is
-nothing within Vase that helps or hinders unifying data.
+API-specific data that is persisted in the database is owned by that
+API.  An API may only reference data that it owns.  Consumers of the
+API (other services, mobile apps, etc), may choose to integrate data
+from various APIs.  Unifying data across APIs is a design challenge
+for API designers.  There is nothing within Vase that helps or hinders
+unifying data.
 
-Owned data is versioned and namespaced for the given API.  Please see the
-API-specific documentation (or description files) to understand the shape,
-identifier, and target version of the data.
+## Reader Literals
 
+The primary input to Vase is an EDN file. Clojure's reader literals
+offer a concise way to extend the input format while maintaining
+uniform syntax. Vase makes use of reader literals for:
+
+ * Actions (i.e., interceptors) on routes
+ * Attribute definitions in schemas
+
+# Norms
+
+"Norms" refer to fragments of schema that must exist for an API to
+function.
+
+## Norm Identity
+
+The service can apply any number of norms. Each one is uniquely
+identified by a namespaced keyword.
+
+## Norm Transactions
+
+A norm comprises:
+
+ * `:vase.norm/txes` - A sequence of transaction data (tx-data) that
+   will be transacted in Datomic at initialization time. Each tx-data
+   is a vector of transactions (see below).
+ * `:vase.norm/requires` - A collection of norm names that this schema
+   requires. Vase ensures that all the required schemas are transacted
+   before this one.
+
+Norms are idempotent, so Vase transacts them at each startup.
+
+The norms are captured as a map, with namespaced-keyword keys, and map
+values that hold the schema transactions, or `txes`.  For example:
+
+```clojure
+{:vase/norms
+ {:example-app/base-schema
+  {:vase.norm/txes [[{:db/id #db/id [:db.part/db]
+                      :db/ident :something/title
+                      :db/valueType :db.type/string
+                      :db/cardinality :db.cardinality/one
+                      :db/index false
+                      :db/doc "A simple title"
+                      :db.install/_attribute :db.part/db}
+                      ,,,]]}}
+ :vase/apis
+ {:example-app/v1
+  {:vase.api/routes [[ ... ]]
+   :vase.api/schemas [:example-app/base-schema ...]}}}
+```
+
+Each API specifies which of these schema segments it uses, captured as
+a vector of keywords (the norm keys).  This ensures the data is
+modeled appropriately per API version when queries run or data is
+transacted.
+
+## Schema-tx Reader Literal
+
+Tx-data can also be described using a reader literal for shorthand.
+The `#vase/schema-tx` literal takes a vector of vectors. The inner
+vector is interpreted as follows:
+
+ * The :db/ident of the attribute
+ * The cardinality of the attribute, written as `:one` or `:many`
+ * The type of the attribute, written as a simple keyword (e.g., for
+   `:db.valueType/string`, use `:string`.)
+ * An optional qualifier. One of `:unique`, `:identity`, `:index`, or
+   `:fulltext`
+ * A doc string
+
+The optional qualifiers describe attributes that contain `:unique`
+values, that the DB should `:index`, or that allow `:fulltext` search.
+`:fulltext` also implies `:index`. You can also say an entity's unique
+`:identity` can be determined by an attribute.
+
+The schema above using the short form would look like:
+
+```clojure
+{:vase/norms
+ {:example-app/base-schema
+  {:vase.norm/txes [#vase/schema-tx [[:something/title :one :string "A simple title"]]]}}
+
+ :vase/apis
+ {:example-app/api
+   {:vase.api/routes [[ ... ]]
+    :vase.api/schemas [:example-app/base-schema ...]}}}
+```
+
+# Specs
+
+Specs appear under the `:vase/specs` key. The value of this key is a
+map of spec name to spec.
+
+Specs are identical to those that would be written in Clojure source code.
+
+For example, the following might be found in code:
+
+```clojure
+(s/def :example.app.v1/age #(> age 21))
+```
+
+This would translate into the following spec in a Vase description:
+
+```clojure
+{:vase/specs
+ {:example.app.v1/age (fn [age] (> age 21))}}
+```
+
+APIs can apply specs using the `#vase/validate` action.
+
+# APIs
 
 ## API Identity
 
-The service hosts any number of external APIs; each uniquely identified via a URI root.
-When an API is submitted for inclusion within the container, it must specify its
-unique *app-root*.  This app-root name uniquely identifies that service for the
-lifetime of the application within the container.
+The service hosts any number of external APIs; each uniquely
+identified via namespaced keyword.
 
+## API Roots
 
-## Failure and reliability
+Each API will construct routes beneath a common "root". That root is
+external to the API and should not appear anywhere within the API
+description or code.
 
-The core service prevents APIs from having third-party integrations as a means
-to remove a common source of failures (and reliability issues) - which is
-achieved by constraining possible actions within an API endpoint.  The core
-service itself also doesn't integrate with any third-party systems.  At any
-point where an external integration is needed, it is recommended that one use a
-latency and fault tolerant circuit breaker that is configurable within a
-configuration file.
+## API description
 
+APIs are defined under the `:vase/apis` key. The value of this key is
+a map of API names to definitions.
 
-## Authorization and external requests
+API names are namespaced keywords. The API name becomes part of its
+routes' URLs as follows:
 
-The core service has no authorization or authentication mechanisms.  If such
-systems are desired, one should place the core service behind a system that provides
-such services externally.  One may also consider utilizing a ServletFilter or
-Pedestal interceptor.
+ * Every '.' in the keyword is replaced with a '/'.
+ * The '/' between the namespace and name is left in place.
+ * Non URL characters are URL-encoded.
 
+The definition of an API has the following top-level keys:
 
-## Monitoring and logging
+ * `:vase.api/routes` - A route map (see below)
+ * `:vase.api/schemas` - A collection of schema names. When this API
+ is activated, these schemas will be transacted into the database.
+ * `:vase.api/forwarded-headers` - A collection of strings. Any
+ request headers matching these strings are passed through into the
+ response headers.
+ * `:vase.api/interceptors` - A collection of interceptors that will
+ be prepended to the action interceptors for every route.
 
-All APIs will be logged with the core service's default system log configuration.
-Additionally, the core service's platform should also provide additional
-monitoring capabilities.  No additional logging, monitoring, or reporting
-mechanisms are currently in place for the core service.
+An API describes its routes and required schema in a hashmap. See the
+example below:
 
+```clojure
+{:vase/apis
+ {:example.app/v1
+  {:vase.api/schemas [:example/base-schema ,,,]
+   :vase.api/routes  { ,,, }}}
+```
 
-## Related concepts
-
-TODO
-
+In the example above, we've described a new API called,
+`:example.app/v1`.  It also specifies the norms that this API
+requires.
 
 ## Input and Output formats
 
-All core service operations use _edn_ as the data exchange format.
-
 All hosted API operations use _JSON_ as the data exchange format.
 
-The description of each operation in the sections below define these formats in
-detail.
-
-
-### Default output format
-
-While some operations return specific formats, most operations use the default
-output format described here. You will see some expansion of this format for
-all requests returning an HTTP status `200`, `205`, or `400` - successful,
-partially-successful, or known-error/rejected results.  Other HTTP status codes
-may optionally return this format.  The example below is shown in JSON, the
-data exchange format for API operations.  An EDN adaption is also used for
-core service operations.
-
-```javascript
-{"request" : {"body": {original-req-payload},
-              "this_": "http://domain.com/...",
-              "help": "http://developers.domain.com/api/v3/docs/...",
-              "request_id": "hashtoken",
-              "server_received_time": "2012-01-02T01:04:05.000Z"},
- "response" : {},
- "errors" : {}}
-```
-
- * The entire JSON response is known as a payload, that contains three top-level bodies: request, response, errors.
- * Response bodies (payload.response) are either additional information if you performed a POST (like data validation or API creation) or requested information with GET
- * Top-level properties within the response and error body follow the rule:
-   * If the request is for a single resource pool, the property is the resource.
-   * If the request contains pools of resources, the property names are the pools - the first layer/highest layer of nesting
- * `request_id` is used for tracking purposes and is pulled out from the HTTP header or generated upon receiving the request
- * A help property must appear with all error properties and is encouraged in response properties; ie: payload.errors.somedata.help. It is the URL to entity/request/error documentation.
- * All errors in the payload must contain their unique error code and help
-   * The error code is only unique within the error tree for that resource
- * The body property in request may be an empty object on GET requests if there are no query parameters.
- * There may be some partial information processed, even if the endpoint rejected some erroneous payload data.  You may choose to ignore the partial data and resubmit the entire (corrected) payload again.
-   * Please see the HTTP status codes below for more information
-
-
-### Formats and conventions
-
- * Timestamps and dates are always Zulu/GMT ISO-8601 format strings like, `"2014-01-02T01:04:05.000Z"`
- * All property names are lowercase words separated with underscore, like `snake_case`
- * Model ID always identifies a given item, integer (numeric type)
- * User ID always identifies a given user, string - confirm
-   * The User ID should not appear in URLs or be needlessly exposed
-   * The User ID potentially could be some hash in the future
- * `...` in this document means "repeat what was done before." It is used in the example input and output.
-
+Each operation defines its own format.
 
 ## Response status codes and payload navigation
 
-All HTTP operations return an HTTP status code. The core service and hosted APIs
-use the following HTTP status codes and each of them drive the navigation of the
-response payload.
+All HTTP operations return an HTTP status code. The hosted APIs use
+the following HTTP status codes:
 
- * 200 - Success. The response body should have a value and the errors body should be empty.
- * 205 - Partial process / Partial success; Error body should be inspected and the request should be resubmitted for pull process / full success.  There are syntactic/semantic errors in the input (malformed, data missing, invalid values, not existing ids, ...)
- * 303 - Redirect on creation POST.
- * 307 - Redirect on an alias POST.
- * 400 - The request was rejected.  There are syntactic/semantic errors in the input (malformed, data missing, invalid values, not existing ids, ...). The errors body should have a value and the response body normally is empty but might contain additional info (e.g. partial input processing, ...).
- * 403 - A request came through without a service API key in the header and was not on the internal whitelist.
- * 404 - The requested resource is not found. The errors body might contain a description for the "not found" error.
- * 500 - A system error. The errors body might contain a description of the internal error/errors that occurred.
-
-
-### Examples navigating the payload
-
-TODO
-
-
-## Service data description formats
-
-Below are the formats and conventions for the data descriptions files used to
-describe and create APIs within the container/core service.  The data exchange
-format is edn.
-
-### Base description
-
-An API describes its various components (routes, schema, etc) within a hashmap,
-keyed with the applications URI app-route, whose value is also a map containing
-the versioned components.  See the example below:
-
-```clojure
-{:example-app
-  {:norms {:example/base-schema ...}
-   :v1 {:routes ...
-        :schemas ...
-        ...}}}
-```
-
-In the example above, we've described a new API called, `example-app`, that has
-a specified version, `v1`.  It also specifies all possible database schemas,
-`:norms`, that a version may use.  The component details for version `v1` of
-`example-app` follow.
+ * 200 - Success. The response body should have a value.
+ * 302 - Redirect returned from an obsoleted route. The response body
+   will probably be empty. A "Location" header contains the target URL.
+ * 400 - The request was rejected.  There are syntactic/semantic
+   errors in the input (malformed, data missing, invalid values, not
+   existing ids, ...). The errors body should have a value and the
+   response body normally is empty but might contain additional info
+   (e.g. partial input processing, ...).
+ * 404 - The requested resource is not found. The response body might
+   contain a description for the "not found" error.
+ * 500 - A system error. The response body might contain a description
+   of the internal error/errors that occurred.
 
 ### Routing
 
-Routing is described in a hashmap, keyed by `:routes`, whose value is a vector
-of nested route-verb pairs.  See the example below:
+Routing is described in a hashmap, keyed by `:vase.api/routes`, whose
+value is a vector of nested route-verb pairs.  See the example below:
 
 ```clojure
-{:example-app
-  {:v1
-    {:routes ["/" {:get #vase/respond {:name :example-app/home
-                                         :data "Home page"}}
-              ["/about" {:get #vase/redirect {:name :example-app/about
-                                                :url "http://www.google.com"}}]
-              ["/check/:age" {:post #vase/validate {:name :example-app/age-check
-                                                      :url-params [age]
-                                                      :params [name address] ;; extracted from query string and POST body (form data, json, or edn)
-                                                      :properties [[TODO]]}}]]
-     :forward-headers ["vaserequest-id"]}}}
+{:example.app/v1
+ {:vase.api/routes
+  {"/home"       {:get  #vase/respond  {:name :example.app.v1/home
+                                        :body "Home page"}}
+   "/about"      {:get  #vase/redirect {:name :example.app.v1/about
+                                        :url "http://www.google.com"}}
+   "/check/:age" {:post #vase/validate {:name :example.app.v1/age-check
+                                        :spec :example.app.v1/age}}}}}
 ```
 
 This configuration would produce the URLs:
 
- * _/api/example-app/v1/_
- * _/api/example-app/v1/about_
- * _/api/example-app/v1/check_
+ * _/api/example/app/v1/home_
+ * _/api/example/app/v1/about_
+ * _/api/example/app/v1/check_
 
-All endpoints would forward the header `vaserequest-id` from every request, to
-every response.  This may be used to forward API key credentials in headers,
-or other system information.  To **trace a reqestion**, use the special header
-found in this example, `vaserequest-id`.
+### Action Map
 
-#### Route-verb pairs
+The action map describes the allowed HTTP verbs for a route and what
+actions to invoke for each.  Actions are described using reader
+literals.
 
-The *route-verb pairs* are vectors describing the route and various HTTP verb
-actions.  Actions are described using *tagged-literals*, which which provide
-domain encoding for the *action-map*, and also provide a mechanism for easily
-extending and modifying the system.
+Each route has exactly one action map. Each action map can have keys
+from `#{:get :put :post :delete :head :options :any}` (these are the
+standard HTTP verbs from Pedestal routes.)
 
-All route-verb pairs appear within the vector containing the root path ("/").
-That is, routing is nested based on URL hierarchy.  For more information,
-please see the [Pedestal routing documentation](https://github.com/pedestal/pedestal/blob/master/guides/documentation/service-routing.md)
+The value for each verb is either a single action written as a reader
+literal or a vector of actions. When the value is a vector of actions,
+they will be invoked in the same order as written.
 
-#### Actions
+### Actions
 
-Action (or action literals) are always verbs.  Here are the available actions:
+Here are the available actions:
 
- * `#vase/respond` - Return a static response, optionally setting headers and the HTTP status code
-   * Action map may contain: `{:name :keyword, :data "a body string", :status 200, :headers {}}`
- * `#vase/redirect` - Redirect the request with an HTTP 302 status; You can optionally set 303 status and additional headers
-   * Action map may contain: `{:name :keyword, :url "http://domain.com", :status 302, :headers {}, :params [bindname]}`
+ * `#vase/respond` - Return a static response, optionally setting
+   headers and the HTTP status code
+ * `#vase/redirect` - Redirect the request with an HTTP 302 status;
+   You can optionally set 303 status and additional headers
  * `#vase/validate` - Validate a POST body or query string data
-   * Action map may contain: `{:name :keyword, :properties [... prop-vecs ...], :params [bindname]}`
- * `#vase/query` - Consume a POST body, URL parameters, or query string data and run a Datomic query
-   * Action map may contain: `{:name :keyword, :params [... bindname ...], :query <legal datomic query>}`
- * `#vase/transact` - Consume a POST body, URL parameters, or query string data, and transact data into the DB
-   * Action map may contain: `{:name :keyword, :properties [... whitelisted key ...]}`
+ * `#vase/query` - Consume a POST body, URL parameters, or query
+   string data and run a Datomic query
+ * `#vase/transact` - Consume a POST body, URL parameters, or query
+   string data, and transact data into the DB
+ * `#vase/intercept` - Execute an interceptor written directly in the
+   EDN description file.
 
-#### Action-maps
+### Action-maps
 
 Action-maps are hashmaps that contain Action-specific data.  All action-maps
 require a `:name` for the given action, a keyword.  This name is used in logging and URL
 generation, and thus should be a namespaced keyword.
 
-All additional action-map data is optional.  The keys in the action map are
-always nouns.  The details of each action map follow.
+See documentation for the [action literals](./action-literals.md) for
+the details of their keys and interpretation.
 
-**Respond**
+# Operational Attributes
 
-Details TODO
+## Failure and reliability
 
-**Redirect**
+The core service may be scaled horizontally for availability.
 
-Details TODO
+APIs defined in the core service access Datomic, so their availability
+is constrained to that of the underlying Datomic instance.
 
-**Validate**
+Neither the core service nor APIs defined in it can make outcalls to
+third parties.
 
-Details TODO
+## Authorization and external requests
 
-**Query**
+The core service has no authorization or authentication mechanisms.
 
-Details TODO
+Consuming applications may supply interceptors to be placed on every
+Vase route. This allows an application to provide authentication and
+authorization separately from the Vase API.
 
-**Transact**
+## Initialization
 
-Details TODO
+Vase services have some initialization:
+
+   * Registering Clojure specs.
+   * Transacting Schema into Datomic.
+
+## Monitoring and logging
+
+Vase will use Pedestal's logging facilities. No additional logging,
+monitoring, or reporting mechanisms are currently in place for the
+core service.
 
 
 ### Norms and schemas
 
-An API uses a top-level key, `:norms` to specify all acceptable/avaible API
-schema datoms.  These are called *norms* because they're transacted with
-Datomic in an idempotent manner.
-
-The norms are captured as a map, with namespaced-keyword keys, and map values
-that hold the schema transactions, or `txes`.  For example:
-
-```clojure
-{:norms {:example-app/base-schema
-           {:txes [[{:db/id #db/id [:db.part/db]
-                     :db/ident :something/title
-                     :db/valueType :db.type/string
-                     :db/cardinality :db.cardinality/one
-                     :db/index false
-                     :db/doc "A simple title"
-                     :db.install/_attribute :db.part/db}
-                     ...]]}
-           ;; End :example-app/base-schema
-         ...}
- :v1 {:routes [[ ... ]]
-      :schemas [:example-app/base-schema ...]}
-```
-
-Each API *version* specifies which of these schema segments it uses, captured
-as a vector of keywords (the norm keys).  This ensures the data is modeled
-appropriately per API version when queries run or data is transacted.
-
-Schema norms can also be described using a short-hand schema-transaction literal.
-Schema-transaction literals describe the ident, cardinality, type, optional
-qualifier (unique, identity, index, fulltext), and a doc string.  The optional qualifiers
-describe attributes that contain `:unique` values, that the DB should `:index`,
-or that allow `:fulltext` search.  `:fulltext` also implies `:index`. You can
-also say an entity's unique `:identity` can be determined by an attribute.
-
-The schema above using the short form would look like:
-
-```clojure
-{:norms {:example-app/base-schema
-           {:txes [#vase/schema-tx [[:something/title :one :string "A simple title"]]]}
-           ;; End :example-app/base-schema
-         ...}
- :v1 {:routes [[ ... ]]
-      :schemas [:example-app/base-schema ...]}
-```
-
-
-# Operations
-
-This section describes the specific operations exposed by the Vase core service.
-
-## Service operations
-
-These operations are about creating, updating, inspecting/querying and
-removing hosted APIs within the container service itself.
-
-### Create a new service
-
-_POST /api_
-
-Create/Upsert an API within the core service/container, given an edn payload
-that contains a full API descriptor, the API/app-name you wish to upsert
-(which also must appear in the descriptor), and the API version you wish to
-activate.  Returns Content-Type *application/edn*.
-
-#### Input format
-
-```clojure
-{:descriptor {... full-descriptor-map ...}
- :app-name :example
- :version [:v2]}
-```
-
-#### Output format
-
-```clojure
-{:added [:v2]}
-```
-
-### List all registered/active endpoints
-
-_GET /api_
-
-List all the registered/active routes within the container.  Optionally filter
-the list with the `f` query-arg.  Optionally set the separator between route
-names with the `sep` query-arg (`<br/>` is the default).  Optionally set
-the return format to edn (a vector containing the string results) with
-the `edn` query-arg set.
-
-
-## Configuration validation
-
-These operations about validating and checking the integrity and correctness
-of an API configuration (or any data-oriented description files)
-
+An API uses a top-level key, `:vase/norms` to specify all
+acceptable/avaible API schema datoms.  These are called *norms*
+because they're transacted with Datomic in an idempotent manner.
