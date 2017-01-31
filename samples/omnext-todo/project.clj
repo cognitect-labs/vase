@@ -1,6 +1,6 @@
 (defproject omnext-todo "0.0.1-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Vase sample application, Todo list compatible with Om.next"
+  :url "https://github.com/cognitect-labs/vase/tree/master/samples/omnext-todo"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
@@ -36,4 +36,3 @@
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.2"]]}
              :uberjar {:aot [omnext-todo.server]}}
   :main ^{:skip-aot true} omnext-todo.server)
-
