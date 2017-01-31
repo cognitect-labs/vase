@@ -14,14 +14,16 @@ there. When you do, raise an issue so we can make it better.
 
 ## Releases and Dependency Information
 
-There are no released versions of Vase. You will need to clone this
-repository and install it locally:
+If you would like to use the latest developments in Vase, you will need to
+clone this repository and install it locally:
 
 ```
 git clone https://github.com/cognitect-labs/vase
 cd vase
 lein install
 ```
+
+Stable versions are currently deployed to the Clojars repository.
 
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 
