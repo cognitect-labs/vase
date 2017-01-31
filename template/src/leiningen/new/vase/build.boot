@@ -6,9 +6,9 @@
             :source-paths #{"src"}
             :test-paths #{"test"}
             :resource-paths #{"resources" "config"}
-            :dependencies [[org.clojure/clojure "1.9.0-alpha13"]
+            :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
                            [io.pedestal/pedestal.service "0.5.2"]
-                           [com.cognitect/pedestal.vase "0.9.0-SNAPSHOT"]
+                           [com.cognitect/pedestal.vase "0.9.0"]
 
                            ;; Remove this line and uncomment one of the next lines to
                            ;; use Immutant or Tomcat instead of Jetty:

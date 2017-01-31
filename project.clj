@@ -1,11 +1,11 @@
-(defproject com.cognitect/pedestal.vase "0.9.0-SNAPSHOT"
+(defproject com.cognitect/pedestal.vase "0.9.0"
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-alpha13"]
+                 [org.clojure/clojure "1.9.0-alpha14"]
 
                  ;; Datomic
-                 [com.datomic/datomic-free "0.9.5544" :exclusions [[org.slf4j/slf4j-api]
+                 [com.datomic/datomic-free "0.9.5554" :exclusions [[org.slf4j/slf4j-api]
                                                                    [org.slf4j/slf4j-nop]]]
                  [io.rkn/conformity "0.4.0" :exclusions [com.datomic/datomic-free]]
 
@@ -18,7 +18,7 @@
   :pedantic? :abort
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
-             :dev {:aliases {"dumbrepl" ["trampoline" "run" "-m" "clojure.main/main"]
+             :dev {:aliases {"crepl" ["trampoline" "run" "-m" "clojure.main/main"]
                              "srepl" ["with-profile" "srepl" "trampoline" "run" "-m" "clojure.main/main"]}
                    :source-paths ["dev"]
                    :resource-paths ["config"
