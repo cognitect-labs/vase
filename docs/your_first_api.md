@@ -600,5 +600,5 @@ An example of simple constants follows - observe our last change to the schema b
 We've covered most of the action literals. The examples in this guide
 created a real, if somewhat quirky, API for an accounts system.
 
-The next step is to read the [Action Literals](./action-literals.md)
+The next step is to read the [Action Literals](./action_literals.md)
 reference.
