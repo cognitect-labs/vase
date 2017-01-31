@@ -1,1 +1,1 @@
-All data and code in this repository is copyright © 2014-2016 Cognitect, Inc.
+All data and code in this repository is copyright © 2014-2017 Cognitect, Inc.
