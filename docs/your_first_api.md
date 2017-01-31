@@ -28,10 +28,9 @@ It also important to note that the terms *service*, *server*, *container* are al
 
 Create a new project from the Vase leiningen template:
 
-   lein new vase your-first-api --template-version 0.1.0-SNAPSHOT
-
-Note that the `--template-version` argument is needed because we
-haven't released Vase jars into Maven Central or Clojars.
+```
+lein new vase your-first-api
+```
 
 ## Up and running
 
