@@ -275,7 +275,7 @@ Specs are identical to those that would be written in Clojure source code.
 For example, the following might be found in code:
 
 ```clojure
-(s/def :example.app.v1/age #(> age 21))
+(s/def :example.app.v1/age #(> % 21))
 ```
 
 This would translate into the following spec in a Vase description:
