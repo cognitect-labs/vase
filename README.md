@@ -44,6 +44,13 @@ Stable versions are currently deployed to the Clojars repository.
 
 ## Getting Started
 
+By default, Vase uses an in-memory Datomic database, using the
+[publicly available Datomic-free](https://clojars.org/com.datomic/datomic-free)
+version located in Clojars.
+
+Everything you need to get up and running with Vase is packaged in Vase itself.
+Vase is completely self-contained -- You don't need to setup Datomic or create a MyDatomic account.
+
 ### Using the template
 
 This repository also includes a Leiningen [template](./template) for
