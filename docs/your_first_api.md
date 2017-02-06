@@ -281,7 +281,10 @@ string from our `#vase/respond` literal.
 
 ## Handling Parameters
 
-Vase does some code generation to make HTTP parameters available as Clojure bindings for a route's action literal(s). These are conveyed from the route to Vase by Pedestal, using the `:params` keyword in the [request map](http://pedestal.io/reference/request-map).
+Vase does some code generation to make HTTP parameters available as
+Clojure bindings for a route's action literal(s). These are conveyed
+from the route to Vase by Pedestal, using the `:params` keyword in the
+[request map](http://pedestal.io/reference/request-map).
 
 Params arrive in various forms, extracted from:
 
@@ -356,24 +359,36 @@ is not a string, it's automatically converted into JSON.
 
 ## Working with POST data
 
-All of the POST params work the same way.  Suppose you have a JSON
-payload posted to your endpoint like:
+All of the POST params work the same way. Vase expects the data to
+arrive as a JSON entity body. The `#vase/transact` interceptor gets
+the contents of the body's `payload` parameter. That parameter will be
+a sequence of maps, where each map gets passed to the `#vase/transact`
+action. Suppose you have a JSON payload posted to your endpoint like:
 
 ```json
-{
+{"payload":
+ [{
   "a" : "Hello",
   "b" : "World"
+ }]
 }
 ```
 
-You could bind parameters `a` and `b` like:
+And this request gets routed to a transaction like this:
 
 ```clojure
-:params [a b]
+"/do-stuff" {:post #vase/transact {:name :example/do-stuff-to-things
+                                   :properties [:a :b]}
 ```
 
-and their values would be "Hello" and "World", respectively.
+When the transaction executes, it will create a new entity in Datomic
+with the entity map `{:a "Hello" :b "World"}`.
 
+You can use cURL to try a POST like that:
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"a": "Hello", "b": "World"}]}' http://localhost:8080/api/example/do-stuff
+```
 
 ## A dangerous truth
 
@@ -451,9 +466,11 @@ example, consider the following JSON corresponding to incoming POST
 data:
 
 ```json
-{
-  "user/userId" : 42,
-  "user/email" : "user@example.com"
+{"payload":
+  [{
+    "user/userId" : 42,
+    "user/email" : "user@example.com"
+  }]
 }
 ```
 
@@ -463,10 +480,12 @@ return its newly created `:db/id`.  On the other hand, the following
 JSON refers to an existing entity in the database:
 
 ```json
-{
-  "db/id" : 100,
-  "user/userId" : 9,
-  "user/email" : "user9@example.com"
+{"payload":
+  [{
+    "db/id" : 100,
+    "user/userId" : 9,
+    "user/email" : "user9@example.com"
+  }]
 }
 ```
 
@@ -480,9 +499,11 @@ One final way to refer to existing entities is to set the value at the
 question.  For example:
 
 ```json
-{
-  "db/id" : ["user/userId", 9],
-  "user/email" : "user9@example.com"
+{"payload":
+  [{
+    "db/id" : ["user/userId", 9],
+    "user/email" : "user9@example.com"
+  }]
 }
 ```
 
