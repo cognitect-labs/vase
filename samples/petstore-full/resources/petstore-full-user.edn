@@ -1,5 +1,5 @@
 {:activated-apis [:petstore-full/v1/users :petstore-full/v1/user]
- :datomic-uri "datomic:dev://localhost:4334/petstore-full"
+ :datomic-uri "datomic:free://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
   {:petstore-full/user-schema
@@ -61,4 +61,3 @@
                                               (pull ?e [*])
                                               :in $ ?username :where [?e :petstore.user/username ?username]]}]}}
     :vase.api/schemas [:petstore-full/user-schema]}}}}
-

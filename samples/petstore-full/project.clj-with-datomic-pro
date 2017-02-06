@@ -10,7 +10,10 @@
                  [org.slf4j/jul-to-slf4j "1.7.21"]
                  [org.slf4j/jcl-over-slf4j "1.7.21"]
                  [org.slf4j/log4j-over-slf4j "1.7.21"]
-                 [com.cognitect/pedestal.vase "0.9.0"]]
+                 [com.datomic/datomic-pro "0.9.5544" :exclusions [[com.fasterxml.jackson.core/jackson-core]
+                                                                  [com.fasterxml.jackson.core/jackson-databind]
+                                                                  [joda-time]]]
+                 [com.cognitect/pedestal.vase "0.9.0" :exclusions [com.datomic/datomic-free]]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :plugins [[info.sunng/lein-bootclasspath-deps "0.2.0"]]

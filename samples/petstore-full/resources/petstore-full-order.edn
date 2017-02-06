@@ -1,5 +1,5 @@
 {:activated-apis [:petstore-full/v1/store/orders :petstore-full/v1/store/order]
- :datomic-uri "datomic:dev://localhost:4334/petstore-full"
+ :datomic-uri "datomic:free://localhost:4334/petstore-full"
  :descriptor
  {:vase/norms
   {:petstore-full/order-status-schema
