@@ -107,20 +107,21 @@ Thanks to the template, we have a lot of stuff inside
 
 ```clojure
  :vase/norms
-  {:your-first-api/accounts {}
+  {:accounts/item {}
+   :accounts/user {}
   }
 ```
 
 (This goes inside the map attached to `:descriptor`.)
 
-This says we're building a schema named
-`:your-first-api/accounts`. The first component of a schema is
-defining its normalized, master form.  That's done using the
-`:vase/norms` entry. In this map, we'll define attributes for Items
-and Users.  You'll notice that the Users schema requires the Items
-schema, so that we can describe a user's owned items. You'll also
-notice that attributes of a given entity are defined in terms of
-database transactions (*txes*) that describe them.
+This says we're building one schema named `:accounts/item` and another
+named `:accounts/user`. The first component of a schema is defining
+its normalized, master form.  That's done using the `:vase/norms`
+entry. In this map, we'll define attributes for Items and Users.
+You'll notice that the Users schema requires the Items schema, so that
+we can describe a user's owned items. You'll also notice that
+attributes of a given entity are defined in terms of database
+transactions (*txes*) that describe them.
 
 ```clojure
  :vase/norms
@@ -217,7 +218,7 @@ of schema will be applied to our database.
 {:vase/apis
  {:accounts/v1
   {:vase.api/routes  ,,, ;; skipping the routes for space
-   :vase.api/schemas [:account/item]}}}
+   :vase.api/schemas [:accounts/item]}}}
 ```
 
 ## Forwarding Headers
@@ -231,7 +232,7 @@ level of the whole API:
 {:vase/apis
  {:accounts/v1
   {:vase.api/routes          ,,, ;; skipping the routes for space
-   :vase.api/schemas         [:account/item]
+   :vase.api/schemas         [:accounts/item]
    :vase.api/forward-headers ["vaserequest-id"]}}}
 ```
 
