@@ -1,14 +1,20 @@
 # Pet Store Example
 
-This is a simple version of pet store app, Swagger UI on the front-end and Vase app on the back-end. This app is for Vase newcommers to understand how Vase app is configured. If you want to learn more to build a real app, [a full version of pet store app](../petstore-full), is a good example.
+This is a simple version of pet store app, Swagger UI on the front-end
+and Vase app on the back-end. This app is for Vase newcommers to
+understand how Vase app is configured. If you want to learn more to
+build a real app, [a full version of pet store app](../petstore-full),
+is a good example.
 
 
 ## Datomic Setup
 
-This pet-store simple version uses Datomic memory database. The dependency
-to Datomic is defined in Vase. If you want to use Datomic Pro's transactor,
-see [project.clj-with-datomic-pro](./project.clj-with-datomic-pro) for project setup.
-Also, change database uri defined in `resources/petstore-simple.edn` accordingly, for example,
+This pet-store simple version uses Datomic memory database. The
+dependency to Datomic is defined in Vase. If you want to use Datomic
+Pro's transactor, see
+[project.clj-with-datomic-pro](./project.clj-with-datomic-pro) for
+project setup.  Also, change database uri defined in
+`resources/petstore-simple.edn` accordingly, for example,
 
 ```clojure
 :vase.descriptor/datomic-uri "datomic:dev://localhost:4334/pet-store"
@@ -17,9 +23,9 @@ Also, change database uri defined in `resources/petstore-simple.edn` accordingly
 When you create a docker image with Datomic Pro,
 you may need to fix a dependency.
 
-
 ## Getting Started
 
+0. Start a Datomic Free transactor.
 1. Start the application: `lein run`
 2. Go to [localhost:8080/index.html](http://localhost:8080/index.html) to see Swagger UI.
 3. Click `default`
@@ -58,4 +64,3 @@ If you want to use other port number:
 
 To configure logging see config/logback.xml. By default, the app logs to stdout and logs/.
 To learn more about configuring Logback, read its [documentation](http://logback.qos.ch/documentation.html).
-

@@ -26,6 +26,12 @@ It also important to note that the terms *service*, *server*, *container* are al
 
 ## Setting Up
 
+First, be sure you have a Datomic transactor running. See
+[the Datomic docs](docs.datomic.com) to get set up. Note that the
+template project uses Datomic Pro. (You can change the project.clj
+dependency to use Datomic Free. Be sure to make the corresponding
+change in the `:datomic-uri` later.)
+
 Create a new project from the Vase leiningen template:
 
 ```
@@ -364,7 +370,10 @@ All of the POST params work the same way. Vase expects the data to
 arrive as a JSON entity body. The `#vase/transact` interceptor gets
 the contents of the body's `payload` parameter. That parameter will be
 a sequence of maps, where each map gets passed to the `#vase/transact`
-action. Suppose you have a JSON payload posted to your endpoint like:
+action.
+
+Just as an example, suppose you created a JSON payload posted to your
+endpoint like:
 
 ```json
 {"payload":
@@ -385,7 +394,10 @@ And this request gets routed to a transaction like this:
 When the transaction executes, it will create a new entity in Datomic
 with the entity map `{:a "Hello" :b "World"}`.
 
-You can use cURL to try a POST like that:
+(We haven't defined any attributes like `:a` and `:b` in the
+norms... this is just an example.)
+
+This is how you would use cURL to POST such a payload::
 
 ```
 curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"a": "Hello", "b": "World"}]}' http://localhost:8080/api/example/do-stuff
