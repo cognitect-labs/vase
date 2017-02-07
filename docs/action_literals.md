@@ -5,7 +5,7 @@ full scoop, you should definitely look at
 src/com/cognitect/vase/literals.clj.
 
 All the literals can be chained together in a single route, _except_
-for #vase/respond and #vase/redirect.
+for #vase/respond and #vase/redirect. To chain literals, put them in a vector.
 
 
 ## #vase/respond
