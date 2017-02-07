@@ -460,7 +460,7 @@ to the system descriptor:
                                                :params [one-thing another-thing]
                                                :body   {:first-param  one-thing
                                                         :second-param another-thing}}}
-     "/user"             {:post #vase/transact {:name :accounts-v1/user-create
+     "/user"             {:post #vase/transact {:name :accounts.v1/user-create
                                                 :properties [:db/id
                                                              :user/userId
                                                              :user/email]}}}
