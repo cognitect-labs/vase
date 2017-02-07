@@ -224,7 +224,7 @@ of schema will be applied to our database.
 {:vase/apis
  {:accounts/v1
   {:vase.api/routes  ,,, ;; skipping the routes for space
-   :vase.api/schemas [:accounts/item]}}}
+   :vase.api/schemas [:accounts/user]}}}
 ```
 
 ## Forwarding Headers
@@ -238,7 +238,7 @@ level of the whole API:
 {:vase/apis
  {:accounts/v1
   {:vase.api/routes          ,,, ;; skipping the routes for space
-   :vase.api/schemas         [:accounts/item]
+   :vase.api/schemas         [:accounts/user]
    :vase.api/forward-headers ["vaserequest-id"]}}}
 ```
 
