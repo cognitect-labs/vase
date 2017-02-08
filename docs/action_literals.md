@@ -62,7 +62,7 @@ Run a datalog query and return the results as JSON
 
 ## #vase/transact
 
-Execute a Datomic transaction. Return the results (the tx-result) as JSON
+Execute a Datomic transaction. Return the results (the tx-result) as JSON. The new database value will be used for any subsequent datalog queries.
 
 | Param | Meaning |
 |-------|---------|
