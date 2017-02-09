@@ -5,7 +5,8 @@
             [io.pedestal.log :as log]
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.actions :as actions]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [io.pedestal.interceptor :as i]))
 
 (deftest test-data-massging
   "This test ensures that data received can be transformed into a form
@@ -42,7 +43,8 @@
       "#vase/redirect" (lit/redirect {:name :redirect :url ""})
       "#vase/validate" (lit/validate {:name :validate})
       "#vase/query"    (lit/query    {:name :query :query []})
-      "#vase/transact" (lit/transact {:name :transact})))
+      "#vase/transact" (lit/transact {:name :transact})
+      "#vase/conform"  (lit/conform  {:name :conform})))
 
   (testing "actions round-trip through the reader"
     (are [action] (= action (read-string (pr-str action)))
@@ -50,4 +52,14 @@
       (lit/redirect {:name :redirect :url ""})
       (lit/validate {:name :validate})
       (lit/query    {:name :query :query []})
-      (lit/transact {:name :transact}))))
+      (lit/transact {:name :transact})
+      (lit/conform  {:name :conform :from :from-key})))
+
+  (testing "literals create IntoInterceptor values"
+    (are [s] (satisfies? i/IntoInterceptor (read-string s))
+      "#vase/respond{:name :a}"
+      "#vase/redirect{:name :b :url \"http://www.example.com\"}"
+      "#vase/validate{:name :c}"
+      "#vase/query{:name :d :query []}"
+      "#vase/transact{:name :e}"
+      "#vase/conform{}")))

@@ -86,10 +86,22 @@
 (defmethod print-method ValidateAction [t ^java.io.Writer w]
   (.write w (str "#vase/validate" (into {} t))))
 
-(defrecord QueryAction [name params query edn-coerce constants headers doc]
+(defrecord ConformAction [name from spec to explain-to doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/query-action name query params (into #{} edn-coerce) constants headers)))
+    (actions/conform-action name from spec to explain-to)))
+
+(defn conform [form]
+  {:pre [(map? form)]}
+  (map->ConformAction form))
+
+(defmethod print-method ConformAction [t ^java.io.Writer w]
+  (.write w (str "#vase/conform" (into {} t))))
+
+(defrecord QueryAction [name params query edn-coerce constants headers to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (actions/query-action name query params (into #{} edn-coerce) constants headers to)))
 
 (defn query [form]
   {:pre [(map? form)
@@ -102,10 +114,10 @@
 (defmethod print-method QueryAction [t ^java.io.Writer w]
   (.write w (str "#vase/query" (into {} t))))
 
-(defrecord TransactAction [name properties db-op headers doc]
+(defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (actions/transact-action name properties db-op headers)))
+    (actions/transact-action name properties db-op headers to)))
 
 (defn transact [form]
   {:pre [(map? form)
@@ -134,4 +146,3 @@
                      :enter enter
                      :leave leave
                      :error error})))
-
