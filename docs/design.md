@@ -254,6 +254,10 @@ values, that the DB should `:index`, or that allow `:fulltext` search.
 can flag a `:ref` attribute to propagate fetches or retractions from 
 the attributed entity to the referred entity.
 
+If you want to describe enumeration values as part of your schema, it 
+is also valid to only give the :db/ident value and a doc string in a 
+two element vector.
+
 The schema above using the short form would look like:
 
 ```clojure
