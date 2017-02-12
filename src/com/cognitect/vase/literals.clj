@@ -26,11 +26,12 @@
         [ident card kind opt-toggle sec-opt-toggle] (butlast s-vec)]
     (if (and (contains? accepted-schema-toggles opt-toggle)
              (contains? accepted-schema-toggles sec-opt-toggle))
-      (merge {:db/id (d/tempid :db.part/db)
-              :db/ident ident
-              :db/valueType (keyword "db.type" (name kind))
-              :db/cardinality (keyword "db.cardinality" (name card))
-              :db.install/_attribute :db.part/db}
+      (merge {:db/ident ident}
+             (when (> (count s-vec) 2)
+               {:db/id                 (d/tempid :db.part/db)
+                :db/valueType          (keyword "db.type" (name kind))
+                :db/cardinality        (keyword "db.cardinality" (name card))
+                :db.install/_attribute :db.part/db})
              (when (string? doc-string)
               {:db/doc (str doc-string)})
              (opt-toggles opt-toggle)
