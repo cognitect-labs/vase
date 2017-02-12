@@ -23,9 +23,8 @@
 
 (defn parse-schema-vec [s-vec]
   (let [doc-string (last s-vec)
-        [ident card kind opt-toggle sec-opt-toggle] (butlast s-vec)]
-    (if (and (contains? accepted-schema-toggles opt-toggle)
-             (contains? accepted-schema-toggles sec-opt-toggle))
+        [ident card kind opt-toggle] (butlast s-vec)]
+    (if (contains? accepted-schema-toggles opt-toggle)
       (merge {:db/ident ident}
              (when (> (count s-vec) 2)
                {:db/id                 (d/tempid :db.part/db)
@@ -34,8 +33,7 @@
                 :db.install/_attribute :db.part/db})
              (when (string? doc-string)
               {:db/doc (str doc-string)})
-             (opt-toggles opt-toggle)
-             (opt-toggles sec-opt-toggle))
+             (opt-toggles opt-toggle))
       (throw (ex-info (str "Short schema toggles must be one of: " accepted-schema-toggles)
                       {:found-toggle opt-toggle})))))
 
