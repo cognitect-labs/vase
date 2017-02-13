@@ -243,14 +243,15 @@ vector is interpreted as follows:
  * The cardinality of the attribute, written as `:one` or `:many`
  * The type of the attribute, written as a simple keyword (e.g., for
    `:db.valueType/string`, use `:string`.)
- * An optional qualifier. One of `:unique`, `:identity`, `:index`, or
-   `:fulltext`
+ * An optional qualifier. One of `:unique`, `:identity`, `:index`, `:fulltext`,
+   or `:component`
  * A doc string
 
 The optional qualifiers describe attributes that contain `:unique`
 values, that the DB should `:index`, or that allow `:fulltext` search.
 `:fulltext` also implies `:index`. You can also say an entity's unique
-`:identity` can be determined by an attribute.
+`:identity` can be determined by an attribute. You may also state that
+a ref-attribute is a `:component` of another entity.
 
 The schema above using the short form would look like:
 

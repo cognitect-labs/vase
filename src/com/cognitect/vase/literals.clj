@@ -11,7 +11,7 @@
 
 ;; Schema literals
 ;; ---------------
-(def accepted-schema-toggles #{:unique :index :fulltext :identity nil})
+(def accepted-schema-toggles #{:unique :index :fulltext :identity :component nil})
 
 (defn parse-schema-vec [s-vec]
   (let [doc-string (last s-vec)
@@ -25,11 +25,12 @@
              (when (string? doc-string)
               {:db/doc (str doc-string)})
              (case opt-toggle
-               :unique   {:db/unique :db.unique/value}
-               :identity {:db/unique :db.unique/identity}
-               :index    {:db/index true}
-               :fulltext {:db/fulltext true
-                          :db/index true}
+               :unique    {:db/unique :db.unique/value}
+               :identity  {:db/unique :db.unique/identity}
+               :index     {:db/index true}
+               :fulltext  {:db/fulltext true
+                           :db/index true}
+               :component {:db/isComponent true}
                nil))
       (throw (ex-info (str "Short schema toggles must be one of: " accepted-schema-toggles)
                       {:found-toggle opt-toggle})))))
