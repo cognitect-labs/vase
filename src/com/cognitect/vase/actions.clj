@@ -256,12 +256,11 @@
        (let [val#           (get ~'context ~from)
              conformed#     (clojure.spec/conform ~spec val#)
              problems#      (when (= :clojure.spec/invalid conformed#)
-                              (clojure.spec/explain-data ~spec val#))]
-         (cond->
-             (assoc ~'context ~to conformed#)
-
-           (some? problems#)
-           (assoc ~explain-to problems#))))))
+                              (clojure.spec/explain-data ~spec val#))
+             ctx# (assoc ~'context ~to conformed#)]
+         (if problems#
+           (assoc ctx# ~explain-to problems#)
+           ctx#)))))
 
 (defn conform-action
   "Returns a Pedestal interceptor that performs conforms data from the context.
