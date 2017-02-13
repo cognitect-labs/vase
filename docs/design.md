@@ -243,14 +243,20 @@ vector is interpreted as follows:
  * The cardinality of the attribute, written as `:one` or `:many`
  * The type of the attribute, written as a simple keyword (e.g., for
    `:db.valueType/string`, use `:string`.)
- * An optional qualifier. One of `:unique`, `:identity`, `:index`, or
-   `:fulltext`
+ * An optional qualifier. One of `:unique`, `:identity`, `:index`, 
+   `:fulltext`, or `:component`
  * A doc string
 
 The optional qualifiers describe attributes that contain `:unique`
 values, that the DB should `:index`, or that allow `:fulltext` search.
 `:fulltext` also implies `:index`. You can also say an entity's unique
-`:identity` can be determined by an attribute.
+`:identity` can be determined by an attribute. With `:component` you 
+can flag a `:ref` attribute to propagate fetches or retractions from 
+the attributed entity to the referred entity.
+
+If you want to describe enumeration values as part of your schema, it 
+is also valid to only give the :db/ident value and a doc string in a 
+two element vector.
 
 The schema above using the short form would look like:
 
