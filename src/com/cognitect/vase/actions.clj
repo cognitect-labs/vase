@@ -100,7 +100,6 @@
 
 (def eav (juxt :e :a :v))
 
-;; @ohpauleez - is 'args' the right thing for the whitelist key here?
 (defn apply-tx
   [conn tx-data args]
   {:whitelist
@@ -110,6 +109,7 @@
    (->> tx-data
         (d/transact conn)
         deref
+        :tx-data
         (map eav))})
 
 ;; Building Interceptors
