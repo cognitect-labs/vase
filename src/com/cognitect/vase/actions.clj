@@ -83,11 +83,13 @@
 
 (def db-ops
   {:vase/assert-entity  `process-assert
-   :vase/retract-entity `process-retract})
+   :vase/retract-entity `process-retract
+   nil                  `process-assert})
 
 (defn tx-processor
   [op]
-  (get db-ops op `process-assert))
+  (or (get db-ops op)
+      (throw (ex-info "Unknown db-op" {:db-op op}))))
 
 (defn merged-parameters
   [request]
