@@ -20,8 +20,8 @@
     (actions/respond-action  :responder  [] [] "Body content" 203 {})
     (actions/redirect-action :redirector [] "Body content" 303 {} "https://www.example.com")
     (actions/validate-action :validator  [] {} [])
-    (actions/query-action    :query      [] [] [] [] {})
-    (actions/transact-action :transact   [] :vase/assert-entity [])))
+    (actions/query-action    :query      [] [] [] [] {} nil)
+    (actions/transact-action :transact   [] :vase/assert-entity [] nil)))
 
 (defn- expect-response
   [actual status body headers]
@@ -111,3 +111,25 @@
         {:path [:b] :val 12345        :via [::b]                :in [:b]}) {:b 12345}   (make-validate `(s/keys :req-un #{::a} :opt-un #{::b}))
       '({:path []   :val {:b "false"} :via [::request-body]     :in []}
         {:path [:b] :val "false"      :via [::request-body ::b] :in [:b]}) {:b "false"} (make-validate `::request-body))))
+
+(defn make-conformer
+  [from spec to]
+  (actions/conform-action :conformer from spec to nil))
+
+(deftest conform-action
+  (testing "Happy path"
+    (is (not= :clojure.spec/invalid
+              (-> {:query-data {:a 1 :b true}}
+                  (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
+                  (get :shaped)))))
+
+  (testing "Non-conforming inputs"
+    (is (= :clojure.spec/invalid
+           (-> {:query-data {:a 1 :b "string-not-allowed"}}
+               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
+               (get :shaped))))
+    (is (not
+         (nil?
+          (-> {:query-data {:a 1 :b "string-not-allowed"}}
+              (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
+              (get :com.cognitect.vase.actions/explain-data)))))))

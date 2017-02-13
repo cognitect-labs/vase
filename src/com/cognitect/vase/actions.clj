@@ -246,6 +246,38 @@
       :action-literal
       :vase/validate})))
 
+(defn conform-action-exprs
+  "Return code for a Pedestal interceptor function that performs
+  clojure.spec validation on the data attached at `from`. If the data
+  does not conform, the explain-data will be attached at `explain-to`"
+  [from spec to explain-to]
+  (let [explain-to (or explain-to ::explain-data)]
+    `(fn [{~'request :request :as ~'context}]
+       (let [val#           (get ~'context ~from)
+             conformed#     (clojure.spec/conform ~spec val#)
+             problems#      (when (= :clojure.spec/invalid conformed#)
+                              (clojure.spec/explain-data ~spec val#))
+             ctx# (assoc ~'context ~to conformed#)]
+         (if problems#
+           (assoc ctx# ~explain-to problems#)
+           ctx#)))))
+
+(defn conform-action
+  "Returns a Pedestal interceptor that performs conforms data from the context.
+
+  The interceptor will take data from the key named in `:from`,
+  conform it according to the specs in `:spec` and reattach it to the
+  context under the key named in `:to`."
+  [name from spec to explain-to]
+  (dynamic-interceptor
+   name
+   :conform
+   {:enter
+    (conform-action-exprs from spec to explain-to)
+
+    :action-literal
+    :vase/conform}))
+
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
   Datomic query.
@@ -270,8 +302,9 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [query variables coercions constants headers]
-  (let [args-sym (gensym 'args)]
+  [query variables coercions constants headers to]
+  (let [args-sym (gensym 'args)
+        to       (or to ::query-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [~args-sym      (merged-parameters ~'request)
              vals#          [~(mapcat
@@ -301,7 +334,7 @@
                                400))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
-           (assoc ~'context ::query-data response-body#))))))
+           (assoc ~'context ~to response-body#))))))
 
 (comment
   (clojure.pprint/pprint
@@ -320,12 +353,12 @@
 (defn query-action
   "Returns a Pedestal interceptor that executes a Datomic query on
   entry."
-  [name query variables coercions constants headers]
+  [name query variables coercions constants headers to]
   (dynamic-interceptor
    name
    :query
    {:enter
-    (query-action-exprs query variables coercions constants headers)
+    (query-action-exprs query variables coercions constants headers to)
 
     :action-literal
     :vase/query}))
@@ -344,37 +377,38 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [properties db-op headers]
-  `(fn [{~'request :request :as ~'context}]
-     (let [;args#          (merged-parameters ~'request)
-           args#          (mapv
-                           #(select-keys % ~(vec properties))
-                           (get-in ~'request [:json-params :payload]))
-           tx-data#       (~(tx-processor db-op) args#)
-           conn#          (:conn ~'request)
-           response-body# (apply-tx
-                           conn#
-                           tx-data#
-                           args#)
-           resp#          (util/response
-                           response-body#
-                           ~headers
-                           (util/status-code response-body# (:errors ~'context)))]
-       (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
-         (assoc ~'context :response resp#)
-         (-> ~'context
-             (assoc ::transact-data response-body#)
-             (assoc-in [:request :db] (d/db conn#)))))))
+  [properties db-op headers to]
+  (let [to (or to ::transact-data)]
+    `(fn [{~'request :request :as ~'context}]
+       (let [;args#          (merged-parameters ~'request)
+             args#          (mapv
+                             #(select-keys % ~(vec properties))
+                             (get-in ~'request [:json-params :payload]))
+             tx-data#       (~(tx-processor db-op) args#)
+             conn#          (:conn ~'request)
+             response-body# (apply-tx
+                             conn#
+                             tx-data#
+                             args#)
+             resp#          (util/response
+                             response-body#
+                             ~headers
+                             (util/status-code response-body# (:errors ~'context)))]
+         (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
+           (assoc ~'context :response resp#)
+           (-> ~'context
+               (assoc ~to response-body#)
+               (assoc-in [:request :db] (d/db conn#))))))))
 
 (defn transact-action
   "Returns a Pedestal interceptor that executes a Datomic transaction
   on entry."
-  [name properties db-op headers]
+  [name properties db-op headers to]
   (dynamic-interceptor
    name
    :transact
    {:enter
-    (transact-action-exprs properties db-op headers)
+    (transact-action-exprs properties db-op headers to)
 
     :action-literal
     :vase/transact}))
