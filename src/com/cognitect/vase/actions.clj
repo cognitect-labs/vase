@@ -87,7 +87,10 @@
 
 (defn tx-processor
   [op]
-  (get db-ops op `process-assert))
+  (if op
+    (or (get db-ops op)
+        (throw (ex-info (str "Unknown DB Op: " op) {:db-op op})))
+    `process-assert))
 
 (defn merged-parameters
   [request]
