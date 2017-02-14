@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Food Mart Data Dash</title>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+        <!-- external libs from cdnjs -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+
+        <!-- PivotTable.js libs from ./dist -->
+        <link rel="stylesheet" type="text/css" href="./dist/pivot.css">
+        <script type="text/javascript" src="./dist/pivot.js"></script>
+        <script type="text/javascript" src="./dist/gchart_renderers.js"></script>
+        <style>
+            body {font-family: Verdana;}
+        </style>
+
+        <!-- optional: mobile support with jqueryui-touch-punch -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    </head>
+    <body>
+    <h3 style="margin: 30px;">Food Mart Pivot Explorer</h3>
+        <script type="text/javascript">
+
+    // Add the Google Chart renderers.
+    google.load("visualization", "1", {packages:["corechart", "charteditor"]});
+
+    // Fetch the data and populate the pivot table
+    var query_selector = "[:* {:sale/store [:*] :sale/product [:* {:product/type [:db/ident]}]}]";
+    var columns = ["sale/price", "product/name"];
+    var rows = ["store/name"];
+
+    var render = function(){
+    $(function(){
+        var derivers = $.pivotUtilities.derivers;
+        var renderers = $.extend($.pivotUtilities.renderers,
+            $.pivotUtilities.gchart_renderers);
+
+        // Replace URL with "mps.json" to test a static resource
+        $.getJSON(//"/api/vasebi/main/sales?selector="+query_selector,
+                "/api/vasebi/main/sales-denormalized",
+                function(sales) {
+                    $("#output").pivotUI(sales, {
+                        renderers: renderers,
+                        //derivedAttributes: {
+                        //    "Age Bin": derivers.bin("Age", 10),
+                        //    "Gender Imbalance": function(mp) {
+                        //        return mp["Gender"] == "Male" ? 1 : -1;
+                        //    }
+                        //},
+                        cols: columns, rows: rows,
+                        rendererName: "Bar Chart"
+                    });
+                });
+    })};
+    render();
+        </script>
+
+        <div id="output" style="margin: 30px;"></div>
+
+    </body>
+</html>
+

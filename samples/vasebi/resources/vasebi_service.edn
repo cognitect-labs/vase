@@ -1,0 +1,154 @@
+{:activated-apis [:vasebi/main]
+ :datomic-uri "datomic:mem://foodmartbi"
+ :descriptor
+ ;; Datomic Schema Norms
+ ;; --------------------
+ {:vase/norms
+  {:vasebi/foodmart-stores
+   ;; Supports full/long Datomic schemas
+   {:vase.norm/txes [#vase/schema-tx [[:store/name :one :string :identity "A Store's unique name"]
+                                      [:store/state :one :string "The two-letter USA state code of the store"]
+                                      [:store/city :one :string "The city of the store's location"]
+                                      [:store/address :one :string "The Store's postal/street address"]
+                                      [:store/sqft :one :long "The square-footage area of a store"]
+                                      [:store/has-coffee-bar :one :boolean "Does this store have a coffee bar?"]]]}
+   :vasebi/foodmart-product-types
+   {:vase.norm/txes [[{:db/id #db/id[:db.part/db]
+                       :db/ident :product.type/produce}
+                      {:db/id #db/id[:db.part/db]
+                       :db/ident :product.type/deli}
+                      {:db/id #db/id[:db.part/db]
+                       :db/ident :product.type/bakery}]]}
+   :vasebi/foodmart-products
+   {:vase.norm/requires [:vasebi/foodmart-product-types]
+    :vase.norm/txes [#vase/schema-tx [[:product/name :one :string :identity "A product's unique name"]
+                                      [:product/type :one :ref "The type (enum) of a product"]
+                                      [:product/brand-name :one :string "A brand name for products"]]]}
+   :vasebi/foodmart-sales
+   {:vase.norm/requires [:vasebi/foodmart-stores
+                         :vasebi/foodmart-products]
+    :vase.norm/txes [#vase/schema-tx [[:sale/product :one :ref "The product sold"]
+                                      [:sale/store :one :ref "The store in which the product was sold"]
+                                      [:sale/price :one :long "Total amount of item sale in cents"]]]}
+   :vasebi/seed-data
+   {:vase.norm/requires [:vasebi/foodmart-sales]
+    :vase.norm/txes [[{:db/id #db/id[:db.part/user]
+                       :store/name "JoeMart"
+                       :store/state "CA"
+                       :store/city "San Francisco"
+                       :store/address "123 Fake St"
+                       :store/sqft 70000
+                       :store/has-coffee-bar true}
+                      {:db/id #db/id[:db.part/user]
+                       :store/name "JaneMart"
+                       :store/state "MA"
+                       :store/city "Boston"
+                       :store/address "789 Fake St"
+                       :store/sqft 30000
+                       :store/has-coffee-bar false}
+
+                      {:db/id #db/id[:db.part/user]
+                       :product/name "Ham"
+                       :product/type :product.type/deli
+                       :product/brand-name "Hearty"}
+                      {:db/id #db/id[:db.part/user]
+                       :product/name "Cupcake"
+                       :product/type :product.type/bakery
+                       :product/brand-name "Crusty"}
+                      {:db/id #db/id[:db.part/user]
+                       :product/name "Strawberry"
+                       :product/type :product.type/produce
+                       :product/brand-name "Sweet"}]
+
+                      [{:db/id #db/id[:db.part/user]
+                       :sale/product [:product/name "Ham"]
+                       :sale/store [:store/name "JoeMart"]
+                       :sale/price 1000}
+                      {:db/id #db/id[:db.part/user]
+                       :sale/product [:product/name "Ham"]
+                       :sale/store [:store/name "JoeMart"]
+                       :sale/price 1000}
+                      {:db/id #db/id[:db.part/user]
+                       :sale/product [:product/name "Strawberry"]
+                       :sale/store [:store/name "JaneMart"]
+                       :sale/price 2000}
+                      {:db/id #db/id[:db.part/user]
+                       :sale/product [:product/name "Cupcake"]
+                       :sale/store [:store/name "JaneMart"]
+                       :sale/price 2000}]]}}
+
+  ;; Global Specs for the API
+  ;; ------------------------
+  :vase/specs
+  {:vasebi.inbound-sale/store (clojure.spec/and string? not-empty)
+   :vasebi.inbound-sale/product (clojure.spec/and string? not-empty)
+   :vasebi.inbound/sale (clojure.spec/keys :req-un [:vasebi.inbound-sale/store
+                                                    :vasebi.inbound-sale/product])
+   :vasebi.inbound/sales (clojure.spec/+ :vasebi.inbound/sale)
+
+   :vasebi.store/name (clojure.spec/and string? not-empty)
+   :vasebi.store/state (clojure.spec/and string? not-empty (fn [x] (= 2 (count x))))
+   :vasebi.store/city (clojure.spec/and string? not-empty)
+   :vasebi.store/sqft pos-int?
+   :vasebi.store/has-coffee-bar boolean?
+   :vasebi/store (clojure.spec/keys :req-un [:vasebi.store/name
+                                             :vasebi.store/state
+                                             :vasebi.store/city
+                                             :vasebi.store/sqft]
+                                    :opt-un [:vasebi.store/has-coffee-bar])}
+
+  ;; API Tagged Chunks/Versions
+  ;; --------------------------
+  :vase/apis
+  {:vasebi/main
+   {:vase.api/routes
+    {"/sales" {:get #vase/query {:name :vasebi-main/sales-list
+                                 :params [[selector [:* {:sale/store [:*]
+                                                         :sale/product [:* {:product/type [:db/ident]}]}]]]
+                                 :edn-coerce [selector]
+                                 :query [:find [(pull ?sale selector) ...]
+                                         :in $ selector
+                                         :where [?sale :sale/product]]}
+               :post [#vase/validate {:name :vasebi.main/sale-validation
+                                      :spec :vasebi.inbound/sales
+                                      :request-params-path [:json-params :payload]}
+                      #vase/intercept {:name :vasebi.main/sale-ensure-lookupref
+                                       :enter (fn [ctx]
+                                                (update-in ctx [:request :json-params :payload]
+                                                           (fn [tx]
+                                                             (mapv (fn [{:keys [sale/product
+                                                                                sale/store]
+                                                                         :as sale-ent}]
+                                                                     (when sale-ent
+                                                                       {:sale/product [:product/name product]
+                                                                        :sale/store [:store/name store]}))
+                                                                   tx))))}
+                      #vase/transact {:name :vasebi.main/sale-create
+                                      ;; `:properties` are pulled from the `payload` parameters
+                                      :properties [:db/id
+                                                   :sale/product
+                                                   :sale/store]}]}
+     "/sales-denormalized" {:get [#vase/query {:name :vasebi-main/normal-sales-list
+                                               :params [[selector [:* {:sale/store [:*]
+                                                                       :sale/product [:* {:product/type [:db/ident]}]}]]]
+                                               :edn-coerce [selector]
+                                               :query [:find [(pull ?sale selector) ...]
+                                                       :in $ selector
+                                                       :where [?sale :sale/product]]
+                                               :to :vasebi/sales-data}
+                                  #vase/intercept {:name :vasebi-main/denormal-sales-responded
+                                                   :enter (fn [ctx]
+                                                            (assoc ctx
+                                                                   :response
+                                                                   {:status 200
+                                                                    :body (mapv (fn [res]
+                                                                           (assoc (merge (dissoc (:sale/store res) :db/id)
+                                                                                         (dissoc (:sale/product res) :db/id))
+                                                                                  :sale/price (:sale/price res)
+                                                                                  :product/type (get-in res [:sale/product :product/type :db/ident])))
+                                                                         (:vasebi/sales-data ctx))}))}]}}
+    ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
+    :vase.api/schemas [:vasebi/foodmart-sales
+                       :vasebi/seed-data]
+    :vase.api/forward-headers ["vaserequest-id"]}}}}
+
