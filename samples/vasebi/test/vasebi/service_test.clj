@@ -25,5 +25,5 @@
             "X-XSS-Protection" "1; mode=block"
             "X-Download-Options" "noopen"
             "X-Permitted-Cross-Domain-Policies" "none"
-            "Content-Security-Policy" "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;"}))))
+            "Content-Security-Policy" "object-src none"}))))
 

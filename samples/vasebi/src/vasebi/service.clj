@@ -51,6 +51,8 @@
 
    ;; Root for resource interceptor that is available by default.
    ::http/resource-path "/public"
+   ;; We need to relax the secure headers a bit (specifically the CSP controls)
+   ::http/secure-headers {:content-security-policy-settings {:object-src "none"}}
 
    ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
    ::http/type :jetty
