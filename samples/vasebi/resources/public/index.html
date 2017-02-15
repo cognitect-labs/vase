@@ -28,8 +28,9 @@
 
     // Fetch the data and populate the pivot table
     var query_selector = "[:* {:sale/store [:*] :sale/product [:* {:product/type [:db/ident]}]}]";
-    var columns = ["sale/price", "product/name"];
-    var rows = ["store/name"];
+    var columns = ["store/name", "store/has-coffee-bar"];
+    var rows = ["product/name"];
+    var vals = ["sale/price"];
 
     var render = function(){
     $(function(){
@@ -49,8 +50,9 @@
                         //        return mp["Gender"] == "Male" ? 1 : -1;
                         //    }
                         //},
-                        cols: columns, rows: rows,
-                        rendererName: "Bar Chart"
+                        cols: columns, rows: rows, vals: vals,
+                        aggregatorName: "Sum",
+                        rendererName: "Stacked Bar Chart"
                     });
                 });
     })};

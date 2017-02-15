@@ -38,14 +38,14 @@
                        :store/city "San Francisco"
                        :store/address "123 Fake St"
                        :store/sqft 70000
-                       :store/has-coffee-bar true}
+                       :store/has-coffee-bar false}
                       {:db/id #db/id[:db.part/user]
                        :store/name "JaneMart"
                        :store/state "MA"
                        :store/city "Boston"
                        :store/address "789 Fake St"
                        :store/sqft 30000
-                       :store/has-coffee-bar false}
+                       :store/has-coffee-bar true}
 
                       {:db/id #db/id[:db.part/user]
                        :product/name "Ham"
@@ -75,7 +75,11 @@
                       {:db/id #db/id[:db.part/user]
                        :sale/product [:product/name "Cupcake"]
                        :sale/store [:store/name "JaneMart"]
-                       :sale/price 2000}]]}}
+                       :sale/price 2000}
+                      {:db/id #db/id[:db.part/user]
+                       :sale/product [:product/name "Cupcake"]
+                       :sale/store [:store/name "JaneMart"]
+                       :sale/price 150}]]}}
 
   ;; Global Specs for the API
   ;; ------------------------
@@ -144,7 +148,8 @@
                                                                     :body (mapv (fn [res]
                                                                            (assoc (merge (dissoc (:sale/store res) :db/id)
                                                                                          (dissoc (:sale/product res) :db/id))
-                                                                                  :sale/price (:sale/price res)
+                                                                                  ;; Let's convert sale prices (whole cents) into floating points
+                                                                                  :sale/price (/ (:sale/price res) 100.0)
                                                                                   :product/type (get-in res [:sale/product :product/type :db/ident])))
                                                                          (:vasebi/sales-data ctx))}))}]}}
     ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
