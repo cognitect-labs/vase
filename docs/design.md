@@ -420,7 +420,7 @@ Action-maps are hashmaps that contain Action-specific data.  All action-maps
 require a `:name` for the given action, a keyword.  This name is used in logging and URL
 generation, and thus should be a namespaced keyword.
 
-See documentation for the [action literals](./action-literals.md) for
+See documentation for the [action literals](./action_literals.md) for
 the details of their keys and interpretation.
 
 # Operational Attributes
