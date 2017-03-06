@@ -8,7 +8,7 @@
             [clojure.string :as string]
             [io.pedestal.interceptor :as i]))
 
-(deftest test-data-massging
+(deftest test-data-massaging
   "This test ensures that data received can be transformed into a form
    amenable to storing into datomic."
 
