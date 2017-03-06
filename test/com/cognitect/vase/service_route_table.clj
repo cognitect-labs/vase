@@ -1,9 +1,9 @@
 (ns com.cognitect.vase.service-route-table
-  (:import [java.util UUID])
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.route.definition.table :as table]
-            [com.cognitect.vase :as vase]))
+            [com.cognitect.vase :as vase])
+  (:import [java.util UUID]))
 
 (defn make-master-routes
   [spec]

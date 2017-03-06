@@ -3,7 +3,9 @@
             [io.pedestal.interceptor :as interceptor]
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.test-helper :as helper]
-            [clojure.spec :as s]))
+            [com.cognitect.vase.test-db-helper :as db-helper]
+            [clojure.spec :as s]
+            [datomic.api :as d]))
 
 (deftest dynamic-interceptor-creation
   (testing "at least one function is required"
@@ -30,10 +32,20 @@
   (is (= headers (select-keys (:headers actual) (keys headers)))))
 
 (defn- with-query-params
-  [p]
-  (-> {}
-      (update-in [:request :query-params] merge p)
-      (update-in [:request :params] merge p)))
+  ([p]
+   (with-query-params {} p))
+  ([ctx p]
+      (-> ctx
+       (update-in [:request :query-params] merge p)
+       (update-in [:request :params] merge p))))
+
+(defn- with-path-params
+  ([p]
+   (with-path-params {} p))
+  ([ctx p]
+      (-> ctx
+       (update-in [:request :path-params] merge p)
+       (update-in [:request :params] merge p))))
 
 (defn- execute-and-expect
   ([action status body headers]
@@ -64,14 +76,14 @@
   (testing "with parameters and defaults"
     (are [expected-body action ctx] (execute-and-expect ctx action 200 expected-body {})
       "p1: foobar"  (make-respond '[[p1 "foobar"]]      [] '(str "p1: " p1)) (with-query-params {})
-      "p1: & p2: +"    (make-respond '[p1 [p2 "+"]]      [] '(str "p1: " p1 " p2: " p2)) (with-query-params {:p1 "&"})
-      "foo.bar." (make-respond '[[p1 "baz"] [zort "bar"]] [] '(format "%s.%s." p1 zort)) (with-query-params {:p1 "foo"})))
+      "p1: & p2: +" (make-respond '[p1 [p2 "+"]]      [] '(str "p1: " p1 " p2: " p2)) (with-query-params {:p1 "&"})
+      "foo.bar."    (make-respond '[[p1 "baz"] [zort "bar"]] [] '(format "%s.%s." p1 zort)) (with-query-params {:p1 "foo"})))
 
   (testing "with parameters and coercions"
     (are [expected-body action ctx] (execute-and-expect ctx action 200 expected-body {})
       "p1's foo: 1" (make-respond '[p1] '[p1] '(str "p1's foo: " (:foo p1))) (with-query-params {:p1 "{:foo 1}"})
-      "p1: A" (make-respond '[p1] '[p1] '(str "p1: " p1))  (with-query-params {:p1 "\"A\""})
-      "Sum: 3" (make-respond '[p1 zort] '[p1 zort] '(str "Sum: " (+ p1 zort))) (with-query-params {:p1 "1" :zort "2"}))))
+      "p1: A"       (make-respond '[p1] '[p1] '(str "p1: " p1))  (with-query-params {:p1 "\"A\""})
+      "Sum: 3"      (make-respond '[p1 zort] '[p1 zort] '(str "Sum: " (+ p1 zort))) (with-query-params {:p1 "1" :zort "2"}))))
 
 (defn make-redirect
   ([params status body headers url]
@@ -133,3 +145,54 @@
           (-> {:query-data {:a 1 :b "string-not-allowed"}}
               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
               (get :com.cognitect.vase.actions/explain-data)))))))
+
+(defn empty-db-entity-count
+  []
+  (let [conn (:connection (db-helper/new-database []))
+        db   (d/db conn)]
+    (count
+     (d/q '[:find ?e ?v :where [?e :db/ident ?v]] db))))
+
+(defn make-query
+  [query variables coercions constants to]
+  (actions/query-action :query query variables coercions constants {} to))
+
+(defn- context-with-db []
+  (let [conn (db-helper/connection)]
+    (-> (helper/new-ctx)
+        (assoc-in [:request :db] (d/db conn))
+        (assoc-in [:request :conn] conn))))
+
+(deftest query-action
+  (db-helper/with-database db-helper/query-test-txes
+    (testing "Simple query, no parameters"
+      (let [action        (make-query '[:find ?e ?v :where [?e :db/ident ?v]] [] [] [] nil)
+            response      (:response (helper/run-interceptor (context-with-db) action))
+            query-results (:body response)]
+        (is (vector? query-results))
+        (is (< (empty-db-entity-count) (count query-results)))
+        (is (= '(2) (distinct (map count query-results))))))
+
+
+    (testing "with one coerced query parameter"
+      (let [action        (make-query '[:find ?id ?email :in $ ?id :where [?e :user/userId ?id] [?e :user/userEmail ?email]] '[id] '[id] [] nil)
+            response      (:response (helper/run-interceptor
+                                      (with-path-params
+                                        (context-with-db)
+                                        {:id "100"})
+                                      action))
+            query-results (:body response)]
+        (is (vector? query-results))
+        (is (< 0 (count query-results)))))
+
+    (testing "with two coerced query parameters"
+      (let [action        (make-query '[:find ?id ?email :in $ ?id :where [?e :user/userId ?id] [?e :user/userEmail ?email]] '[id email] '[email id] [] nil)
+            response      (:response (helper/run-interceptor
+                                      (with-path-params
+                                        (context-with-db)
+                                        {:id    "100"
+                                         :email "paul@cognitect.com"})
+                                      action))
+            query-results (:body response)]
+        (is (vector? query-results))
+        (is (< 0 (count query-results)))))))

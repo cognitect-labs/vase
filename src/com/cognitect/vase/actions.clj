@@ -295,7 +295,7 @@
   allowing for default values if the key/keyword is not found in the request map.
   `variables` may be nil.
 
-  `coercions` is a set of variable names (expressed as symbols) that
+  `coercions` is a collection of variable names (expressed as symbols) that
   should be read as EDN values from the Pedestal request map. (I.e.,
   anything that needs to be converted from String to Date, Long, etc.)
   May be nil.
@@ -306,19 +306,20 @@
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
   [query variables coercions constants headers to]
-  (let [args-sym (gensym 'args)
-        to       (or to ::query-data)]
+  (let [args-sym  (gensym 'args)
+        to        (or to ::query-data)
+        coercions (into #{} coercions)]
     `(fn [{~'request :request :as ~'context}]
        (let [~args-sym      (merged-parameters ~'request)
-             vals#          [~(mapcat
-                               (fn [x]
-                                 (let
-                                   [[k-sym default-v] (if (vector? x) x [x nil])
-                                    k (util/ensure-keyword k-sym)]
-                                   (if (contains? coercions k-sym)
-                                   `(coerce-arg-val ~args-sym ~k ~default-v)
-                                   `(get ~args-sym ~k ~default-v))))
-                                variables)]
+             vals#          ~(mapv
+                              (fn [x]
+                                (let
+                                    [[k-sym default-v] (if (vector? x) x [x nil])
+                                     k (util/ensure-keyword k-sym)]
+                                  (if (contains? coercions k-sym)
+                                    `(coerce-arg-val ~args-sym ~k ~default-v)
+                                    `(get ~args-sym ~k ~default-v))))
+                              variables)
              db#            (:db ~'request)
              query-params# (concat vals# ~constants)
              query-result#  (when (every? some? query-params#)
