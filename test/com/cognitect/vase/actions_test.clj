@@ -133,3 +133,44 @@
           (-> {:query-data {:a 1 :b "string-not-allowed"}}
               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
               (get :com.cognitect.vase.actions/explain-data)))))))
+
+(defn get-query-vals
+  "Get the expression that will be bound to vals# in the query"
+  [q-exprs]
+  (-> q-exprs
+      (nth 2)
+      (nth 1)
+      (nth 3)))
+
+(deftest query-action-exprs-test
+  (testing "single parameter is bound correctly"
+    (is
+     (= 1
+        (count
+         (get-query-vals
+          (actions/query-action-exprs
+           '[:find ?e
+             :in $ ?foo
+             :where
+             [?e :foo ?foo]]
+           '[foo]
+           []
+           []
+           {}
+           nil))))))
+  (testing "multiple parameters are bound correctly"
+    (is
+     (= 2
+        (count
+         (get-query-vals
+          (actions/query-action-exprs
+           '[:find ?e
+             :in $ ?foo ?bar
+             :where
+             [?e :foo ?foo]
+             [?e :bar ?bar]]
+           '[foo bar]
+           []
+           []
+           {}
+           nil)))))))

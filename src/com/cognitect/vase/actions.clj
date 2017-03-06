@@ -310,15 +310,15 @@
         to       (or to ::query-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [~args-sym      (merged-parameters ~'request)
-             vals#          [~(mapcat
-                               (fn [x]
-                                 (let
-                                   [[k-sym default-v] (if (vector? x) x [x nil])
-                                    k (util/ensure-keyword k-sym)]
-                                   (if (contains? coercions k-sym)
-                                   `(coerce-arg-val ~args-sym ~k ~default-v)
-                                   `(get ~args-sym ~k ~default-v))))
-                                variables)]
+             vals#          ~(mapv
+                              (fn [x]
+                                (let
+                                    [[k-sym default-v] (if (vector? x) x [x nil])
+                                     k (util/ensure-keyword k-sym)]
+                                  (if (contains? coercions k-sym)
+                                    `(coerce-arg-val ~args-sym ~k ~default-v)
+                                    `(get ~args-sym ~k ~default-v))))
+                              variables)
              db#            (:db ~'request)
              query-params# (concat vals# ~constants)
              query-result#  (when (every? some? query-params#)
