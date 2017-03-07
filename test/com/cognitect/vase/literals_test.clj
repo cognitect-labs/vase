@@ -8,7 +8,63 @@
             [clojure.string :as string]
             [io.pedestal.interceptor :as i]))
 
-(deftest test-data-massging
+;; Schema literal tests
+(deftest test-schema-tx
+  (are [input expected] (= expected (map #(dissoc % :db/id) (read-string input)))
+    ;; One attribute
+    "#vase/schema-tx[[:entity/attribute :one :long \"A docstring\"]]"
+    [{:db/ident              :entity/attribute
+      :db/valueType          :db.type/long
+      :db/cardinality        :db.cardinality/one
+      :db/doc                "A docstring"
+      :db.install/_attribute :db.part/db}]
+
+    ;; Two attributes
+    "#vase/schema-tx[[:e/a1 :one :long \"\"] [:e/a2 :many :string \"docstring 2\"]]"
+    [{:db/ident :e/a1
+      :db/valueType :db.type/long
+      :db/cardinality :db.cardinality/one
+      :db/doc ""
+      :db.install/_attribute :db.part/db}
+     {:db/ident              :e/a2
+      :db/valueType          :db.type/string
+      :db/cardinality        :db.cardinality/many
+      :db/doc                "docstring 2"
+      :db.install/_attribute :db.part/db}]
+
+    ;; One toggle
+    "#vase/schema-tx[[:e/a :one :long :identity \"Doc\"]]"
+    [{:db/ident              :e/a
+      :db/valueType          :db.type/long
+      :db/cardinality        :db.cardinality/one
+      :db/unique             :db.unique/identity
+      :db/doc                "Doc"
+      :db.install/_attribute :db.part/db}]
+
+    ;; Several toggles
+    "#vase/schema-tx[[:e/a :one :string :identity :index :component :no-history :fulltext \"Doc\"]]"
+    [{:db/ident              :e/a
+      :db/valueType          :db.type/string
+      :db/cardinality        :db.cardinality/one
+      :db/index              true
+      :db/isComponent        true
+      :db/noHistory          true
+      :db/fulltext           true
+      :db/unique             :db.unique/identity
+      :db/doc                "Doc"
+      :db.install/_attribute :db.part/db}])
+
+  (are [bad-input] (thrown? Throwable (read-string bad-input))
+    "#vase/schema-tx[[:e/a :one-is-the-lonliest-number :long \"doc\"]]"
+    "#vase/schema-tx[[\"not a keyword\" :one :ref \"doc\"]]"
+    "#vase/schema-tx[[:e/a :one :categorically-imperative \"\"]]"
+    "#vase/schema-tx[[:e/a :one :ref]]"
+    "#vase/schema-tx[#{:e/a :one :ref \"doc\"}]"))
+
+(run-tests)
+;; Action literals tests
+;;
+(deftest test-data-massaging
   "This test ensures that data received can be transformed into a form
    amenable to storing into datomic."
 
