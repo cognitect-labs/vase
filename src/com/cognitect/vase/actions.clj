@@ -281,6 +281,9 @@
     :action-literal
     :vase/conform}))
 
+(defn hash-set? [x]
+  (instance? java.util.HashSet x))
+
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
   Datomic query.
@@ -316,20 +319,22 @@
                                 (let
                                     [[k-sym default-v] (if (vector? x) x [x nil])
                                      k (util/ensure-keyword k-sym)]
-                                  (if (contains? coercions k-sym)
-                                    `(coerce-arg-val ~args-sym ~k ~default-v)
-                                    `(get ~args-sym ~k ~default-v))))
+                                    (if (contains? coercions k-sym)
+                                      `(coerce-arg-val ~args-sym ~k ~default-v)
+                                      `(get ~args-sym ~k ~default-v))))
                               variables)
              db#            (:db ~'request)
              query-params# (concat vals# ~constants)
              query-result#  (when (every? some? query-params#)
                               (apply d/q '~query db# query-params#))
-             response-body# (if query-result#
-                              (into [] query-result#)
-                              (str
-                                "Missing required query parameters; One or more parameters was `nil`."
-                                "  Got: " (keys ~args-sym)
-                                "  Required: " ~(mapv util/ensure-keyword variables)))
+             missing-params?# (not (every? some? query-params#))
+             response-body# (cond
+                              missing-params?#          (str
+                                                         "Missing required query parameters; One or more parameters was `nil`."
+                                                         "  Got: " (keys ~args-sym)
+                                                         "  Required: " ~(mapv util/ensure-keyword variables))
+                              (hash-set? query-result#) (into [] query-result#)
+                              :else                     [query-result#])
              resp#          (util/response
                              response-body#
                              ~headers

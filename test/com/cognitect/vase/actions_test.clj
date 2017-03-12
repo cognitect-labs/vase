@@ -173,7 +173,6 @@
         (is (< (empty-db-entity-count) (count query-results)))
         (is (= '(2) (distinct (map count query-results))))))
 
-
     (testing "with one coerced query parameter"
       (let [action        (make-query '[:find ?id ?email :in $ ?id :where [?e :user/userId ?id] [?e :user/userEmail ?email]] '[id] '[id] [] nil)
             response      (:response (helper/run-interceptor
@@ -195,4 +194,38 @@
                                       action))
             query-results (:body response)]
         (is (vector? query-results))
-        (is (< 0 (count query-results)))))))
+        (is (< 0 (count query-results)))))
+
+    (testing "with scalar result"
+      (let [action        (make-query '[:find ?e . :in $ ?id :where [?e :user/userId ?id]] '[id] '[id] [] nil)
+            response      (:response (helper/run-interceptor
+                                      (with-path-params
+                                        (context-with-db)
+                                        {:id "100"})
+                                      action))
+            query-results (:body response)]
+        (is (vector? query-results))
+        (is (= 1 (count query-results)))))
+
+    (testing "with nil params"
+      (let [action        (make-query '[:find ?e :in $ ?id :where [?e :user/userId ?id]] '[id] '[id] [] nil)
+            response      (:response (helper/run-interceptor
+                                      (with-path-params
+                                        (context-with-db)
+                                        {})
+                                      action))
+            query-results (:body response)]
+        (is (string? query-results))
+        (is (re-matches #"Missing required query parameters.*" query-results))))
+
+    (testing "scalar query with no results"
+      (let [action        (make-query '[:find ?e . :in $ ?id :where [?e :user/userId ?id]] '[id] '[id] [] nil)
+            response      (:response (helper/run-interceptor
+                                      (with-path-params
+                                        (context-with-db)
+                                        {:id 999})
+                                      action))
+            query-results (:body response)]
+        (is (vector? query-results))
+        (is (= 1 (count query-results)))
+        (is (nil? (first query-results)))))))
