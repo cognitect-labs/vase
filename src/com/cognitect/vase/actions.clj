@@ -322,13 +322,14 @@
                               variables)
              db#            (:db ~'request)
              query-params# (concat vals# ~constants)
-             query-result#  (when (every? some? query-params#)
+             valid-params# (every? some? query-params#)
+             query-result#  (when valid-params#
                               (apply d/q '~query db# query-params#))
              response-body# (cond
-                              (nil? query-result#)  (str
-                                                      "Missing required query parameters; One or more parameters was `nil`."
-                                                      "  Got: " (keys ~args-sym)
-                                                      "  Required: " ~(mapv util/ensure-keyword variables))
+                              (not valid-params#)  (str
+                                                     "Missing required query parameters; One or more parameters was `nil`."
+                                                     "  Got: " (keys ~args-sym)
+                                                     "  Required: " ~(mapv util/ensure-keyword variables))
                               (instance? java.util.Set query-result#) (into [] query-result#)
                               :else [query-result#])
              resp#          (util/response
