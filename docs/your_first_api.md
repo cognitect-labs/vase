@@ -27,7 +27,7 @@ It also important to note that the terms *service*, *server*, *container* are al
 ## Setting Up
 
 First, be sure you have a Datomic transactor running. See
-[the Datomic docs](docs.datomic.com) to get set up. Note that the
+[the Datomic docs](http://docs.datomic.com) to get set up. Note that the
 template project uses Datomic Pro. (You can change the project.clj
 dependency to use Datomic Free. Be sure to make the corresponding
 change in the `:datomic-uri` later.)

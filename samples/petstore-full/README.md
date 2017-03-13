@@ -71,6 +71,13 @@ Datomic Pro, you will need to do a bit of prep work:
    use `datomic:pro://localhost:4334/petstore-full`
 
 
+If you want to use the in-memory Datomic database, packaged in Vase,
+then instead:
+
+1. Change all the `:datomic-uri` settings under `resources/*.edn` to
+use `datomic:mem://petstore-full`.`
+
+
 ## Getting started
 
 1. Start the application: `lein run`
