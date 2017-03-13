@@ -281,9 +281,6 @@
     :action-literal
     :vase/conform}))
 
-(defn hash-set? [x]
-  (instance? java.util.HashSet x))
-
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
   Datomic query.
@@ -327,14 +324,13 @@
              query-params# (concat vals# ~constants)
              query-result#  (when (every? some? query-params#)
                               (apply d/q '~query db# query-params#))
-             missing-params?# (not (every? some? query-params#))
              response-body# (cond
-                              missing-params?#          (str
-                                                         "Missing required query parameters; One or more parameters was `nil`."
-                                                         "  Got: " (keys ~args-sym)
-                                                         "  Required: " ~(mapv util/ensure-keyword variables))
-                              (hash-set? query-result#) (into [] query-result#)
-                              :else                     [query-result#])
+                              (nil? query-result#)  (str
+                                                      "Missing required query parameters; One or more parameters was `nil`."
+                                                      "  Got: " (keys ~args-sym)
+                                                      "  Required: " ~(mapv util/ensure-keyword variables))
+                              (instance? java.util.Set query-result#) (into [] query-result#)
+                              :else [query-result#])
              resp#          (util/response
                              response-body#
                              ~headers
