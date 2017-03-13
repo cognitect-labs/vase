@@ -58,8 +58,11 @@ the `#vase/transact` interceptor.
 
 ## Datomic preparation
 
-The EDN files are written to use Datomic Free. If you want to use
-Datomic Pro, you will need to do a bit of prep work:
+The EDN files are written to use the in-memory Datomic database,
+packed in Vase.
+
+If you want to use Datomic Pro, you will need to do a bit of prep
+work:
 
 1. Download Datomic Pro from my.datomic.com and extract it.
 2. Go to Datomic Pro's top directoy and type `bin/maven-install` to
@@ -70,12 +73,11 @@ Datomic Pro, you will need to do a bit of prep work:
 5. Change all the `:datomic-uri` settings under `resources/*.edn` to
    use `datomic:pro://localhost:4334/petstore-full`
 
+If you want to use an Datamic Free, you will need to:
 
-If you want to use the in-memory Datomic database, packaged in Vase,
-then instead:
-
-1. Change all the `:datomic-uri` settings under `resources/*.edn` to
-use `datomic:mem://petstore-full`.`
+1. [THIS PR NEEDS HELP HERE] Download/install/start Datomic
+2. Change all the `:datomic-uri` settings under `resources/*.edn` to
+use `datomic:free://localhost:4334/petstore-full`.
 
 
 ## Getting started
