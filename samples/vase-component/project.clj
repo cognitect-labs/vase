@@ -18,6 +18,7 @@
                  [com.cognitect/pedestal.vase "0.9.0"]
                  [com.stuartsierra/component "0.3.2"]]
   :main ^:skip-aot vase-component.main
+  :resource-paths ["config", "resources"]
   :profiles {:dev {:dependencies [[com.stuartsierra/component.repl "0.1.0"]
                                   [org.clojure/tools.reader "1.0.0-beta2"]
                                   [org.clojure/tools.namespace "0.3.0-alpha3"]]
