@@ -16,11 +16,11 @@
 
 (defn -main
   "Command-line main entry point."
-  []
+  [& _]
   (let [port   (env-port)
-        system (-> (system/system {})
-                   (update ::system/endpoint endpoint/with-port port)
+        system (-> (system/system)
+                   (update :endpoint endpoint/with-port port)
                    component/start)]
     (log/info :msg "System started" :port port)
     (println "Service started at port" port)
-    (endpoint/join (::system/endpoint system))))
+    (endpoint/join (:endpoint system))))
