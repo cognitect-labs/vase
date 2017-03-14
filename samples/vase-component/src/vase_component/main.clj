@@ -16,7 +16,7 @@
 
 (defn -main
   "Command-line main entry point."
-  [& _]
+  [& args]
   (let [port   (env-port)
         system (-> (system/system)
                    (update :endpoint endpoint/with-port port)
