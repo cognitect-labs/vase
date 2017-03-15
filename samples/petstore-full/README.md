@@ -75,9 +75,15 @@ work:
 
 If you want to use an Datamic Free, you will need to:
 
-1. [THIS PR NEEDS HELP HERE] Download/install/start Datomic
-2. Change all the `:datomic-uri` settings under `resources/*.edn` to
-use `datomic:free://localhost:4334/petstore-full`.
+1.	Download Datomic Free from
+    [https://my.datomic.com/downloads/free](https://my.datomic.com/downloads/free).
+    Note: Download the version used by Vase, currently "0.9.5554", but look in project.clj.
+2.	After decompressing the archive, cd in to the datomic free dir and copy
+    config/samples/free-transactor-template.properties to config/transactor.properties.
+3.	From the root datomic free directory, start the transactor via bin/transactor
+    config/transactor.properties.
+4.  Change all the `:datomic-uri` settings under `resources/*.edn` to
+    use `datomic:free://localhost:4334/petstore-full`.
 
 
 ## Getting started
