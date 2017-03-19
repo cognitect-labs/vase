@@ -60,6 +60,6 @@ Once the image it built, it's cached.  To delete the image and build a new one:
 ## Links
 
  * [Pedestal examples](https://github.com/pedestal/samples)
- * [Vase examples](https://github.com/___/vase/samples)
+ * [Vase examples](https://github.com/cognitect-labs/vase/tree/master/samples)
 
 
