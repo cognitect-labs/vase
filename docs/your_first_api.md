@@ -195,7 +195,7 @@ information about our API:
  {:accounts/v1
   {:vase.api/routes
    {"/about" {:get #vase/respond {:name :accounts.v1/about-response
-                                  :body "General User and Item InformatioN"}}}}}
+                                  :body "General User and Item Information"}}}}}
 ```
 
 Routes are defined as nested maps. Each map defines a single route,
@@ -388,7 +388,7 @@ And this request gets routed to a transaction like this:
 
 ```clojure
 "/do-stuff" {:post #vase/transact {:name :example/do-stuff-to-things
-                                   :properties [:a :b]}
+                                   :properties [:a :b]}}
 ```
 
 When the transaction executes, it will create a new entity in Datomic
@@ -418,7 +418,7 @@ string using Clojure's `(str ...)` function.
 ```clojure
  :vase/apis
  {:accounts/v1
-  {:vase/routes
+  {:vase.api/routes
    {"/about"            {:get #vase/respond {:name   :accounts.v1/about-response
                                              :body   "General User and Item Information"}}
     "/about/:your-name" {:get #vase/respond {:name   :accounts.v1/about-yourname
