@@ -15,17 +15,37 @@
 (def accepted-kinds          #{:keyword :string :boolean :long :bigint :float :double :bigdec :ref :instant :uuid :uri :bytes})
 (def accepted-cards          #{:one :many})
 
+(def schema-tx-usage
+  "#vase/schema-tx[[ _attribute-name_ _cardinality_ _type_ _toggles_* _docstring_ ]* ]")
+
+(defmacro schema-problem
+  [flavor actual]
+  `(str "#vase/schema-tx must look like this:\n\n"
+       schema-tx-usage
+       "\n\n"
+       ~flavor
+       "\n\n"
+       "I got:\n\n"
+       (pr-str ~actual)))
+
+(defmacro schema-assert
+  [f flavor emit]
+  `(when-not ~f
+     (throw (AssertionError. (schema-problem ~flavor ~emit)))))
+
 (defn parse-schema-vec
   [s-vec]
-  (assert (every? keyword? (butlast s-vec)))
+  (schema-assert (every? keyword? (butlast s-vec))
+                 "All of _attribute-name_, _cardinality_, _type_, and _toggles_ must be Clojure keywords."
+                 s-vec)
   (let [doc-string            (last s-vec)
         [ident card kind & _] (take 3 s-vec)
         opt-toggles           (take-while keyword? (drop 3 s-vec))]
-    (assert (string? doc-string) (str "The last thing in the vector must be a docstring. Instead, I got a " (type doc-string)))
-    (assert (every? #(contains? accepted-schema-toggles %) opt-toggles)
-            (str "Short schema toggles must be taken from " accepted-schema-toggles ". I found " opt-toggles))
-    (assert (contains? accepted-kinds kind) (str "The value type must be one of " accepted-kinds ". I found " kind))
-    (assert (contains? accepted-cards card) (str "The cardinality must be one of " accepted-cards ". I found " card))
+    (schema-assert (string? doc-string) "The last thing in the vector must be a docstring." s-vec)
+    (schema-assert (every? #(contains? accepted-schema-toggles %) opt-toggles)
+            (str "Short schema toggles must be taken from " accepted-schema-toggles) opt-toggles)
+    (schema-assert (contains? accepted-kinds kind) (str "The value type must be one of " accepted-kinds) kind)
+    (schema-assert (contains? accepted-cards card) (str "The cardinality must be one of " accepted-cards) card)
     (merge {:db/id                 (d/tempid :db.part/db)
             :db/ident              ident
             :db/valueType          (keyword "db.type" (name kind))
@@ -46,7 +66,8 @@
                    opt-toggles))))
 
 (defn schema-tx [form]
-  {:pre [(vector? form)]}
+  (schema-assert (vector? form) "The top level must be a vector." form)
+  (schema-assert (every? vector? form) "The top level vector must only contain other vectors" form)
   (mapv parse-schema-vec form))
 
 ;; Routing/Action literals
@@ -65,7 +86,6 @@
 
 (defmethod print-method RespondAction [t ^java.io.Writer w]
   (.write w (str "#vase/respond" (into {} t))))
-
 
 (defrecord RedirectAction [name params body status headers url]
   i/IntoInterceptor

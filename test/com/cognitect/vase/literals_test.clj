@@ -10,8 +10,8 @@
 
 ;; Schema literal tests
 (deftest test-schema-tx
-  (are [input expected] (= expected (map #(dissoc % :db/id) (read-string input)))
-    ;; One attribute
+  (are [case input expected] (testing case (= expected (map #(dissoc % :db/id) (read-string input))))
+    "One attribute"
     "#vase/schema-tx[[:entity/attribute :one :long \"A docstring\"]]"
     [{:db/ident              :entity/attribute
       :db/valueType          :db.type/long
@@ -19,7 +19,7 @@
       :db/doc                "A docstring"
       :db.install/_attribute :db.part/db}]
 
-    ;; Two attributes
+    "Two attributes"
     "#vase/schema-tx[[:e/a1 :one :long \"\"] [:e/a2 :many :string \"docstring 2\"]]"
     [{:db/ident :e/a1
       :db/valueType :db.type/long
@@ -32,7 +32,7 @@
       :db/doc                "docstring 2"
       :db.install/_attribute :db.part/db}]
 
-    ;; One toggle
+    "One toggle"
     "#vase/schema-tx[[:e/a :one :long :identity \"Doc\"]]"
     [{:db/ident              :e/a
       :db/valueType          :db.type/long
@@ -41,7 +41,7 @@
       :db/doc                "Doc"
       :db.install/_attribute :db.part/db}]
 
-    ;; Several toggles
+    "Several toggles"
     "#vase/schema-tx[[:e/a :one :string :identity :index :component :no-history :fulltext \"Doc\"]]"
     [{:db/ident              :e/a
       :db/valueType          :db.type/string
@@ -59,9 +59,25 @@
     "#vase/schema-tx[[\"not a keyword\" :one :ref \"doc\"]]"
     "#vase/schema-tx[[:e/a :one :categorically-imperative \"\"]]"
     "#vase/schema-tx[[:e/a :one :ref]]"
-    "#vase/schema-tx[#{:e/a :one :ref \"doc\"}]"))
+    "#vase/schema-tx[#{:e/a :one :ref \"doc\"}]")
 
-(run-tests)
+  (testing "helpful error messages"
+    (are [bad-input msg-pattern] (thrown-with-msg? Throwable msg-pattern (read-string bad-input))
+      "#vase/schema-tx()"
+      #"must be a vector"
+
+      "#vase/schema-tx[()]"
+      #"only contain other vectors"
+
+      "#vase/schema-tx[:e/a :one :long :identity \"Doc\"]"
+      #"must look like this"
+
+      "#vase/schema-tx[[e/a :one :long \"doc\"]]"
+      #"must be Clojure keywords"
+
+      "#vase/schema-tx[[:e/a :one :long]]"
+      #"last thing in the vector must be a docstring")))
+
 ;; Action literals tests
 ;;
 (deftest test-data-massaging
