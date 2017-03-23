@@ -154,6 +154,7 @@
   canned response. The same `body`, `status`, and `headers` arguments
   are returned for every HTTP request."
   [params edn-coerce body status headers]
+  (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) (coerce-params req-params# ~(mapv util/ensure-keyword (or edn-coerce [])))
@@ -188,6 +189,7 @@
   "Return code for a Pedestal interceptor function that returns a
   redirect response."
   [params body status headers url]
+  (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) req-params#
@@ -213,6 +215,7 @@
   "Return code for a Pedestal interceptor function that performs
   clojure.spec validation on the parameters."
   [params headers spec request-params-path]
+  (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    ~(if request-params-path
                              `(get-in ~'request ~request-params-path)
@@ -309,6 +312,7 @@
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
   [query variables coercions constants headers to]
+  (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [args-sym  (gensym 'args)
         to        (or to ::query-data)
         coercions (into #{} coercions)]
@@ -387,6 +391,7 @@
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
   [properties db-op headers to]
+  (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [to (or to ::transact-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [;args#          (merged-parameters ~'request)

@@ -23,7 +23,7 @@
     (actions/redirect-action :redirector [] "Body content" 303 {} "https://www.example.com")
     (actions/validate-action :validator  [] {} [])
     (actions/query-action    :query      [] [] [] [] {} nil)
-    (actions/transact-action :transact   [] :vase/assert-entity [] nil)))
+    (actions/transact-action :transact   [] :vase/assert-entity {} nil)))
 
 (defn- expect-response
   [actual status body headers]
@@ -64,8 +64,9 @@
 (deftest respond-action
   (testing "static response"
     (are [ status body headers action] (execute-and-expect action status body headers)
-      202 "respond-only" {}          (make-respond [] [] "respond-only" 202)
-      201 "with-header"  {"a" "b"}   (make-respond [] [] "with-header"  201 {"a" "b"})))
+      202 "respond-only" {}                (make-respond [] [] "respond-only" 202)
+      201 "with-header"  {"a" "b"}         (make-respond [] [] "with-header"  201 {"a" "b"})
+      200 "two-headers"  {"a" "b" "c" "d"} (make-respond [] [] "two-headers"  200 {"a" "b" "c" "d"})))
 
   (testing "with parameters"
     (are [expected-body action ctx] (execute-and-expect ctx action 200 expected-body {})
