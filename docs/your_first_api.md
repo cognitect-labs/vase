@@ -334,6 +334,9 @@ In this trivial example we bind part of the URL to the symbol
 `your-name` and return it as the body of our response.  URL parameters
 are always string values.
 
+Note that you can specify a default value for each of the `:params` bindings.
+For example, `:params [[your-name "Jack Florey"] [age 42]]`.
+
 Try it for [yourself](http://127.0.0.1:8080/api/accounts/v1/about/paul).
 
 Let's see how we might take multiple parameters for a given route.
