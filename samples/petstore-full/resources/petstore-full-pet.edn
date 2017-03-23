@@ -13,7 +13,7 @@
    {:vase.norm/requires [:petstore-full/pet-status-schema]
     :vase.norm/txes [#vase/schema-tx
                      [[:petstore.pet/id :one :long :unique "pet id"]
-                      [:petstore.pet/category :one :ref "Reference to :pet-stpre.category"]
+                      [:petstore.pet/category :one :ref "Reference to :petstore.category"]
                       [:petstore.pet/name :one :string "pet's name"]
                       [:petstore.pet/photoUrls :many :string "photoURL"]
                       [:petstore.pet/tags :many :ref "Reference to :pet-store.tag"]
