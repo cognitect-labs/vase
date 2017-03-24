@@ -95,8 +95,12 @@
 (defn merged-parameters
   [request]
   {:post [(map? %)]}
-  (let [{:keys [path-params params json-params edn-params]} request]
-    (merge (if (empty? path-params) {} (decode-map path-params)) params json-params edn-params)))
+  (let [{:keys [path-params params json-params transit-params edn-params]} request]
+    (merge (if (empty? path-params) {} (decode-map path-params))
+           params
+           json-params
+           transit-params
+           edn-params)))
 
 (defn resolve-payload-parameter
   [request]
