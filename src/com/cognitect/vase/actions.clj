@@ -98,6 +98,16 @@
   (let [{:keys [path-params params json-params edn-params]} request]
     (merge (if (empty? path-params) {} (decode-map path-params)) params json-params edn-params)))
 
+(defn resolve-payload-parameter
+  [request]
+  ;; Using `or` instead of not-found to prevent unnecessary lookups/evaluation
+  (or (get-in request [:json-params :payload])
+      (get-in request [:transit-params :payload])
+      (get-in request [:edn-params :payload])
+      ;; There's no technical reason not to support forms,
+      ;;  except for the lack of symmetry wrt `:payload`
+      (:form-params request)))
+
 (def eav (juxt :e :a :v))
 
 (defn apply-tx
@@ -397,7 +407,7 @@
        (let [;args#          (merged-parameters ~'request)
              args#          (mapv
                              #(select-keys % ~(vec properties))
-                             (get-in ~'request [:json-params :payload]))
+                             (resolve-payload-parameter ~'request))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)
              response-body# (apply-tx
