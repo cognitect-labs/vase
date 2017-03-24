@@ -204,9 +204,8 @@
                                         (context-with-db)
                                         {:id "100"})
                                       action))
-            query-results (:body response)]
-        (is (vector? query-results))
-        (is (= 1 (count query-results)))))
+            query-result (:body response)]
+        (is (number? query-result))))
 
     (testing "with nil params"
       (let [action        (make-query '[:find ?e :in $ ?id :where [?e :user/userId ?id]] '[id] '[id] [] nil)
@@ -227,6 +226,4 @@
                                         {:id 999})
                                       action))
             query-results (:body response)]
-        (is (vector? query-results))
-        (is (= 1 (count query-results)))
-        (is (nil? (first query-results)))))))
+        (is (= nil (read-string {:eof nil} query-results)))))))

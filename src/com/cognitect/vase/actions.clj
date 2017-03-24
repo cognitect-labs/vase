@@ -338,7 +338,7 @@
                                                          "  Got: " (keys ~args-sym)
                                                          "  Required: " ~(mapv util/ensure-keyword variables))
                               (hash-set? query-result#) (into [] query-result#)
-                              :else                     [query-result#])
+                              :else                     query-result#)
              resp#          (util/response
                              response-body#
                              ~headers

@@ -118,11 +118,11 @@
 ;; -------------------
 (defn- complete-with-errors?
   [response errors]
-  (and (seq response) (seq errors)))
+  (and (not (nil? response)) (seq errors)))
 
 (defn- bad-request?
   [response errors]
-  (and (nil? (seq response)) (seq errors)))
+  (and (nil? response) (seq errors)))
 
 (defn- exception?
   [response]
