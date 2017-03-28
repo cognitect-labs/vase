@@ -126,8 +126,8 @@ run. Not very exciting, is it? It gets better in a bit.
 
 Here are the meanings of the top-level keys:
 
-| Key | Type | Meaning |
-|-----|---------|
+| Key               | Type    | Meaning |
+|-------------------|---------|---------|
 | `:activated-apis` | Vector of API "names." | Routes for these APIs will be created. Schema used by these APIs will be applied. |
 | `:datomic-uri`    | String with a [Datomic URI](http://docs.datomic.com/javadoc/datomic/Peer.html#connect-java.lang.Object-) | This is the database that Vase will use. If it doesn't exist, Vase will create it. |
 | `:descriptor`     | Map with specific keys expected | Holds the schemas (`:vase/norms`), specs (`:vase/specs`), and APIs (`:vase/apis` |
