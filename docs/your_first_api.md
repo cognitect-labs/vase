@@ -40,35 +40,51 @@ lein new vase your-first-api
 
 ## Up and running
 
-In a dedicated console/terminal window, start the service by typing
-the following command:
+The exact sequence varies a little bit depending on whether you prefer
+Leiningen or Boot.
+
+### With Leiningen
+
+Start the service by running the following command at a terminal:
 
     lein repl
 
-If you prefer to use Boot, then run
+Once the REPL is running, start a dev mode server like this:
+
+```clojure
+(def srv (run-dev))
+```
+
+That means your server is up and running, listening on port 8080.
+
+### With Boot
+
+Start the service by running the following command at a terminal:
 
     boot repl
 
-Once a REPL is running, start a dev mode server:
+Once the REPL is running, start a dev mode server like this:
 
 ```clojure
-boot.user=> (require 'your-first-api.server)
-,,, ;; Lots of logging elided for clarity.
-INFO  org.eclipse.jetty.util.log - Logging initialized @75260ms to org.eclipse.jetty.util.log.Slf4jLog
-nil
-boot.user=> (def s (your-first-api.server/run-dev))
-
-Creating your [DEV] server...
-INFO  org.eclipse.jetty.server.Server - jetty-9.4.0.v20161208
-INFO  o.e.j.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@20f01b95{/,null,AVAILABLE}
-INFO  o.e.jetty.server.AbstractConnector - Started ServerConnector@5d04c566{HTTP/1.1,[http/1.1, h2c]}{0.0.0.0:8080}
-INFO  org.eclipse.jetty.server.Server - Started @85814ms
-#'boot.user/s
+(require 'your-first-api.server)
+(in-ns 'your-first-api.server)
+(def srv (your-first-api.server/run-dev))
 ```
 
-## An Accounts System
+### Either way
 
-Let's build a system to handle basic user accounts and items those users own.
+There will be a lot of logging, but it should end with something like
+this:
+
+```
+INFO  o.e.jetty.server.AbstractConnector - Started ServerConnector@5d04c566{HTTP/1.1,[http/1.1, h2c]}{0.0.0.0:8080}
+INFO  org.eclipse.jetty.server.Server - Started @85814ms
+```
+
+## A Personal Inventory System
+
+Let's build a system to handle basic user accounts and can track items
+they own.
 
 With this simple goal statement, we can already envision some pieces
 of the data model and even some URLs that might appear in the API.
@@ -86,30 +102,53 @@ And we might have URLs that:
  * Fetch a user's owned-item list given their user ID
  * etc.
 
-## Building the data model
-
-Data models are defined with a schema.  You may split your schema up
-into logical pieces that map directly to your application domain.  In
-our example, we'll define part of the schema for Items, and another
-part for Users.
-
-We can put the description into a `.edn` file that our service can
-load. The description will tell Vase how a single application works
-(potentially with multiple API versions.) Later, we will combine that
-with some deployment configuration to pick out which applications and
-which versions we want to activate, along with the Datomic URI to
-operate against.
+We put the description into a `.edn` file that our service loads. (EDN
+is specified by https://github.com/edn-format/edn.) This description
+tells Vase what API a service offers, what schema it defines, and what
+specifications the data must follow.
 
 The Vase template created `resources/your-first-api_service.edn` with
-a lot of examples. Locate the section with the key `:vase/norms`. The
-value of `:vase/norms` is a map of schema ID to schema definition. The
-schema ID is a namespaced keyword that you get to pick. (But don't use
-`vase` as the namespace or you will confuse parts of your application
-with parts of Vase itself.)
+a lot of examples. For the moment, it has too much. Just delete that
+file and start a fresh one with these contents:
 
-Thanks to the template, we have a lot of stuff inside
-`:vase/norms`. Start by clearing out the current value of
-`:vase/norms` and replace it with this:
+```clojure
+{:activated-apis []
+ :datomic-uri "datomic:mem://example"
+ :descriptor
+
+ {:vase/norms {}
+  :vase/specs {}
+  :vase/apis  {}}}
+```
+
+This says we have no schema, no APIs, no specs, and nothing will
+run. Not very exciting, is it? It gets better in a bit.
+
+Here are the meanings of the top-level keys:
+
+| Key | Type | Meaning |
+|-----|---------|
+| `:activated-apis` | Vector of API "names." | Routes for these APIs will be created. Schema used by these APIs will be applied. |
+| `:datomic-uri`    | String with a [Datomic URI](http://docs.datomic.com/javadoc/datomic/Peer.html#connect-java.lang.Object-) | This is the database that Vase will use. If it doesn't exist, Vase will create it. |
+| `:descriptor`     | Map with specific keys expected | Holds the schemas (`:vase/norms`), specs (`:vase/specs`), and APIs (`:vase/apis` |
+
+## Building the data model
+
+We often start with a model of the entities a service must manipulate.
+
+Data models are defined with a schema (called "norms" for historical
+reasons.)  You may split your schema up into logical pieces that map
+directly to your application domain.  In our example, we'll define
+one part of the schema for Items, and another part for Users.
+
+The `:vase/norms` key is where we put schema definitions. It holds a
+map of "schema name" to schema definition. The schema name is a
+keyword that you choose. We recommend using a namespaced keyword. It's
+best to avoid using `vase` as part of your namespace. It's not a
+reserved name, but you may confuse parts of your application with
+parts that Vase requires.
+
+To start with, let's make space for our two schemas:
 
 ```clojure
  :vase/norms
@@ -129,57 +168,74 @@ we can describe a user's owned items. You'll also notice that
 attributes of a given entity are defined in terms of database
 transactions (*txes*) that describe them.
 
-```clojure
- :vase/norms
- {:accounts/item
-  {:vase.norm/txes [#vase/schema-tx
-                     [[:item/itemId      :one :long   :unique   "The unique identifier for an item"]
-                      [:item/name        :one :string           "The name of an item"]
-                      [:item/description :one :string :fulltext "A short description of the item"]]]}
+Vase offers a reader literal shorthand called `#vase/schema-tx` for
+defining Datomic schema transactions within `:vase.norms/txes`. Its
+body is a vector of vectors.  Each subvector defines an attribute
+name, its cardinality (`:one` or `:many`), its type, some optional
+flags, and a doc string.
 
-  :accounts/user
-  {:vase.norm/requires [:accounts/item]
-   :vase.norm/txes [#vase/schema-tx
-                     [[:user/userId      :one  :long   :unique "The unique identifier for a user"]
-                      [:user/email       :one  :string :unique "The email address for a given user"]
-                      [:user/items       :many :ref            "The collection of items a user owns"]]]}}
+The allowed flags are translated into parts of the attribute
+definition for Datomic:
 
-```
+| Flag | Meaning | Equates to |
+|----------------|---------|------------|
+| `:unique`      | Only one entity in the DB can have this value for this attribute  | `:db/unique :db.unique/value`    |
+| `:identity`    | An entity is uniquely identified by this value. Upsert is enabled | `:db/unique :db.unique/identity` |
+| `:index`       | This attribute should be indexed                                  | `:db/index true                  |
+| `:fulltext`    | This attribute should be searchable as text. (Mildly deprecated.) | `:db/fulltext true               |
+| `:component`   | The entity referenced by this attribute should be retracted when this one is. (Cascading delete) | `:db/isComponent true` |
+| `:no-history`  | Do not preserve old values of this attribute                      | `:db/noHistory true`             |
 
-Vase offers a shorthand for defining Datomic schema transactions
-within `:vase.norms/txes`. This tag marks a vector of vectors.  Each
-subvector defines an attribute, its cardinality, its type, an optional
-qualifier (unique, index, or fulltext), and a doc string. Attribute
-names are *namespaced* with the entity name to which they apply. The
-optional qualifiers let you mark attributes that have `:unique`
-values, that the DB should `:index`, or that allow for `:fulltext`
-search.  `:fulltext` also implies `:index`.  You can also say an
-entity's unique `:identity` can be determined by an attribute, which
-is useful when you want to ensure an entity can be upserted
-(`user_id`), but not when you want to avoiding adding a new user that
-already exists (say, given their `email` - a `:unique` attribute).
 
 Even though the short-schema version covers most of the use cases
 you'll need, you're always free to use full Datomic
 [schema](http://docs.datomic.com/schema.html) definitions like:
 
 ```clojure
-{:db/id          #db/id[:db.part/db]
- :db/ident       :item/name
- :db/valueType   :db.type/string
- :db/cardinality :db.cardinality/one
- :db/doc         "The name of an item"
- :db.install/_attribute :db.part/db}
+:vase.norm/txes [[{:db/id          #db/id[:db.part/db]
+                   :db/ident       :item/name
+                   :db/valueType   :db.type/string
+                   :db/cardinality :db.cardinality/one
+                   :db/doc         "The name of an item"}]]
 ```
 
-Just put that entity map in the outer vector, as a sibling to the
-"shorthand" vectors.
+A common convention for attribute names is that the namespace
+identifies the "entity type" that the attribute belongs to. This is
+strictly for human consumption, though. Datomic doesn't have any
+notion of entity type and doesn't care how you mix and match
+attributes.
+
+
+Fill in the schema parts like this:
+
+```clojure
+ :vase/norms
+ {:accounts/item
+  {:vase.norm/txes [#vase/schema-tx
+                     [[:item/itemId      :one :long   :identity "The unique identifier for an item"]
+                      [:item/name        :one :string           "The name of an item"]
+                      [:item/description :one :string           "A short description of the item"]]]}
+
+  :accounts/user
+  {:vase.norm/requires [:accounts/item]
+   :vase.norm/txes [#vase/schema-tx
+                     [[:user/userId      :one  :long   :identity "The unique identifier for a user"]
+                      [:user/email       :one  :string :unique   "The email address for a given user"]
+                      [:user/items       :many :ref              "The collection of items a user owns"]]]}}
+```
+
+This says the `:accounts/item` schema has three attributes:
+`:item/itemId`, `:item/name`, and `:item/description`. The
+`:accounts/user` schema has three more attributes: `:user/userId`,
+`:user/email`, and `:user/items`. Furthermore, the `:accounts/user`
+schema requires that the `:accounts/item` schema must be in place
+first. (It doesn't really... there are no definitions in
+`:accounts/user` that depend on `:accounts/item`. This is just for
+illustration in this tutorial.)
 
 ## Making It Act
 
-We can now begin building out an HTTP API for our data model. This
-will let third-party application and other internal services make use
-of our data.
+With the data model in place, we can build our API.
 
 Vase defines routes defined with URL strings, HTTP verbs (get, post,
 etc), and action literals.  The foundation of Vase's routing is based
@@ -187,8 +243,7 @@ on [Pedestal's
 capabilities](http://pedestal.io/reference/routing-quick-reference),
 but with care given to represent routes in an external data file.
 
-Here is a route that gives some
-information about our API:
+Fill in `:vase/apis` with this route that gives some information about our API:
 
 ```clojure
  :vase/apis
@@ -199,10 +254,10 @@ information about our API:
 ```
 
 Routes are defined as nested maps. Each map defines a single route,
-and then a map of HTTP verbs to action literals. Here we see that *GET
-/api/accounts/v1/about* will respond with a text body. Every action
-literal requires a unique `:name`. Other keys and their
-interpretations are defined per literal.
+and then a map of HTTP verbs to action literals---in this case
+`#vase/respond`. Every action literal requires a unique `:name`. Other
+keys and their interpretations are defined per literal.  Here we see
+that `GET /api/accounts/v1/about` will respond with a string.
 
 These are the action literals:
 
@@ -215,7 +270,7 @@ These are the action literals:
 | `#vase/validate`  | Validate data against specs                            |
 | `#vase/intercept` | Apply a hand-crafted, artisinal interceptor            |
 
-An API depends on some amount of schema existing. In this example,
+An API usually depends on some amount of schema. In this example,
 we've added a dependency from the `:accounts/v1` API to the User
 schema. Since the User schema depends on the Item schema, both parts
 of schema will be applied to our database.
@@ -226,6 +281,44 @@ of schema will be applied to our database.
   {:vase.api/routes  ,,, ;; skipping the routes for space
    :vase.api/schemas [:accounts/user]}}}
 ```
+
+An API can depend on any number of schemas.  You should feel free to
+grow and evolve your schema by adding new "norms."
+
+One note: Vase tracks which schemas it has already applied to a
+database. Think of each schema like a migration in other database
+frameworks: once it's applied to the database you don't change
+it. Just add new schemas under `:vase/schemas` and add them to your
+APIs' `:vase.api/schemas` dependencies.
+
+## Activating the API
+
+You can use curl to test the new URL, but it won't work yet.
+
+```
+curl http://localhost:8080/api/accounts/v1/about
+```
+
+If you've been following along in this guide, you got a 404 response
+just now. That's because Vase has one more concept about APIs:
+activation.
+
+A single EDN file can define many APIs and many schema fragments. It
+is up to a service instance to determine which of these to activate
+using the top-level key `:activated-apis`. This is in the EDN file for
+ease, but could be supplied separately as part of your service
+config. (For example, as EC2 instance data.)
+
+To activate the accounts API, modify the top of your EDN file like
+this:
+
+```clojure
+{:activated-apis [:accounts/v1]
+ ,,,
+```
+
+Now re-run curl and you'll get back a 200 status code with the body
+string from our `#vase/respond` literal.
 
 ## Forwarding Headers
 
@@ -242,49 +335,10 @@ level of the whole API:
    :vase.api/forward-headers ["vaserequest-id"]}}}
 ```
 
-
-Since our API is only about providing operations for user details and
-accounts, we only need to depend on/declare the user schema.  Above
-we're saying that version *v1* of our *accounts* API uses the
-*user-schema*, and to forward the *vaserequest-id* header from every
-request to every response.  This HTTP header is used to trace and
+This says to forward the `vaserequest-id` header from every
+request to every response. This HTTP header is used to trace and
 debug requests to the service (and is automatically added if it's not
 sent in).
-
-An API can depend on any number of schemas.  You should feel free to
-grow and evolve your normalized schema `:norms` and add them to you
-APIs `:schema` dependencies. This is one of the major benefits of
-Datomic.
-
-## Try it out
-
-You can use curl to test the new URL.
-
-```
-curl http://localhost:8080/api/accounts/v1/about
-```
-
-If you've been following along in this guide, you got a 404 response
-just now. That's because Vase has one more concept about APIs:
-activation.
-
-A single EDN file can define many APIs and many schema fragments. It
-is up to a service instance to determine which of these to activate
-using the top-level key `:activated-apis`. This is in the EDN file for
-ease, but can be supplied separately as part of your service
-config. (For example, as EC2 instance data.)
-
-To activate the accounts API, modify the top of your EDN file like
-this:
-
-```clojure
-{:activated-apis [:accounts/v1]
- ,,,
-```
-
-Now re-run curl and you'll get back a 200 status code with the body
-string from our `#vase/respond` literal.
-
 
 ## Handling Parameters
 
@@ -314,8 +368,12 @@ complete reference on parameters.
 
 Let's look at them from the bottom up.
 
-URL parameters bind a single value from a URL to a symbol name in your
-action literal. Here's an example with a URL parameter:
+### Path Parameters
+
+A path parameter binds a single value from a URL to a symbol name in your
+action literal.
+
+Add a route with a path parameter:
 
 ```clojure
  :vase/apis
@@ -330,19 +388,21 @@ action literal. Here's an example with a URL parameter:
    :vase.api/forward-headers ["vaserequest-id"]}}
 ```
 
-In this trivial example we bind part of the URL to the symbol
-`your-name` and return it as the body of our response.  URL parameters
-are always string values.
+In this trivial example we bind part of the URL path to the symbol
+`your-name` and return it as the body of our response. A path
+parameter value is always a string.
 
-Note that you can specify a default value for each of the `:params` bindings.
-For example, `:params [[your-name "Jack Florey"] [age 42]]`.
+Try it out with curl:
 
-Try it for [yourself](http://127.0.0.1:8080/api/accounts/v1/about/paul).
+    curl http://127.0.0.1:8080/api/accounts/v1/about/paul
 
 Let's see how we might take multiple parameters for a given route.
 
-Query string args are typically used for filtering the result of returned data.
-Here's an example were we'll return a JSON response for all of our expected query args
+### Query Parameters
+
+Query string args are typically used for filtering the result of
+returned data.  Here's an example were we'll return a JSON response
+for all of our expected query args
 
 ```clojure
  :vase/apis
@@ -354,30 +414,47 @@ Here's an example were we'll return a JSON response for all of our expected quer
                                              :params [your-name]
                                              :body   your-name}}
     "/aboutquery"       {:get #vase/respond {:name   :accounts.v1/about-query
-                                             :params [one-thing another-thing]
+                                             :params [first-param second-param]
                                              :body   {:first-param  one-thing
                                                       :second-param another-thing}}}}
    :vase.api/schemas         [:accounts/user]
    :vase.api/forward-headers ["vaserequest-id"]}}
 ```
 
-Hit [the new
-url](http://127.0.0.1:8080/api/accounts/v1/aboutquery?one-thing=hello&another-thing=world),
-you'll notice that the response that comes back is JSON, not text like
-the other `respond` actions we specified.  When the body of a response
-is not a string, it's automatically converted into JSON.
+With curl:
 
-## A dangerous truth
+    curl 'http://127.0.0.1:8080/api/accounts/v1/aboutquery?one-thing=hello&another-thing=world'
 
-So far, we've lead you to believe that action literals are *purely*
+(Make sure you quote the whole string properly... the '?' and '&' mean
+something entirely different to the shell.)
+
+Notice that the response that comes back is JSON, not text like the
+other `#vase/respond` action we specified. That's because the new action
+returned a Clojure data structure instead of a string. When the body
+of a response is not a string, Vase converts it to JSON.
+
+### Parameter Defaults
+
+You can provide a default value for any `:params` binding.
+For example, `:params [your-name [age 42]]`. Of course, if a path
+parameter is nil, then the route didn't even match. But query and body
+parameters can be defaulted this way.
+
+## A Dangerous Truth
+
+So far, we've lead you to believe that action literals are _purely_
 data. That's not entirely true.
 
-During the symbol escaping process, all function that are part of Clojure's core
-will correctly resolve, unless you have bound a symbol of the same name in `:params`.
+Many parts of the action literals are evaluated as code, in an
+environment where the parameter names are bound. Everything from
+`clojure.core` is available. That is, unless you shadow something from
+`clojure.core` with a parameter name!
 
-This means we can add some basic functionality to our `#respond`
+This means we can add a function call directly to our `#vase/respond`
 actions.  Let's update our url-param route to print a more interesting
-string using Clojure's `(str ...)` function.
+string using `clojure.core/str`.
+
+Modify the action for "/about/:your-name" like this:
 
 ```clojure
  :vase/apis
@@ -387,7 +464,7 @@ string using Clojure's `(str ...)` function.
                                              :body   "General User and Item Information"}}
     "/about/:your-name" {:get #vase/respond {:name   :accounts.v1/about-yourname
                                              :params [your-name]
-                                             :body (str "You said your name was: " your-name)}}
+                                             :body   (str "You said your name was: " your-name)}}
     "/aboutquery"       {:get #vase/respond {:name   :accounts.v1/about-query
                                              :params [one-thing another-thing]
                                              :body   {:first-param  one-thing
@@ -406,48 +483,45 @@ descriptors!
 
 ## Getting data in with `transact`
 
-In addition to rendering content, the Vase system also provides a `#transact`
-action allowing the storage of incomming POST data.
+In addition to rendering content, the Vase system also provides a
+`#vase/transact` action allowing the storage of incomming POST data.
 
-All of the POST params work the same way. Vase expects the data to
-arrive as a JSON entity body. The `#vase/transact` interceptor gets
-the contents of the body's `payload` parameter. That parameter will be
-a sequence of maps, where each map gets passed to the `#vase/transact`
-action.
+Vase expects transaction data to arrive as a JSON entity body. The top
+level of the body is an object with the single key `payload`. The
+payload should be a collection of entity bodies (i.e., maps) to transact.
 
-Observe the following addition to the system descriptor:
+Add the "/user" route shown here to your descriptor:
 
 ```clojure
   :vase/apis
   {:accounts/v1
    {:vase.api/routes
-    {"/about"            {:get #vase/respond  {:name :accounts.v1/about-response
-                                               :body "General User and Item InformatioN"}}
-     "/about/:your-name" {:get #vase/respond  {:name   :accounts.v1/about-yourname
-                                               :params [your-name]
-                                               :body (str "You said your name was: " your-name)}}
-
-     "/aboutquery"       {:get #vase/respond  {:name   :accounts.v1/about-query
-                                               :params [one-thing another-thing]
-                                               :body   {:first-param  one-thing
-                                                        :second-param another-thing}}}
-     "/user"             {:post #vase/transact {:name :accounts.v1/user-create
-                                                :properties [:db/id
-                                                             :user/userId
-                                                             :user/email]}}}
-   :vase.api/schemas         [:accounts/user]
-   :vase.api/forward-headers ["vaserequest-id"]}}
+     {"/about"            {:get #vase/respond    {:name       :accounts.v1/about-response
+                                                  :body       "General User and Item Information"}}
+      "/about/:your-name" {:get #vase/respond    {:name       :accounts.v1/about-yourname
+                                                  :params     [your-name]
+                                                  :body       (str "You said your name was: " your-name)}}
+      "/aboutquery"       {:get #vase/respond    {:name       :accounts.v1/about-query
+                                                  :params     [one-thing another-thing]
+                                                  :body       {:first-param  one-thing
+                                                              :second-param another-thing}}}
+       "/user"             {:post #vase/transact {:name       :accounts.v1/user-create
+                                                  :properties [:db/id
+                                                               :user/userId
+                                                               :user/email]}}}
+    :vase.api/schemas         [:accounts/user]
+    :vase.api/forward-headers ["vaserequest-id"]}}
 ```
 
-The added `#vase/transact` literal shown above consists of a single
-element `:properties`. The `:properties` field describes the
-whitelisted properties accepted in a set of incoming POST data.  The
-properties `:user/userId` and `:user/userEmail` are fairly
-self-explanatory, but the `:db/id` property is handled specially.
-That is, the `:db/id` key signifies if the incoming data refers to
-existing entities in the Vase database, or to new entities.  For
-example, consider the following JSON corresponding to incoming POST
-data:
+The new route has a single `#vase/transact` literal with a name and
+properties. The `:properties` key holds a whitelist of attribute names
+that Vase will accept in the incoming POST data. In this case, the
+payload should have a sequence of maps that each have `:user/userId`
+and `:user/email` keys and values. These will be asserted in Datomic.
+
+### Try a Transaction
+
+We want to POST the following JSON
 
 ```json
 {"payload":
@@ -458,16 +532,44 @@ data:
 }
 ```
 
-This is how you would use cURL to POST such a payload::
+This is how you would use cURL to POST such a payload:
 
 ```
 curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"user/userId": 42, "user/email": "user@example.com"}]}' http://localhost:8080/api/accounts/v1/user
 ```
 
-The JSON packet above, because it does not contain a `:db/id` field
-refers to a new entity and the return value from the Vase service will
-return its newly created `:db/id`.  On the other hand, the following
-JSON refers to an existing entity in the database:
+The quoting is a little different on Windows:
+
+```
+curl -H "Content-Type: application/json" -X POST -d "{\"payload\":[{\"user/userId\":42,\"user/email\":\"user@example.com\"}]}" http://localhost:8080/api/accounts/v1/user
+```
+
+Give it a try!
+
+### Insert, Assert, Upsert
+
+The properties `:user/userId` and `:user/userEmail` are fairly
+self-explanatory, but the `:db/id` property is handled specially.
+That is, the `:db/id` key signifies if the incoming data refers to
+existing entities in the Vase database, or to new entities.
+
+In the JSON packet above, the entity did not contain a `:db/id`
+field. Vase treats it as a new entity and attaches a tempid before
+asserting it.
+
+At this point, one of three things will happen:
+
+1. The entity has an `:identity` attribute whose value matches an
+   existing entity in the database. This becomes an "upsert" on that
+   entity: the new attribute values are _merged_ with the existing
+   entity.
+2. The entity has a `:unique` value that already exists in the
+   database. Because it has a tempid, Datomic will reject the
+   transaction and Vase will return an error to the client.
+3. Neither of the above are true, and Datomic will create a new
+   entity.
+
+It is possible to supply a db/id directly, like this:
 
 ```json
 {"payload":
@@ -479,14 +581,14 @@ JSON refers to an existing entity in the database:
 }
 ```
 
-Because the `:db/id` field is set to a value the Vase system will
-attempt to resolve the entity in the database before transacting the
-data.  Obviously, if no such entity exists then a failure will occur,
+Because the `:db/id` field is set to a value, Vase will try to
+resolve the entity in the database before transacting the
+data. Obviously, if no such entity exists then a failure will occur,
 thus notifying the calling client.
 
 One final way to refer to existing entities is to set the value at the
 `:db/id` field to correspond to a unique value for the entity in
-question.  For example:
+question. For example:
 
 ```json
 {"payload":
@@ -497,58 +599,64 @@ question.  For example:
 }
 ```
 
-Because the User IDs are unique to each user, they can be used to
-demarcate a unique entity in the database for the purposes of
-transcting associated data. See Datomic's [lookup
-refs](http://docs.datomic.com/identity.html#lookup-refs) for more
-details.
+We declared `:user/userId` as an `:identity` attribute. That means we
+can use it in lookup refs as well as doing upsert with it.
+
+See Datomic's
+[lookup refs](http://docs.datomic.com/identity.html#lookup-refs) for
+more details.
 
 ## Getting data out with `query`
 
-The `#query` action provides a way to defining service routes that
-return data based on Datalog queries. Observe the following addition
-to the descriptor:
+The `#vase/query` action provides a way to define service routes that
+return data based on Datalog queries.
+
+Go ahead and add a `:get` action to the "/user" route like this:
 
 ```clojure
   :vase/apis
   {:accounts/v1
    {:vase.api/routes
-    {"/about"            {:get #vase/respond  {:name :accounts.v1/about-response
-                                               :body "General User and Item InformatioN"}}
-     "/about/:your-name" {:get #vase/respond  {:name   :accounts.v1/about-yourname
-                                               :params [your-name]
-                                               :body (str "You said your name was: " your-name)}}
-
-     "/aboutquery"       {:get #vase/respond  {:name   :accounts.v1/about-query
-                                               :params [one-thing another-thing]
-                                               :body   {:first-param  one-thing
-                                                        :second-param another-thing}}}
-     "/user"             {:post #vase/transact {:name :accounts-v1/user-create
-                                                :properties [:db/id
-                                                             :user/userId
-                                                             :user/email]}
-                          :get #vase/query     {:name :accounts.v1/user-page
-                                                :params [email]
-                                                :query [:find ?e
-                                                :in $ ?email
-                                                :where [?e :user/email ?email]]}}}
-   :vase.api/schemas         [:accounts/user]
-   :vase.api/forward-headers ["vaserequest-id"]}}
+     {"/about"            {:get #vase/respond    {:name       :accounts.v1/about-response
+                                                  :body       "General User and Item Information"}}
+      "/about/:your-name" {:get #vase/respond    {:name       :accounts.v1/about-yourname
+                                                  :params     [your-name]
+                                                  :body       (str "You said your name was: " your-name)}}
+      "/aboutquery"       {:get #vase/respond    {:name       :accounts.v1/about-query
+                                                  :params     [one-thing another-thing]
+                                                  :body       {:first-param  one-thing
+                                                              :second-param another-thing}}}
+       "/user"             {:post #vase/transact {:name       :accounts.v1/user-create
+                                                  :properties [:db/id
+                                                               :user/userId
+                                                               :user/email]}
+                            :get #vase/query     {:name       :accounts.v1/user-page
+                                                  :params     [email]
+                                                  :query      [:find ?e
+                                                               :in $ ?email
+                                                               :where [?e :user/email ?email]]}}}
+    :vase.api/schemas         [:accounts/user]
+    :vase.api/forward-headers ["vaserequest-id"]}}
 ```
 
-One query route is defined above called `/user`. This route supports
-both POST and GET requests. A POST request hits the `#vase/transact`
-action, while a GET runs the `#vase/query` action. The query looks up
-an entity based on a query string parameter. The two main keys of
-interest in the `#vase/query` action are `:params` and
-`:query`. (We'll discuss an optional third property a bit later.) The
-`:params` property defines the accepted keyed data names that are used
-as external arguments to the query to resolve those listed parameters
-to the incoming values. You can think of these as the additional
-arguments to `datomic.api/q`, after the database value itself. If the
-`:params` field is empty or missing, they query doesn't accept any
-arguments. In that case all parameters in the URL, query string, form,
-etc. will be ignored. The `:query` property contains a Datomic
+The "/user" route now supports both POST and GET requests.  The POST
+request hits the `#vase/transact` the same as before. Now a GET runs
+the `#vase/query` action. The query looks up an entity based on a
+query string parameter. The two main keys of interest in the
+`#vase/query` action are `:params` and `:query`. (We'll discuss an
+optional third property a bit later.)
+
+The `:params` property defines
+the accepted keyed data names that are used as external arguments to
+the query to resolve those listed parameters to the incoming
+values. The `#vase/query` action passes these as extra arguments to
+`datomic.api/q`, following the database value itself.
+
+If the `:params` field is empty or missing, they query doesn't accept
+any arguments. In that case all parameters in the URL, query string,
+form, etc. will be ignored.
+
+The `:query` property contains a Datomic
 [datalog query](http://docs.datomic.com/query.html).
 
 One limitation of providing query parameters as URL arguments or path
@@ -580,7 +688,7 @@ valid EDN data type.  Therefore, when clients hit the URL bound to
 that query the proper types will match (i.e. the DB expects integer
 IDs, not string IDs).
 
-## Querying `or` and other constants
+### Querying `or` and other constants
 
 It's often useful to model a query that match against anything within
 a given data set, for example, "Give me all users whose email is in
@@ -604,6 +712,13 @@ An example of simple constants follows - observe our last change to the schema b
                                           :where
                                           [?e :user/email ?email]]}}
 ```
+
+## Be Persistent
+
+So far, we've used an in-memory URI for Datomic. That means just what
+it sounds like: values are only stored in memory. To make it
+persistent, you need to pick a [storage engine]() and update the
+`:datomic-uri` value.
 
 ## Wrapping Up
 
