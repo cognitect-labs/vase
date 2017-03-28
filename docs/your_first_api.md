@@ -195,7 +195,7 @@ information about our API:
  {:accounts/v1
   {:vase.api/routes
    {"/about" {:get #vase/respond {:name :accounts.v1/about-response
-                                  :body "General User and Item InformatioN"}}}}}
+                                  :body "General User and Item Information"}}}}}
 ```
 
 Routes are defined as nested maps. Each map defines a single route,
@@ -367,45 +367,6 @@ you'll notice that the response that comes back is JSON, not text like
 the other `respond` actions we specified.  When the body of a response
 is not a string, it's automatically converted into JSON.
 
-## Working with POST data
-
-All of the POST params work the same way. Vase expects the data to
-arrive as a JSON entity body. The `#vase/transact` interceptor gets
-the contents of the body's `payload` parameter. That parameter will be
-a sequence of maps, where each map gets passed to the `#vase/transact`
-action.
-
-Just as an example, suppose you created a JSON payload posted to your
-endpoint like:
-
-```json
-{"payload":
- [{
-  "a" : "Hello",
-  "b" : "World"
- }]
-}
-```
-
-And this request gets routed to a transaction like this:
-
-```clojure
-"/do-stuff" {:post #vase/transact {:name :example/do-stuff-to-things
-                                   :properties [:a :b]}
-```
-
-When the transaction executes, it will create a new entity in Datomic
-with the entity map `{:a "Hello" :b "World"}`.
-
-(We haven't defined any attributes like `:a` and `:b` in the
-norms... this is just an example.)
-
-This is how you would use cURL to POST such a payload::
-
-```
-curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"a": "Hello", "b": "World"}]}' http://localhost:8080/api/example/do-stuff
-```
-
 ## A dangerous truth
 
 So far, we've lead you to believe that action literals are *purely*
@@ -421,7 +382,7 @@ string using Clojure's `(str ...)` function.
 ```clojure
  :vase/apis
  {:accounts/v1
-  {:vase/routes
+  {:vase.api/routes
    {"/about"            {:get #vase/respond {:name   :accounts.v1/about-response
                                              :body   "General User and Item Information"}}
     "/about/:your-name" {:get #vase/respond {:name   :accounts.v1/about-yourname
@@ -446,8 +407,15 @@ descriptors!
 ## Getting data in with `transact`
 
 In addition to rendering content, the Vase system also provides a `#transact`
-action allowing the storage of incomming POST data.  Observe the following addition
-to the system descriptor:
+action allowing the storage of incomming POST data.
+
+All of the POST params work the same way. Vase expects the data to
+arrive as a JSON entity body. The `#vase/transact` interceptor gets
+the contents of the body's `payload` parameter. That parameter will be
+a sequence of maps, where each map gets passed to the `#vase/transact`
+action.
+
+Observe the following addition to the system descriptor:
 
 ```clojure
   :vase/apis
@@ -488,6 +456,12 @@ data:
     "user/email" : "user@example.com"
   }]
 }
+```
+
+This is how you would use cURL to POST such a payload::
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"payload": [{"user/userId": 42, "user/email": "user@example.com"}]}' http://localhost:8080/api/accounts/v1/user
 ```
 
 The JSON packet above, because it does not contain a `:db/id` field
