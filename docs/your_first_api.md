@@ -181,8 +181,8 @@ definition for Datomic:
 |----------------|---------|------------|
 | `:unique`      | Only one entity in the DB can have this value for this attribute  | `:db/unique :db.unique/value`    |
 | `:identity`    | An entity is uniquely identified by this value. Upsert is enabled | `:db/unique :db.unique/identity` |
-| `:index`       | This attribute should be indexed                                  | `:db/index true                  |
-| `:fulltext`    | This attribute should be searchable as text. (Mildly deprecated.) | `:db/fulltext true               |
+| `:index`       | This attribute should be indexed                                  | `:db/index true`                  |
+| `:fulltext`    | This attribute should be searchable as text. (Mildly deprecated.) | `:db/fulltext true`               |
 | `:component`   | The entity referenced by this attribute should be retracted when this one is. (Cascading delete) | `:db/isComponent true` |
 | `:no-history`  | Do not preserve old values of this attribute                      | `:db/noHistory true`             |
 
@@ -717,7 +717,7 @@ An example of simple constants follows - observe our last change to the schema b
 
 So far, we've used an in-memory URI for Datomic. That means just what
 it sounds like: values are only stored in memory. To make it
-persistent, you need to pick a [storage engine]() and update the
+persistent, you need to pick a [storage engine](http://docs.datomic.com/storage.html#storage-services) and update the
 `:datomic-uri` value.
 
 ## Wrapping Up
