@@ -414,7 +414,7 @@ for all of our expected query args
                                              :params [your-name]
                                              :body   your-name}}
     "/aboutquery"       {:get #vase/respond {:name   :accounts.v1/about-query
-                                             :params [first-param second-param]
+                                             :params [one-thing another-thing]
                                              :body   {:first-param  one-thing
                                                       :second-param another-thing}}}}
    :vase.api/schemas         [:accounts/user]
