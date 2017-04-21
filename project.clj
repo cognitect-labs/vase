@@ -12,6 +12,8 @@
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.5.2"]
 
+                 [com.cognitect/fern "0.1.0-SNAPSHOT"]
+
                  ;; Cleanup
                  [commons-codec "1.10"]
                  [cheshire "5.6.3"]]

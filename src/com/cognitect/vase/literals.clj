@@ -177,3 +177,15 @@
                      :enter enter
                      :leave leave
                      :error error})))
+
+(defrecord AttachAction [name key val]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (actions/attach-action name key val)))
+
+(defn attach [form]
+  {:pre [(map? form)]}
+  (map->AttachAction form))
+
+(defmethod print-method AttachAction [t ^java.io.Writer w]
+  (.write w (str "#vase/attach" (into {} t))))

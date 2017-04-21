@@ -426,3 +426,19 @@
 
     :action-literal
     :vase/transact}))
+
+(defn- attach-action-exprs
+  [key val]
+  `(fn [~'context]
+     (assoc ~'context ~key ~val)))
+
+(defn attach-action
+  "Returns a Pedestal interceptor that attaches a value to a key in the context."
+  [name key val]
+  (dynamic-interceptor
+   name
+   :attach
+   {:enter
+    (attach-action-exprs key val)
+    :action-literal
+    :vase/attach}))
