@@ -1,5 +1,9 @@
 (ns com.cognitect.vase.fern
-  (:require [com.cognitect.vase.interceptor :as vinterceptor]
+  (:require [com.cognitect.vase :as vase]
+            [com.cognitect.vase.datomic :as datomic]
+            [com.cognitect.vase.interceptor :as vinterceptor]
+            [com.cognitect.vase.literals :as literals]
+            [datomic.api :as d]
             [fern :as f]
             [fern.easy :as easy]
             [io.pedestal.http :as http]
@@ -8,9 +12,7 @@
             [io.pedestal.http.csrf :as csrf]
             [io.pedestal.http.params :as params]
             [io.pedestal.http.ring-middlewares :as ring-middlewares]
-            [com.cognitect.vase.literals :as literals]
-            [com.cognitect.vase.datomic :as datomic]
-            [com.cognitect.vase :as vase]))
+            [io.pedestal.interceptor :as i]))
 
 (defn- synthetic-interceptor-name
   [description]
@@ -55,13 +57,11 @@
          `(function-for-literal ~s ~f))))
 
 (fn-lits
-
  'vase/respond                    literals/respond
  'vase/redirect                   literals/redirect
  'vase/conform                    literals/conform
  'vase/validate                   literals/validate
 ; 'vase.datomic/db-from-connection literals/datomic-db-from-connection
-; 'vase.datomic/schema-tx          literals/datomic-schema-tx
  'vase.datomic/query              literals/query
  'vase.datomic/transact           literals/transact)
 
@@ -70,6 +70,30 @@
 
 (defmethod f/literal 'vase.datomic/connection [_ uri]
   (datomic/connect uri))
+
+(defrecord Tx [assertions])
+
+(defmethod f/literal 'vase.datomic/tx [_ & assertions]
+  (->Tx assertions))
+
+(defrecord Attributes [attributes])
+
+(defmethod f/literal 'vase.datomic/attributes [_ & attributes]
+  (doseq [a attributes]
+    (println "meta " (dissoc (meta a) :source) " from " a))
+  ;; TODO - validate the schema vecs and report errors
+  (->Attributes attributes))
+
+(defrecord DbFromConnection [to-key from-key]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (i/map->Interceptor
+     {:enter
+      (fn [ctx]
+        (assoc ctx to-key (d/db (from-key ctx))))})))
+
+(defmethod f/literal 'vase.datomic/db-from-connection [_ to-key from-key]
+  (->DbFromConnection to-key from-key))
 
 (def stock-interceptor-syms
   '[io.pedestal.http/log-request

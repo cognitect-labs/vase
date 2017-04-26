@@ -97,19 +97,19 @@
  v2/intercept            (lit vase/respond {:enforce-format true
                                             :body           {:one 1}})
 
- base-attributes         (lit vase.datomic/schema-tx [{:db/ident       :company/name
-                                                       :db/unique      :db.unique/value
-                                                       :db/valueType   :db.type/string
-                                                       :db/cardinality :db.cardinality/one}])
+ base-attributes         (lit vase.datomic/tx {:db/ident       :company/name
+                                               :db/unique      :db.unique/value
+                                               :db/valueType   :db.type/string
+                                               :db/cardinality :db.cardinality/one})
 
- user-attributes         (lit vase.datomic/schema-tx [[:user/userId    :one :long   :identity "A Users unique identifier"]
+ user-attributes         (lit vase.datomic/attributes [:user/userId    :one :long   :identity "A Users unique identifier"]
                                                       [:user/userEmail :one :string :unique   "The users email"]
-                                                      [:user/userBio   :one :string :fulltext "A short blurb about the user"]])
+                                                      [:user/userBio   :one :string :fulltext "A short blurb about the user"])
 
- loan-attributes         (lit vase.datomic/schema-tx [[:loanOffer/loanId :one  :long :unique "The unique offer ID"]
+ loan-attributes         (lit vase.datomic/attributes [:loanOffer/loanId :one  :long :unique "The unique offer ID"]
                                                       [:loanOffer/fees   :one  :long :index  "All of the loan fees"]
                                                       [:loanOffer/notes  :many :string       "Notes about the loan"]
-                                                      [:user/loanOffers  :many :ref          "The collection of loan offers"]])
+                                                      [:user/loanOffers  :many :ref          "The collection of loan offers"])
 
  example.test/age        (fn [age] (> age 21))
  example.test/name       (clojure.spec/and string? not-empty)
