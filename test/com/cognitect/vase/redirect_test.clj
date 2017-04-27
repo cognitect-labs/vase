@@ -10,7 +10,8 @@
 
 (defn make-redirect
   ([params status body headers url]
-   (actions/redirect-action :redirector params body status headers url)))
+   (interceptor/-interceptor
+    (actions/->RedirectAction :redirector params body status headers url))))
 
 (deftest redirect-action
   (testing "static redirect"

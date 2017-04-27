@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.test-helper :as helper]
-            [clojure.spec :as s]))
+            [clojure.spec :as s]
+            [io.pedestal.interceptor :as i]))
 
 (s/def ::a string?)
 (s/def ::b boolean?)
@@ -10,7 +11,8 @@
 
 (defn make-conformer
   [from spec to]
-  (actions/conform-action :conformer from spec to nil))
+  (i/-interceptor
+   (actions/->ConformAction :conformer from spec to nil "")))
 
 (deftest conform-action
   (testing "Happy path"

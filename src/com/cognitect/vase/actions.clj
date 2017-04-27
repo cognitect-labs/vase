@@ -172,23 +172,17 @@
                           200 {}))
   )
 
-(defn respond-action
-  "Return a Pedestal interceptor that responds with a canned
-  response."
-  [name params edn-coerce body status headers]
-  (dynamic-interceptor
-   name
-   :respond
-   {:enter
-    (respond-action-exprs params edn-coerce body status headers)
-
-    :action-literal
-    :vase/respond}))
-
 (defrecord RespondAction [name params edn-coerce body status headers doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (respond-action name params edn-coerce body status headers)))
+    (dynamic-interceptor
+     name
+     :respond
+     {:enter
+      (respond-action-exprs params edn-coerce body status headers)
+
+      :action-literal
+      :vase/respond})))
 
 (defmethod print-method RespondAction [t ^java.io.Writer w]
   (.write w (str "#vase/respond" (into {} t))))
@@ -207,22 +201,17 @@
                            ~(or status 302))]
        (assoc ~'context :response resp#))))
 
-(defn redirect-action
-  "Return a Pedestal interceptor that redirects to a static URL."
-  [name params body status headers url]
-  (dynamic-interceptor
-   name
-   :redirect
-   {:enter
-    (redirect-action-exprs params body status headers url)
-
-    :action-literal
-    :vase/redirect}))
-
 (defrecord RedirectAction [name params body status headers url]
   i/IntoInterceptor
   (-interceptor [_]
-    (redirect-action name params body status headers url)))
+    (dynamic-interceptor
+     name
+     :redirect
+     {:enter
+      (redirect-action-exprs params body status headers url)
+
+      :action-literal
+      :vase/redirect})))
 
 (defmethod print-method RedirectAction [t ^java.io.Writer w]
   (.write w (str "#vase/redirect" (into {} t))))
@@ -250,29 +239,17 @@
          (assoc ~'context :response resp#)
          ~'context))))
 
-(defn validate-action
-  "Returns a Pedestal interceptor that performs validations on the
-  parameters.
-
-  The response body will be a list of data structures as returned by
-  clojure.spec/explain-data."
-  ([name params headers spec]
-   (validate-action name params headers spec nil))
-  ([name params headers spec request-params-path]
+(defrecord ValidateAction [name params headers spec request-params-path doc]
+  i/IntoInterceptor
+  (-interceptor [_]
    (dynamic-interceptor
      name
      :validate
      {:enter
-      (validate-action-exprs params headers spec request-params-path)
+      (validate-action-exprs (or params []) headers spec request-params-path)
 
       :action-literal
       :vase/validate})))
-
-(defrecord ValidateAction [name params headers spec request-params-path doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (let [params (or params [])]
-      (validate-action name params headers spec request-params-path))))
 
 (defmethod print-method ValidateAction [t ^java.io.Writer w]
   (.write w (str "#vase/validate" (into {} t))))
@@ -293,26 +270,17 @@
            (assoc ctx# ~explain-to problems#)
            ctx#)))))
 
-(defn conform-action
-  "Returns a Pedestal interceptor that performs conforms data from the context.
-
-  The interceptor will take data from the key named in `:from`,
-  conform it according to the specs in `:spec` and reattach it to the
-  context under the key named in `:to`."
-  [name from spec to explain-to]
-  (dynamic-interceptor
-   name
-   :conform
-   {:enter
-    (conform-action-exprs from spec to explain-to)
-
-    :action-literal
-    :vase/conform}))
-
 (defrecord ConformAction [name from spec to explain-to doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (conform-action name from spec to explain-to)))
+    (dynamic-interceptor
+     name
+     :conform
+     {:enter
+      (conform-action-exprs from spec to explain-to)
+
+      :action-literal
+      :vase/conform})))
 
 (defmethod print-method ConformAction [t ^java.io.Writer w]
   (.write w (str "#vase/conform" (into {} t))))
@@ -397,23 +365,17 @@
                         {}))
   )
 
-(defn query-action
-  "Returns a Pedestal interceptor that executes a Datomic query on
-  entry."
-  [name query variables coercions constants headers to]
-  (dynamic-interceptor
-   name
-   :query
-   {:enter
-    (query-action-exprs query variables coercions constants headers to)
-
-    :action-literal
-    :vase/query}))
-
 (defrecord QueryAction [name params query edn-coerce constants headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (query-action name query params (into #{} edn-coerce) constants headers to)))
+    (dynamic-interceptor
+     name
+     :query
+     {:enter
+      (query-action-exprs query params (into #{} edn-coerce) constants headers to)
+
+      :action-literal
+      :vase/query})))
 
 (defmethod print-method QueryAction [t ^java.io.Writer w]
   (.write w (str "#vase/query" (into {} t))))
@@ -456,23 +418,17 @@
                (assoc ~to response-body#)
                (assoc-in [:request :db] (d/db conn#))))))))
 
-(defn transact-action
-  "Returns a Pedestal interceptor that executes a Datomic transaction
-  on entry."
-  [name properties db-op headers to]
-  (dynamic-interceptor
-   name
-   :transact
-   {:enter
-    (transact-action-exprs properties db-op headers to)
-
-    :action-literal
-    :vase/transact}))
-
 (defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
-    (transact-action name properties db-op headers to)))
+    (dynamic-interceptor
+     name
+     :transact
+     {:enter
+      (transact-action-exprs properties db-op headers to)
+
+      :action-literal
+      :vase/transact})))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
   (.write w (str "#vase/transact" (into {} t))))
@@ -484,20 +440,16 @@
     (var? x) (deref x)
     :else x))
 
-(defn- intercept-action
-  [name enter leave error]
-  (dynamic-interceptor
-   name
-   :intercept
-   (cond-> {:action-literal :vase/intercept}
-     enter (assoc :enter (handle-intercept-option enter))
-     leave (assoc :leave (handle-intercept-option leave))
-     error (assoc :error (handle-intercept-option error)))))
-
 (defrecord InterceptAction [name enter leave error]
   i/IntoInterceptor
   (-interceptor [_]
-    (intercept-action name enter leave error)))
+    (dynamic-interceptor
+     name
+     :intercept
+     (cond-> {:action-literal :vase/intercept}
+       enter (assoc :enter (handle-intercept-option enter))
+       leave (assoc :leave (handle-intercept-option leave))
+       error (assoc :error (handle-intercept-option error))))))
 
 (defmethod print-method InterceptAction [t ^java.io.Writer w]
   (.write w (str "#vase/intercept" (into {} t))))
@@ -507,21 +459,16 @@
   `(fn [~'context]
      (assoc ~'context ~key ~val)))
 
-(defn attach-action
-  "Returns a Pedestal interceptor that attaches a value to a key in the context."
-  [name key val]
-  (dynamic-interceptor
-   name
-   :attach
-   {:enter
-    (attach-action-exprs key val)
-    :action-literal
-    :vase/attach}))
-
 (defrecord AttachAction [name key val]
   i/IntoInterceptor
   (-interceptor [_]
-    (attach-action name key val)))
+    (dynamic-interceptor
+     name
+     :attach
+     {:enter
+      (attach-action-exprs key val)
+      :action-literal
+      :vase/attach})))
 
 (defmethod print-method AttachAction [t ^java.io.Writer w]
   (.write w (str "#vase/attach" (into {} t))))
