@@ -119,13 +119,13 @@
   expressions. The expressions will be evaluated and must evaluate to
   a function of 1 argument. At runtime the function will be called
   with a Pedestal context map."
-  [name literal exprs]
-  (with-meta
-    (i/interceptor
-     (merge
-      {:name name}
-      (util/map-vals eval exprs)))
-    {:action-literal literal}))
+  ([name exprs]
+   (i/interceptor
+    (merge
+     {:name name}
+     (util/map-vals eval exprs))))
+  ([name _ exprs]
+   (dynamic-interceptor name exprs)))
 
 ;; Auxiliary functions for interceptor internals
 ;;
@@ -177,7 +177,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :respond
      {:enter
       (respond-action-exprs params edn-coerce body status headers)
 
@@ -206,7 +205,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :redirect
      {:enter
       (redirect-action-exprs params body status headers url)
 
@@ -244,7 +242,6 @@
   (-interceptor [_]
    (dynamic-interceptor
      name
-     :validate
      {:enter
       (validate-action-exprs (or params []) headers spec request-params-path)
 
@@ -275,7 +272,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :conform
      {:enter
       (conform-action-exprs from spec to explain-to)
 
@@ -370,7 +366,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :query
      {:enter
       (query-action-exprs query params (into #{} edn-coerce) constants headers to)
 
@@ -423,7 +418,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :transact
      {:enter
       (transact-action-exprs properties db-op headers to)
 
@@ -445,7 +439,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :intercept
      (cond-> {:action-literal :vase/intercept}
        enter (assoc :enter (handle-intercept-option enter))
        leave (assoc :leave (handle-intercept-option leave))
@@ -464,7 +457,6 @@
   (-interceptor [_]
     (dynamic-interceptor
      name
-     :attach
      {:enter
       (attach-action-exprs key val)
       :action-literal
