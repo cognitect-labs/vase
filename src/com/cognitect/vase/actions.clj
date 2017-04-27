@@ -32,7 +32,7 @@
   (:require [clojure.walk :as walk]
             [clojure.spec :as s]
             [datomic.api :as d]
-            [io.pedestal.interceptor :as interceptor]
+            [io.pedestal.interceptor :as i]
             [com.cognitect.vase.util :as util])
   (:import java.net.URLDecoder))
 
@@ -121,7 +121,7 @@
   with a Pedestal context map."
   [name literal exprs]
   (with-meta
-    (interceptor/interceptor
+    (i/interceptor
      (merge
       {:name name}
       (util/map-vals eval exprs)))
@@ -185,6 +185,14 @@
     :action-literal
     :vase/respond}))
 
+(defrecord RespondAction [name params edn-coerce body status headers doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (respond-action name params edn-coerce body status headers)))
+
+(defmethod print-method RespondAction [t ^java.io.Writer w]
+  (.write w (str "#vase/respond" (into {} t))))
+
 (defn redirect-action-exprs
   "Return code for a Pedestal interceptor function that returns a
   redirect response."
@@ -210,6 +218,14 @@
 
     :action-literal
     :vase/redirect}))
+
+(defrecord RedirectAction [name params body status headers url]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (redirect-action name params body status headers url)))
+
+(defmethod print-method RedirectAction [t ^java.io.Writer w]
+  (.write w (str "#vase/redirect" (into {} t))))
 
 (defn validate-action-exprs
   "Return code for a Pedestal interceptor function that performs
@@ -252,6 +268,15 @@
       :action-literal
       :vase/validate})))
 
+(defrecord ValidateAction [name params headers spec request-params-path doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (let [params (or params [])]
+      (validate-action name params headers spec request-params-path))))
+
+(defmethod print-method ValidateAction [t ^java.io.Writer w]
+  (.write w (str "#vase/validate" (into {} t))))
+
 (defn conform-action-exprs
   "Return code for a Pedestal interceptor function that performs
   clojure.spec validation on the data attached at `from`. If the data
@@ -283,6 +308,15 @@
 
     :action-literal
     :vase/conform}))
+
+(defrecord ConformAction [name from spec to explain-to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (conform-action name from spec to explain-to)))
+
+(defmethod print-method ConformAction [t ^java.io.Writer w]
+  (.write w (str "#vase/conform" (into {} t))))
+
 
 (defn hash-set? [x]
   (instance? java.util.HashSet x))
@@ -376,6 +410,14 @@
     :action-literal
     :vase/query}))
 
+(defrecord QueryAction [name params query edn-coerce constants headers to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (query-action name query params (into #{} edn-coerce) constants headers to)))
+
+(defmethod print-method QueryAction [t ^java.io.Writer w]
+  (.write w (str "#vase/query" (into {} t))))
+
 (defn transact-action-exprs
   "Return code for a Pedestal context function that executes a
   transaction.
@@ -427,6 +469,39 @@
     :action-literal
     :vase/transact}))
 
+(defrecord TransactAction [name properties db-op headers to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (transact-action name properties db-op headers to)))
+
+(defmethod print-method TransactAction [t ^java.io.Writer w]
+  (.write w (str "#vase/transact" (into {} t))))
+
+(defn- handle-intercept-option [x]
+  (cond
+    (list? x) (eval x)
+    (symbol? x) (resolve x)
+    (var? x) (deref x)
+    :else x))
+
+(defn- intercept-action
+  [name enter leave error]
+  (dynamic-interceptor
+   name
+   :intercept
+   (cond-> {:action-literal :vase/intercept}
+     enter (assoc :enter (handle-intercept-option enter))
+     leave (assoc :leave (handle-intercept-option leave))
+     error (assoc :error (handle-intercept-option error)))))
+
+(defrecord InterceptAction [name enter leave error]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (intercept-action name enter leave error)))
+
+(defmethod print-method InterceptAction [t ^java.io.Writer w]
+  (.write w (str "#vase/intercept" (into {} t))))
+
 (defn- attach-action-exprs
   [key val]
   `(fn [~'context]
@@ -442,3 +517,11 @@
     (attach-action-exprs key val)
     :action-literal
     :vase/attach}))
+
+(defrecord AttachAction [name key val]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (attach-action name key val)))
+
+(defmethod print-method AttachAction [t ^java.io.Writer w]
+  (.write w (str "#vase/attach" (into {} t))))
