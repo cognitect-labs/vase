@@ -1,8 +1,17 @@
-{vase/service            (lit vase/service {:apis  [@example/v1 @example/v2]})
+{ ;; vase/plugins        []
+ vase/service            (lit vase/service {:apis  [@example/v1 @example/v2]
+                                            :service-map @http-options})
 
- example/v1              (lit vase/api {:on-startup  [@base-attributes @user-attributes @loan-attributes]
-                                        :on-request  [@attach-connection @attach-db]
-                                        :routes      @v1/routes})
+ http-options            {:io.pedestal.http/port      @port
+                          :io.pedestal.http/file-path "/public"}
+
+ port                    8080
+
+ example/v1              (lit vase/api {:path          "example/v1"
+                                        :expose-api-at "example/v1/api"
+                                        :on-startup    [@base-attributes @user-attributes @loan-attributes]
+                                        :on-request    [@attach-connection @attach-db]
+                                        :routes        @v1/routes})
 
  attach-connection       (lit vase/attach :conn @connection)
  attach-db               (lit vase.datomic/db-from-connection :db :conn)
@@ -10,20 +19,20 @@
  connection              (lit vase.datomic/connection @datomic-uri)
  datomic-uri             "datomic:mem://example4"
 
- v1/routes               [["/hello"                 :get @v1/simple-response]
-                          ["/redirect-to-google"    :get (lit vase/redirect {:url "http://www.google.com"})]
-                          ["/redirect-to-param"     :get @v1/redirect-to-param]
-                          ["/capture-s/:url-thing"  :get @v1/param-example]
-                          ["/validate"              :post @v1/validate-page]
-                          ["/db"                    :get @v1/query-all-attributes]
-                          ["/users"                 :get @v1/users-page]
-                          ["/users/:id"             :get @v1/user-id-page]
-                          ["/user"                  :get @v1/user-page]
-                          ["/user"                  :post @v1/user-create]
-                          ["/user"                  :delete @v1/user-delete]
-                          ["/fogus"                 :get @v1/fogus-page]
-                          ["/fogus-and-paul"        :get @v1/fogus-paul-page]
-                          ["/fogus-and-someone"     :get @v1/fogus-someone-page]]
+ v1/routes               #{["/hello"                 :get @v1/simple-response]
+                           ["/redirect-to-google"    :get (lit vase/redirect {:url "http://www.google.com"})]
+                           ["/redirect-to-param"     :get @v1/redirect-to-param]
+                           ["/capture-s/:url-thing"  :get @v1/param-example]
+                           ["/validate"              :post @v1/validate-page]
+                           ["/db"                    :get @v1/query-all-attributes]
+                           ["/users"                 :get @v1/users-page]
+                           ["/users/:id"             :get @v1/user-id-page]
+                           ["/user"                  :get @v1/user-page]
+                           ["/user"                  :post @v1/user-create]
+                           ["/user"                  :delete @v1/user-delete]
+                           ["/fogus"                 :get @v1/fogus-page]
+                           ["/fogus-and-paul"        :get @v1/fogus-paul-page]
+                           ["/fogus-and-someone"     :get @v1/fogus-someone-page]}
 
  v1/simple-response      (lit vase/respond {:body "Hello world"})
 
@@ -65,7 +74,6 @@
  v1/user-delete          (lit vase.datomic/transact {:db-op      :vase/retract-entity
                                                      :properties [:db/id]})
 
-
  v1/fogus-page           (lit vase.datomic/query {:query [:find ?e
                                                           :in $
                                                           :where
@@ -85,11 +93,13 @@
                                                               [(list ?someone ?fogus) [?emails ...]]
                                                               [?e :user/userEmail ?emails]]})
 
- example/v2              (lit vase/api {:on-request [@attach-db @attach-connection @io.pedestal.http/transit-body]
-                                        :routes     @v2/routes})
+ example/v2              (lit vase/api {:path          "example/v2"
+                                        :expose-api-at nil
+                                        :on-request    [@attach-db @attach-connection @io.pedestal.http/transit-body]
+                                        :routes        @v2/routes})
 
- v2/routes               [["/hello"      :get @v2/hello]
-                          ["/intercept"  :get [@io.pedestal.http/json-body @v2/intercept]]]
+ v2/routes               #{["/hello"      :get @v2/hello]
+                           ["/intercept"  :get [@io.pedestal.http/json-body @v2/intercept]]}
 
  v2/hello                (lit vase/respond {:enforce-format true
                                             :body           {:just-a-key "Another Hello World Route"}})
@@ -103,13 +113,13 @@
                                                :db/cardinality :db.cardinality/one})
 
  user-attributes         (lit vase.datomic/attributes [:user/userId    :one :long   :identity "A Users unique identifier"]
-                                                      [:user/userEmail :one :string :unique   "The users email"]
-                                                      [:user/userBio   :one :string :fulltext "A short blurb about the user"])
+                              [:user/userEmail :one :string :unique   "The users email"]
+                              [:user/userBio   :one :string :fulltext "A short blurb about the user"])
 
  loan-attributes         (lit vase.datomic/attributes [:loanOffer/loanId :one  :long :unique "The unique offer ID"]
-                                                      [:loanOffer/fees   :one  :long :index  "All of the loan fees"]
-                                                      [:loanOffer/notes  :many :string       "Notes about the loan"]
-                                                      [:user/loanOffers  :many :ref          "The collection of loan offers"])
+                              [:loanOffer/fees   :one  :long :index  "All of the loan fees"]
+                              [:loanOffer/notes  :many :string       "Notes about the loan"]
+                              [:user/loanOffers  :many :ref          "The collection of loan offers"])
 
  example.test/age        (fn [age] (> age 21))
  example.test/name       (clojure.spec/and string? not-empty)

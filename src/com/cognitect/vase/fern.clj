@@ -1,5 +1,7 @@
 (ns com.cognitect.vase.fern
   (:require [com.cognitect.vase :as vase]
+            [com.cognitect.vase.actions :as actions]
+            [com.cognitect.vase.api :as a]
             [com.cognitect.vase.datomic :as datomic]
             [com.cognitect.vase.interceptor :as vinterceptor]
             [com.cognitect.vase.literals :as literals]
@@ -57,16 +59,15 @@
          `(function-for-literal ~s ~f))))
 
 (fn-lits
- 'vase/respond                    literals/respond
- 'vase/redirect                   literals/redirect
- 'vase/conform                    literals/conform
- 'vase/validate                   literals/validate
-; 'vase.datomic/db-from-connection literals/datomic-db-from-connection
- 'vase.datomic/query              literals/query
- 'vase.datomic/transact           literals/transact)
+ 'vase/respond                    actions/map->RespondAction
+ 'vase/redirect                   actions/map->RedirectAction
+ 'vase/conform                    actions/map->ConformAction
+ 'vase/validate                   actions/map->ValidateAction
+ 'vase.datomic/query              actions/map->QueryAction
+ 'vase.datomic/transact           actions/map->TransactAction)
 
 (defmethod f/literal 'vase/attach [_ key val]
-  (literals/attach {:key key :val val}))
+  (actions/map->AttachAction {:key key :val val}))
 
 (defmethod f/literal 'vase.datomic/connection [_ uri]
   (datomic/connect uri))
@@ -79,10 +80,12 @@
 (defrecord Attributes [attributes])
 
 (defmethod f/literal 'vase.datomic/attributes [_ & attributes]
-  (doseq [a attributes]
-    (println "meta " (dissoc (meta a) :source) " from " a))
-  ;; TODO - validate the schema vecs and report errors
   (->Attributes attributes))
+
+(defrecord Tx [entities-and-datoms])
+
+(defmethod f/literal 'vase.datomic/tx [_ & entities-and-datoms]
+  (->Tx entities-and-datoms))
 
 (defrecord DbFromConnection [to-key from-key]
   i/IntoInterceptor
@@ -138,3 +141,21 @@
   (-> filename
       (easy/load-environment 'vase/plugins)
       (merge (stock-interceptors))))
+
+(defn prepare-service
+  ([environment]
+   (evaluate-service environment 'vase/service))
+  ([environment service-key]
+   (-> environment
+       (f/evaluate service-key)
+       (a/service-map))))
+
+(defn dev-mode
+  [service-map]
+  (assoc service-map ::http/join? false))
+
+(defn start-server
+  ([service-map]
+   (-> service-map
+       http/create-server
+       http/start)))
