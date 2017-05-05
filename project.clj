@@ -37,9 +37,7 @@
                                   ;[net.openhft/chronicle-logger-logback "1.1.0" :exclusions [[org.slf4j/slf4j-api]]]
                                   [org.slf4j/jul-to-slf4j "1.7.22"]
                                   [org.slf4j/jcl-over-slf4j "1.7.22"]
-                                  [org.slf4j/log4j-over-slf4j "1.7.22"]
-                                  [refactor-nrepl "2.2.0"]
-                                  [cider/cider-nrepl "0.14.0"]]}
+                                  [org.slf4j/log4j-over-slf4j "1.7.22"]]}
              :test {:dependencies [[org.clojure/test.check "0.9.0"]
                                    [io.pedestal/pedestal.service-tools "0.5.2" :exclusions [[org.slf4j/log4j-over-slf4j]
                                                                                             [org.slf4j/jul-to-slf4j]
