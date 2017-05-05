@@ -144,7 +144,7 @@
 
 (defn prepare-service
   ([environment]
-   (evaluate-service environment 'vase/service))
+   (prepare-service environment 'vase/service))
   ([environment service-key]
    (-> environment
        (f/evaluate service-key)
