@@ -1,5 +1,7 @@
 [![CircleCI](https://circleci.com/gh/cognitect-labs/vase.svg?style=svg&circle-token=21b84b7aea75483821d3852de6c5d9930e85720a)](https://circleci.com/gh/cognitect-labs/vase)
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.cognitect/pedestal.vase.svg)](https://clojars.org/com.cognitect/pedestal.vase)
+
 # Vase: Data-driven microservices
 
 This system provides a data-driven and extensible way to describe and
