@@ -2,7 +2,7 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-alpha14"]
+                 [org.clojure/clojure "1.9.0-alpha14" :scope "provided"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5554" :exclusions [[org.slf4j/slf4j-api]
@@ -11,8 +11,9 @@
 
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.5.2"]
+                 [io.pedestal/pedestal.jetty "0.5.2"]
 
-                 [com.cognitect/fern "0.1.0-SNAPSHOT"]
+                 [com.cognitect/fern "0.1.2-SNAPSHOT"]
 
                  ;; Cleanup
                  [commons-codec "1.10"]
@@ -29,7 +30,6 @@
                    :dependencies [[org.clojure/tools.trace "0.7.9"]
                                   [org.clojure/tools.namespace "0.3.0-alpha3" :exclusions [[org.clojure/tools.reader]]]
                                   [org.clojure/tools.reader "1.0.0-beta4"]
-                                  [io.pedestal/pedestal.jetty "0.5.2"]
                                   [org.clojure/test.check "0.9.0"]
                                    ;; Logging
                                   [org.slf4j/slf4j-api "1.7.22"]

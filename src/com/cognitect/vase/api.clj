@@ -39,8 +39,11 @@
   (let [s (str base path)]
     (str/replace s #"//" "/")))
 
+;; TODO - coll? returns true on records. We need to be more specific
+;; about whether we have one thing or several
 (defn- base-interceptors
   [on-request route-specific]
+  (println 'base-interceptors :route-specific route-specific " (" (type route-specific) ")")
   (if (coll? route-specific)
     (into on-request route-specific)
     (conj on-request route-specific)))
@@ -54,11 +57,11 @@
        (-> r
           (update 0 #(base-route base %))
           (update 2 #(base-interceptors on-req %))))
-     (:routes api []))))
+     (:routes api #{}))))
 
 (defn- collect-routes
   [spec]
-  (reduce into []
+  (reduce into #{}
           (map routes-for-api (:apis spec))))
 
 (defn- add-routes
@@ -73,6 +76,10 @@
 (defn- add-startups
   [service-map startups]
   (assoc service-map ::startups startups))
+
+(defn dev-mode
+  [service-map]
+  (assoc service-map ::http/join? false))
 
 (def default-service-map
   {::http/type :jetty
@@ -94,18 +101,8 @@
            (add-routes (collect-routes spec))
            (add-startups (collect-startups spec)))))))
 
-
-(comment
-
-  ;; It's not the easiest thing in the world yet, but it works.
-  ;; (Except connection and schema creation)
-
-  (-> (com.cognitect.vase.fern/load-from-file "test/resources/test_descriptor.fern")
-      (fern/evaluate 'vase/service)
-      (service-map)
-      (assoc :io.pedestal.http/join? false)
-      (io.pedestal.http/create-server)
-      (io.pedestal.http/start))
-
-
-  )
+(defn start-service
+  [service-map]
+  (-> service-map
+      (http/create-server)
+      (http/start)))
