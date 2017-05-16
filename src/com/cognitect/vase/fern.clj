@@ -10,7 +10,9 @@
             [io.pedestal.http.ring-middlewares :as ring-middlewares]
             [com.cognitect.vase.actions :as actions]
             [io.pedestal.interceptor :as i]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [com.cognitect.vase.literals :as literals])
+  (:import [clojure.lang IObj]))
 
 (defn- synthetic-interceptor-name
   [description]
@@ -45,11 +47,17 @@
 (defmethod f/literal 'vase/validate [_ d] (actions/map->ValidateAction (with-name d)))
 (defmethod f/literal 'vase/attach   [_ key val] (actions/map->AttachAction (with-name {:key key :val val})))
 
-(defrecord Tx         [assertions])
-(defrecord Attributes [attributes])
+(defrecord Tx         [assertions]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (i/map->Interceptor
+     {:enter
+      (fn [{:keys [conn] :as ctx}]
+        @(d/transact conn assertions)
+        ctx)})))
 
 (defmethod f/literal 'vase.datomic/tx         [_ & assertions] (->Tx assertions))
-(defmethod f/literal 'vase.datomic/attributes [_ & attributes] (->Attributes attributes))
+(defmethod f/literal 'vase.datomic/attributes [_ & attributes] (->Tx (literals/schema-tx attributes)))
 
 (defmethod f/literal 'vase.datomic/query    [_ d] (actions/map->QueryAction    (with-name d)))
 (defmethod f/literal 'vase.datomic/transact [_ d] (actions/map->TransactAction (with-name d)))
@@ -94,7 +102,11 @@
 (defn expose-sym
   [s]
   {:pre [(symbol? s) (resolve s)]}
-  {s (var-get (resolve s))})
+  (let [var (resolve s)
+        val (var-get var)]
+    (if (instance? IObj val)
+      {s (with-meta val (meta var))}
+      {s val})))
 
 (defn- expose-as-env
   [syms]
