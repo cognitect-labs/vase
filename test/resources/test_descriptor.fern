@@ -1,17 +1,19 @@
 { ;; vase/plugins        []
- vase/service            (fern/lit vase/service {:apis  [@example/v1 @example/v2]
-                                                 :service-map @http-options})
+ vase/service            (fern/lit vase/service
+                                   {:apis        [@example/v1 @example/v2]
+                                    :service-map @http-options})
 
  http-options            {:io.pedestal.http/port      @port
                           :io.pedestal.http/file-path "/public"}
 
  port                    8080
 
- example/v1              (fern/lit vase/api {:path          "/example/v1"
-                                             :expose-api-at "/example/v1/api"
-                                             :on-startup    [@base-attributes @user-attributes @loan-attributes]
-                                             :on-request    [@connection]
-                                             :routes        @v1/routes})
+ example/v1              (fern/lit vase/api
+                                   {:path          "/example/v1"
+                                    :expose-api-at "/example/v1/api"
+                                    :on-startup    [@base-attributes @user-attributes @loan-attributes]
+                                    :on-request    [@connection]
+                                    :routes        @v1/routes})
 
  connection              (fern/lit vase.datomic/connection @datomic-uri)
  datomic-uri             "datomic:mem://example4"
@@ -31,89 +33,108 @@
                            ["/fogus-and-paul"        :get @v1/fogus-paul-page]
                            ["/fogus-and-someone"     :get @v1/fogus-someone-page]}
 
- v1/simple-response      (fern/lit vase/respond {:body "Hello world"})
+ v1/simple-response      (fern/lit vase/respond
+                                   {:body "Hello world"})
 
- v1/redirect-to-param    (fern/lit vase/redirect {:params [[someurl "http://www.google.com"]]
-                                                  :url    someurl})
+ v1/redirect-to-param    (fern/lit vase/redirect
+                                   {:params [[someurl "http://www.google.com"]]
+                                    :url    someurl})
 
- v1/param-example        (fern/lit vase/respond {:params     [url-thing]
-                                                 :edn-coerce [url-thing]
-                                                 :body       (str "You said: " url-thing " which is a " (type url-thing))})
+ v1/param-example        (fern/lit vase/respond
+                                   {:params     [url-thing]
+                                    :edn-coerce [url-thing]
+                                    :body       (str "You said: " url-thing " which is a " (type url-thing))})
 
- v1/validate-page        (fern/lit vase/validate {:spec @example.test/person})
+ v1/validate-page        (fern/lit vase/validate
+                                   {:spec @example.test/person})
 
- v1/query-all-attributes (fern/lit vase.datomic/query {:params []
-                                              :query  [:find ?e ?v :where [?e :db/ident ?v]]})
+ v1/query-all-attributes (fern/lit vase.datomic/query
+                                   {:params []
+                                    :query  [:find ?e ?v :where [?e :db/ident ?v]]})
 
- v1/users-page           (fern/lit vase.datomic/query {:query [:find ?id ?email
-                                                      :where
-                                                      [?e :user/userId ?id]
-                                                      [?e :user/userEmail ?email]]})
+ v1/users-page           (fern/lit vase.datomic/query
+                                   {:query [:find ?id ?email
+                                            :where
+                                            [?e :user/userId ?id]
+                                            [?e :user/userEmail ?email]]})
 
- v1/user-id-page         (fern/lit vase.datomic/query {:params     [id]
-                                              :edn-coerce [id]
-                                              :query      [:find ?e
-                                                           :in $ ?id
-                                                           :where
-                                                           [?e :user/userId ?id]]})
+ v1/user-id-page         (fern/lit vase.datomic/query
+                                   {:params     [id]
+                                    :edn-coerce [id]
+                                    :query      [:find ?e
+                                                 :in $ ?id
+                                                 :where
+                                                 [?e :user/userId ?id]]})
 
- v1/user-page            (fern/lit vase.datomic/query {:params [email]
-                                              :query  [:find ?e
-                                                       :in $ ?email
-                                                       :where
-                                                       [?e :user/userEmail ?email]]})
+ v1/user-page            (fern/lit vase.datomic/query
+                                   {:params [email]
+                                    :query  [:find ?e
+                                             :in $ ?email
+                                             :where
+                                             [?e :user/userEmail ?email]]})
 
- v1/user-create          (fern/lit vase.datomic/transact {:properties [:db/id
-                                                              :user/userId
-                                                              :user/userEmail
-                                                              :user/userBio]})
+ v1/user-create          (fern/lit vase.datomic/transact
+                                   {:properties [:db/id
+                                                 :user/userId
+                                                 :user/userEmail
+                                                 :user/userBio]})
 
- v1/user-delete          (fern/lit vase.datomic/transact {:db-op      :vase/retract-entity
-                                                 :properties [:db/id]})
+ v1/user-delete          (fern/lit vase.datomic/transact
+                                   {:db-op      :vase/retract-entity
+                                    :properties [:db/id]})
 
- v1/fogus-page           (fern/lit vase.datomic/query {:query [:find ?e
-                                                      :in $
-                                                      :where
-                                                      [?e :user/userEmail "jane@example.com"]]})
+ v1/fogus-page           (fern/lit vase.datomic/query
+                                   {:query [:find ?e
+                                            :in $
+                                            :where
+                                            [?e :user/userEmail "jane@example.com"]]})
 
- v1/fogus-paul-page      (fern/lit vase.datomic/query {:constants [["jane@example.com" "jill@example.com"]]
-                                              :query     [:find ?e
-                                                          :in $ [?emails ...]
-                                                          :where
-                                                          [?e :user/userEmail ?emails]]})
+ v1/fogus-paul-page      (fern/lit vase.datomic/query
+                                   {:constants [["jane@example.com" "jill@example.com"]]
+                                    :query     [:find ?e
+                                                :in $ [?emails ...]
+                                                :where
+                                                [?e :user/userEmail ?emails]]})
 
- v1/fogus-someone-page   (fern/lit vase.datomic/query {:params    [someone]
-                                              :constants ["jane@example.com"]
-                                              :query     [:find ?e
-                                                          :in $ ?someone ?fogus
-                                                          :where
-                                                          [(list ?someone ?fogus) [?emails ...]]
-                                                          [?e :user/userEmail ?emails]]})
+ v1/fogus-someone-page   (fern/lit vase.datomic/query
+                                   {:params    [someone]
+                                    :constants ["jane@example.com"]
+                                    :query     [:find ?e
+                                                :in $ ?someone ?fogus
+                                                :where
+                                                [(list ?someone ?fogus) [?emails ...]]
+                                                [?e :user/userEmail ?emails]]})
 
- example/v2              (fern/lit vase/api {:path          "/example/v2"
-                                             :expose-api-at nil
-                                             :on-request    [@connection @io.pedestal.http/transit-body]
-                                             :routes        @v2/routes})
+ example/v2              (fern/lit vase/api
+                                   {:path          "/example/v2"
+                                    :expose-api-at nil
+                                    :on-request    [@connection @io.pedestal.http/transit-body]
+                                    :routes        @v2/routes})
 
  v2/routes               #{["/hello"      :get @v2/hello]
                            ["/intercept"  :get [@io.pedestal.http/json-body @v2/intercept]]}
 
- v2/hello                (fern/lit vase/respond {:enforce-format true
-                                                 :body           {:just-a-key "Another Hello World Route"}})
+ v2/hello                (fern/lit vase/respond
+                                   {:enforce-format true
+                                    :body           {:just-a-key "Another Hello World Route"}})
 
- v2/intercept            (fern/lit vase/respond {:enforce-format true
-                                                 :body           {:one 1}})
+ v2/intercept            (fern/lit vase/respond
+                                   {:enforce-format true
+                                    :body           {:one 1}})
 
- base-attributes         (fern/lit vase.datomic/tx {:db/ident       :company/name
-                                                    :db/unique      :db.unique/value
-                                                    :db/valueType   :db.type/string
-                                                    :db/cardinality :db.cardinality/one})
+ base-attributes         (fern/lit vase.datomic/tx
+                                   {:db/ident       :company/name
+                                    :db/unique      :db.unique/value
+                                    :db/valueType   :db.type/string
+                                    :db/cardinality :db.cardinality/one})
 
- user-attributes         (fern/lit vase.datomic/attributes [:user/userId    :one :long   :identity "A Users unique identifier"]
+ user-attributes         (fern/lit vase.datomic/attributes
+                                   [:user/userId    :one :long   :identity "A Users unique identifier"]
                                    [:user/userEmail :one :string :unique   "The users email"]
                                    [:user/userBio   :one :string :fulltext "A short blurb about the user"])
 
- loan-attributes         (fern/lit vase.datomic/attributes [:loanOffer/loanId :one  :long :unique "The unique offer ID"]
+ loan-attributes         (fern/lit vase.datomic/attributes
+                                   [:loanOffer/loanId :one  :long :unique "The unique offer ID"]
                                    [:loanOffer/fees   :one  :long :index  "All of the loan fees"]
                                    [:loanOffer/notes  :many :string       "Notes about the loan"]
                                    [:user/loanOffers  :many :ref          "The collection of loan offers"])
@@ -121,4 +142,4 @@
  example.test/age        (fn [age] (> age 21))
  example.test/name       (clojure.spec/and string? not-empty)
  example.test/person     (clojure.spec/keys :req-un [:example.test/name :example.test/age])
- }
+}
