@@ -1,4 +1,4 @@
-{ ;; vase/plugins        []
+{vase/plugins            []
  vase/service            (fern/lit vase/service
                                    {:apis        [@example/v1 @example/v2]
                                     :service-map @http-options})
@@ -12,7 +12,7 @@
  example/v1              (fern/lit vase/api
                                    {:path          "/example/v1"
                                     :expose-api-at "/example/v1/api"
-                                    :on-startup    [@connection @base-attributes @user-attributes @loan-attributes]
+                                    :on-startup    [@connection @base-attributes @user-attributes @loan-attributes @sample-users]
                                     :on-request    [@connection]
                                     :routes        @v1/routes})
 
@@ -30,9 +30,9 @@
                            ["/user"                  :get    @v1/user-page]
                            ["/user"                  :post   @v1/user-create]
                            ["/user"                  :delete @v1/user-delete]
-                           ["/fogus"                 :get    @v1/fogus-page]
-                           ["/fogus-and-paul"        :get    @v1/fogus-paul-page]
-                           ["/fogus-and-someone"     :get    @v1/fogus-someone-page]}
+                           ["/jane"                  :get    @v1/jane-page]
+                           ["/jane-and-jill"         :get    @v1/jane-jill-page]
+                           ["/jane-and-someone"      :get    @v1/jane-someone-page]}
 
  v1/simple-response      (fern/lit vase/respond
                                    {:body "Hello world"})
@@ -84,20 +84,20 @@
                                    {:db-op      :vase/retract-entity
                                     :properties [:db/id]})
 
- v1/fogus-page           (fern/lit vase.datomic/query
+ v1/jane-page            (fern/lit vase.datomic/query
                                    {:query [:find ?e
                                             :in $
                                             :where
                                             [?e :user/userEmail "jane@example.com"]]})
 
- v1/fogus-paul-page      (fern/lit vase.datomic/query
+ v1/jane-jill-page       (fern/lit vase.datomic/query
                                    {:constants [["jane@example.com" "jill@example.com"]]
                                     :query     [:find ?e
                                                 :in $ [?emails ...]
                                                 :where
                                                 [?e :user/userEmail ?emails]]})
 
- v1/fogus-someone-page   (fern/lit vase.datomic/query
+ v1/jane-someone-page    (fern/lit vase.datomic/query
                                    {:params    [someone]
                                     :constants ["jane@example.com"]
                                     :query     [:find ?e
@@ -139,6 +139,12 @@
                                    [:loanOffer/fees   :one  :long :index  "All of the loan fees"]
                                    [:loanOffer/notes  :many :string       "Notes about the loan"]
                                    [:user/loanOffers  :many :ref          "The collection of loan offers"])
+
+ sample-users            (fern/lit vase.datomic/tx
+                                   {:user/userId 500  :user/userEmail "mtnygard@example.com"}
+                                   {:user/userId 501  :user/userEmail "paul@example.com"}
+                                   {:user/userId 502  :user/userEmail "jane@example.com"}
+                                   {:user/userId 503  :user/userEmail "jill@example.com"})
 
  example.test/age        (fn [age] (> age 21))
  example.test/name       (clojure.spec/and string? not-empty)
