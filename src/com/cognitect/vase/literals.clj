@@ -66,8 +66,8 @@
                    opt-toggles))))
 
 (defn schema-tx [form]
-  (schema-assert (vector? form) "The top level must be a vector." form)
-  (schema-assert (every? vector? form) "The top level vector must only contain other vectors" form)
+  (schema-assert (sequential? form) "The top level must be a vector, list, or set." form)
+  (schema-assert (every? vector? form) "The nested elements must be vectors" form)
   (mapv parse-schema-vec form))
 
 ;; Routing/Action literals

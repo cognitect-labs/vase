@@ -11,7 +11,8 @@
             [com.cognitect.vase.actions :as actions]
             [io.pedestal.interceptor :as i]
             [datomic.api :as d]
-            [com.cognitect.vase.literals :as literals])
+            [com.cognitect.vase.literals :as literals]
+            [io.pedestal.log :as log])
   (:import [clojure.lang IObj]))
 
 (defn- synthetic-interceptor-name
@@ -52,8 +53,9 @@
   (-interceptor [_]
     (i/map->Interceptor
      {:enter
-      (fn [{:keys [conn] :as ctx}]
-        @(d/transact conn assertions)
+      (fn [ctx]
+        (when-let [conn (-> ctx :request :conn)]
+          @(d/transact conn assertions))
         ctx)})))
 
 (defmethod f/literal 'vase.datomic/tx         [_ & assertions] (->Tx assertions))
@@ -70,9 +72,9 @@
       (i/map->Interceptor
        {:enter
         (fn [ctx]
-          (assoc ctx
-                 :conn cxn
-                 :db (d/db cxn)))}))))
+          (update ctx :request assoc
+                  :conn cxn
+                  :db (d/db cxn)))}))))
 
 (defmethod f/literal 'vase.datomic/connection
   [_ uri-or-map]
@@ -164,28 +166,20 @@
 
 
   (def filename "test/resources/test_descriptor.fern")
-  (try
-    (start-server
-     (try
-       (-> filename
-           (load-from-file)
-           (prepare-service))
-       (catch Throwable t
-         (def ex t)
-         (fe/print-evaluation-exception t))))
-    (catch Throwable t
-      (def ox t)
-      (fe/print-other-exception t filename)))
 
   (def srv
-    (try
-      (-> filename
-          (load-from-file)
-          (prepare-service))
-      (catch Throwable t
-        (def ex t)
-        (fe/print-evaluation-exception t))))
+       (try
+         (let [s (-> filename load-from-file prepare-service)]
+           (try
+             (start-server s)
+             (catch Throwable t
+               (def ox t)
+               (fe/print-other-exception t filename))))
+         (catch Throwable t
+           (def ex t)
+           (fe/print-evaluation-exception t))))
 
+  srv
 
-
+  (http/stop srv)
   )

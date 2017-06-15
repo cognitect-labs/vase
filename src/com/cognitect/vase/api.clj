@@ -15,48 +15,41 @@
 
 (s/def ::interceptor  interceptor?)
 (s/def ::interceptors (s/coll-of ::interceptor :min-count 1))
-
-(s/def ::route  (s/cat :path ::path
-                       :verb #{:get :put :post :delete :head :options :patch}
-                       :interceptors (s/or :single ::interceptor
-                                           :vector ::interceptors)))
-(s/def ::routes (s/coll-of ::route :min-count 1))
-
-(defn routes
-  "Return routes for all the APIs in the spec. Each one conforms to
-  the spec ::route"
-  [spec])
-
-(s/def ::on-startup  (s/nilable ::interceptors))
-(s/def ::on-request  (s/nilable ::interceptors))
-(s/def ::api         (s/keys :req-un [::on-startup ::on-request ::routes ::path]))
-(s/def ::apis        (s/coll-of ::api :min-count 1))
-(s/def ::service-map (s/keys))
-(s/def ::service     (s/keys :req-un [::apis] :opt-un [::service-map]))
+(s/def ::route        (s/cat :path ::path
+                             :verb #{:get :put :post :delete :head :options :patch}
+                             :interceptors (s/or :single ::interceptor
+                                                 :vector ::interceptors)))
+(s/def ::routes       (s/coll-of ::route :min-count 1))
+(s/def ::on-startup   (s/nilable ::interceptors))
+(s/def ::on-request   (s/nilable ::interceptors))
+(s/def ::api          (s/keys :req-un [::on-startup ::on-request ::routes ::path]))
+(s/def ::apis         (s/coll-of ::api :min-count 1))
+(s/def ::service-map  (s/keys))
+(s/def ::service      (s/keys :req-un [::apis] :opt-un [::service-map]))
 
 (defn- base-route
-  [base path]
+  [base {:keys [path]}]
   (let [s (str base path)]
     (str/replace s #"//" "/")))
 
 ;; TODO - coll? returns true on records. We need to be more specific
 ;; about whether we have one thing or several
 (defn- base-interceptors
-  [on-request route-specific]
-  (println 'base-interceptors :route-specific route-specific " (" (type route-specific) ")")
-  (if (coll? route-specific)
-    (into on-request route-specific)
-    (conj on-request route-specific)))
+  [on-request {:keys [interceptors]}]
+  (let [[one-or-many intc] interceptors]
+    (case one-or-many
+      :single (conj on-request intc)
+      :vector (into on-request intc))))
 
 (defn- routes-for-api
   [api]
   (let [base   (:path api "/")
         on-req (:on-request api [])]
     (mapv
-     (fn [r]
-       (-> r
-          (update 0 #(base-route base %))
-          (update 2 #(base-interceptors on-req %))))
+     (fn [route]
+       [(base-route base route)
+        (:verb route)
+        (base-interceptors on-req route)])
      (:routes api #{}))))
 
 (defn- collect-routes
@@ -97,9 +90,9 @@
      (if (s/invalid? conformed)
        conformed
        (-> starter-map
-           (merge (:service-map spec))
-           (add-routes (collect-routes spec))
-           (add-startups (collect-startups spec)))))))
+           (merge (:service-map conformed))
+           (add-routes (collect-routes conformed))
+           (add-startups (collect-startups conformed)))))))
 
 (defn start-service
   [service-map]
