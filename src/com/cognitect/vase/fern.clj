@@ -54,8 +54,10 @@
     (i/map->Interceptor
      {:enter
       (fn [ctx]
-        (when-let [conn (-> ctx :request :conn)]
-          @(d/transact conn assertions))
+        (if-let [conn (-> ctx :request :conn)]
+          (let [tx-result @(d/transact conn assertions)]
+            (log/info :tx-result tx-result))
+          (log/warn :msg "Cannot execute Tx" :reason :no-connection))
         ctx)})))
 
 (defmethod f/literal 'vase.datomic/tx         [_ & assertions] (->Tx assertions))
@@ -138,12 +140,6 @@
        (f/evaluate service-key)
        (a/service-map))))
 
-(defn start-server
-  ([service-map]
-   (-> service-map
-       http/create-server
-       http/start)))
-
 (def vase-fern-url "https://github.com/cognitect-labs/vase/blob/master/docs/vase_and_fern.md")
 
 (defn -main [& args]
@@ -158,7 +154,7 @@
                                           (fe/print-evaluation-exception t)
                                           nil))]
         (try
-          (start-server prepared-service-map)
+          (a/start-service prepared-service-map)
           (catch Throwable t
             (fe/print-other-exception t filename)))))))
 
@@ -171,7 +167,7 @@
        (try
          (let [s (-> filename load-from-file prepare-service)]
            (try
-             (start-server s)
+             (a/start-service s)
              (catch Throwable t
                (def ox t)
                (fe/print-other-exception t filename))))

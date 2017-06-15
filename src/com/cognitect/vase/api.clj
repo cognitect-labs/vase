@@ -2,11 +2,10 @@
   "Public functions for submitting a data structure to Vase and
   getting back routes, specs, and even a whole Pedestal service map."
   (:require [clojure.spec :as s]
+            [clojure.string :as str]
             [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]
-            [com.cognitect.vase.routes :as routes]
-            [clojure.string :as str]
-            [fern :as f]))
+            [io.pedestal.interceptor.chain :as chain]))
 
 (s/def ::path string?)
 
@@ -94,8 +93,14 @@
            (add-routes (collect-routes conformed))
            (add-startups (collect-startups conformed)))))))
 
+(defn- execute-startups
+  [service-map]
+  (let [startups (map i/-interceptor (get service-map ::startups []))]
+    (chain/execute service-map startups)))
+
 (defn start-service
   [service-map]
   (-> service-map
-      (http/create-server)
-      (http/start)))
+      execute-startups
+      http/create-server
+      http/start))

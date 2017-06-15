@@ -66,7 +66,7 @@
                    opt-toggles))))
 
 (defn schema-tx [form]
-  (schema-assert (sequential? form) "The top level must be a vector, list, or set." form)
+  (schema-assert (sequential? form) "The top level must be a vector or list." form)
   (schema-assert (every? vector? form) "The nested elements must be vectors" form)
   (mapv parse-schema-vec form))
 

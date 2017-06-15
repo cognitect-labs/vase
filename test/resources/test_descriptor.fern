@@ -7,12 +7,12 @@
                           :io.pedestal.http/file-path "/public"
                           :io.pedestal.http/join?     false}
 
- port                    8080
+ port                    8082
 
  example/v1              (fern/lit vase/api
                                    {:path          "/example/v1"
                                     :expose-api-at "/example/v1/api"
-                                    :on-startup    [@base-attributes @user-attributes @loan-attributes]
+                                    :on-startup    [@connection @base-attributes @user-attributes @loan-attributes]
                                     :on-request    [@connection]
                                     :routes        @v1/routes})
 
