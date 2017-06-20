@@ -161,19 +161,29 @@
 (comment
 
 
+  (try-> filename
+         load-from-file
+         (:? IOException ioe ,,,)
+         (:? Throwable t ,,,)
+         prepare-service
+         start-service
+         (:? IOException ioe ,,,)
+         (:? EvaluationException ee ,,,)
+         (:? Throwable t ,,,))
+
   (def filename "test/resources/test_descriptor.fern")
 
   (def srv
-       (try
-         (let [s (-> filename load-from-file prepare-service)]
-           (try
-             (a/start-service s)
-             (catch Throwable t
-               (def ox t)
-               (fe/print-other-exception t filename))))
-         (catch Throwable t
-           (def ex t)
-           (fe/print-evaluation-exception t))))
+    (try
+      (let [s (-> filename load-from-file prepare-service)]
+        (try
+          (a/start-service s)
+          (catch Throwable t
+            (def ox t)
+            (fe/print-other-exception t filename))))
+      (catch Throwable t
+        (def ex t)
+        (fe/print-evaluation-exception t))))
 
   srv
 

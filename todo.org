@@ -1,0 +1,11 @@
+* TODO Util to convert terse routes to table routes
+* TODO Util to convert edn vase descriptor to fern descriptor
+* TODO (Maybe) Util to format/sort/organize fern descriptors
+* TODO Docs & sample code for
+** TODO Add Vase to existing Pedestal service
+- Implies changes to com.cognitect.vase.fern and
+  com.cognitect.vase.api to make it easy to do this.
+** TODO Vase as -main
+** TODO Multiple fern files glommed into one service
+* TODO Move -main into its own namespace
+- Implies making it handle both fern and edn files

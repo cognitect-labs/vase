@@ -75,7 +75,8 @@
 
 (def default-service-map
   {::http/type :jetty
-   ::http/port 80})
+   ::http/port 80
+   ::http/routes #{}})
 
 (defn service-map
   "Given a spec, return a Pedestal service-map
