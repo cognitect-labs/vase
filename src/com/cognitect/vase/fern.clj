@@ -1,6 +1,7 @@
 (ns com.cognitect.vase.fern
   (:require [com.cognitect.vase.api :as a]
             [com.cognitect.vase.interceptor :as vinterceptor]
+            [com.cognitect.vase.try :refer [try->]]
             [fern :as f]
             [fern.easy :as fe]
             [io.pedestal.http :as http]
@@ -158,34 +159,26 @@
           (catch Throwable t
             (fe/print-other-exception t filename)))))))
 
+
+
 (comment
-
-
-  (try-> filename
-         load-from-file
-         (:? IOException ioe ,,,)
-         (:? Throwable t ,,,)
-         prepare-service
-         start-service
-         (:? IOException ioe ,,,)
-         (:? EvaluationException ee ,,,)
-         (:? Throwable t ,,,))
 
   (def filename "test/resources/test_descriptor.fern")
 
-  (def srv
-    (try
-      (let [s (-> filename load-from-file prepare-service)]
-        (try
-          (a/start-service s)
-          (catch Throwable t
-            (def ox t)
-            (fe/print-other-exception t filename))))
-      (catch Throwable t
-        (def ex t)
-        (fe/print-evaluation-exception t))))
-
   srv
 
+  (def srv
+    (try->
+     filename
+     load-from-file
+     (:! java.io.IOException ioe (fe/print-other-exception ioe filename))
+
+     prepare-service
+     (:! Throwable t (fe/print-evaluation-exception t))
+
+     a/start-service
+     (:! Throwable t (fe/print-other-exception t filename))))
+
   (http/stop srv)
+
   )
