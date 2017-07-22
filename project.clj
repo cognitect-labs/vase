@@ -18,6 +18,7 @@
                  ;; Cleanup
                  [commons-codec "1.10"]
                  [cheshire "5.6.3"]]
+  :main          com.cognitect.vase.main
   :pedantic? :abort
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}

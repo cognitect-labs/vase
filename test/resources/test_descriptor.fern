@@ -4,10 +4,9 @@
                                     :service-map @http-options})
 
  http-options            {:io.pedestal.http/port      @port
-                          :io.pedestal.http/file-path "/public"
-                          :io.pedestal.http/join?     false}
+                          :io.pedestal.http/file-path "/public"}
 
- port                    8082
+ port                    8080
 
  example/v1              (fern/lit vase/api
                                    {:path          "/example/v1"
