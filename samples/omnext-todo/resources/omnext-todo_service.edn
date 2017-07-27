@@ -20,10 +20,10 @@
   ;; ------------------------
   :vase/specs
   {:todo/category keyword?
-   :todo/title (clojure.spec/and string? not-empty)
-   :omnext-todo/todo (clojure.spec/keys :req [:todo/title]
-                                        :opt [:todo/category])
-   :omnext-todo/todos (clojure.spec/+ :omnext-todo/todo)}
+   :todo/title (clojure.spec.alpha/and string? not-empty)
+   :omnext-todo/todo (clojure.spec.alpha/keys :req [:todo/title]
+                                              :opt [:todo/category])
+   :omnext-todo/todos (clojure.spec.alpha/+ :omnext-todo/todo)}
 
   ;; API Tagged Chunks/Versions
   ;; --------------------------
@@ -56,10 +56,10 @@
                                                    :todo/created
                                                    :todo/category
                                                    :todo/completed]}]
-              :delete #vase/transact {:name :omnext-todo.main/todos-delete
-                                      :db-op :vase/retract-entity
-                                      ;; :vase/retract-entity requires :db/id to be supplied
-                                      :properties [:db/id]}}
+               :delete #vase/transact {:name :omnext-todo.main/todos-delete
+                                       :db-op :vase/retract-entity
+                                       ;; :vase/retract-entity requires :db/id to be supplied
+                                       :properties [:db/id]}}
      "/todos/validate" {:post #vase/validate {:name :omnext-todo.main/validate-page
                                               :spec :omnext-todo/todo}}}
     ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version

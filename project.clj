@@ -2,7 +2,7 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-alpha14"]
+                 [org.clojure/clojure "1.9.0-alpha17"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5554" :exclusions [[org.slf4j/slf4j-api]
@@ -10,11 +10,12 @@
                  [io.rkn/conformity "0.4.0" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal
-                 [io.pedestal/pedestal.service "0.5.2"]
+                 [io.pedestal/pedestal.service "0.5.2" :exclusions [org.clojure/core.async]]
 
                  ;; Cleanup
                  [commons-codec "1.10"]
-                 [cheshire "5.6.3"]]
+                 [cheshire "5.6.3"]
+                 [org.clojure/core.async "0.3.443"]]
   :pedantic? :abort
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}

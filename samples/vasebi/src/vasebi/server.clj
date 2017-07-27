@@ -1,6 +1,6 @@
 (ns vasebi.server
   (:gen-class) ; for -main method in uberjar
-  (:require [clojure.spec :as spec]
+  (:require [clojure.spec.alpha :as spec]
             [io.pedestal.http :as server]
             [io.pedestal.http.route :as route]
             [com.cognitect.vase :as vase]

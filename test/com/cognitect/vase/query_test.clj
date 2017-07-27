@@ -4,7 +4,7 @@
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.test-db-helper :as db-helper]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [datomic.api :as d]))
 
 (defn empty-db-entity-count
@@ -28,7 +28,7 @@
   ([p]
    (with-path-params {} p))
   ([ctx p]
-      (-> ctx
+   (-> ctx
        (update-in [:request :path-params] merge p)
        (update-in [:request :params] merge p))))
 
