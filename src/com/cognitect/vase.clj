@@ -1,5 +1,5 @@
 (ns com.cognitect.vase
-  (:require [clojure.spec :as spec]
+  (:require [clojure.spec.alpha :as spec]
             [io.pedestal.http.route :as route]
             [com.cognitect.vase.datomic :as datomic]
             [com.cognitect.vase.literals :as literals]

@@ -170,10 +170,10 @@
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-   (let [enter (handle-intercept-option (:enter form))
-         leave (handle-intercept-option (:leave form))
-         error (handle-intercept-option (:leave form))]
-     (i/interceptor {:name (:name form)
-                     :enter enter
-                     :leave leave
-                     :error error})))
+  (let [enter (handle-intercept-option (:enter form))
+        leave (handle-intercept-option (:leave form))
+        error (handle-intercept-option (:leave form))]
+    (i/interceptor {:name (:name form)
+                    :enter enter
+                    :leave leave
+                    :error error})))

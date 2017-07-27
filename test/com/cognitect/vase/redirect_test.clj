@@ -5,7 +5,7 @@
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.test-db-helper :as db-helper]
             [com.cognitect.vase.actions-test :refer [expect-response with-query-params execute-and-expect]]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [datomic.api :as d]))
 
 (defn make-redirect

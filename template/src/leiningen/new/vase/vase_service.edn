@@ -25,9 +25,9 @@
   ;; ------------------------
   :vase/specs
   {:{{namespace}}.test/age (fn [age] (> age 21))
-   :{{namespace}}.test/name (clojure.spec/and string? not-empty)
-   :{{namespace}}.test/person (clojure.spec/keys :req-un [:{{namespace}}.test/name
-                                                     :{{namespace}}.test/age])}
+   :{{namespace}}.test/name (clojure.spec.alpha/and string? not-empty)
+   :{{namespace}}.test/person (clojure.spec.alpha/keys :req-un [:{{namespace}}.test/name
+                                                                :{{namespace}}.test/age])}
 
   ;; API Tagged Chunks/Versions
   ;; --------------------------

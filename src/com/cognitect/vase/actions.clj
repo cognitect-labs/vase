@@ -30,7 +30,7 @@
   with \"/users/:userid\", then the s-expression will have the symbol
   `'userid` bound to the value of that request parameter."
   (:require [clojure.walk :as walk]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as interceptor]
             [com.cognitect.vase.util :as util])
@@ -137,8 +137,8 @@
              (if-let [v (get params-acc k)]
                (assoc params-acc k (coerce-arg-val v))
                params-acc))
-           req-params
-           coercions))
+          req-params
+          coercions))
 
 (defn bind
   [param-syms]
@@ -169,8 +169,8 @@
     (respond-action-exprs '[url-thing]
                           '[url-thing]
                           '(str "You said: " url-thing " which is a " (type url-thing))
-                          200 {}))
-  )
+                          200 {})))
+
 
 (defn respond-action
   "Return a Pedestal interceptor that responds with a canned
@@ -223,8 +223,8 @@
            ~(bind params) req-params#
            problems#      (mapv
                            #(dissoc % :pred)
-                           (:clojure.spec/problems
-                            (clojure.spec/explain-data ~spec req-params#)))
+                           (:clojure.spec.alpha/problems
+                            (clojure.spec.alpha/explain-data ~spec req-params#)))
            resp#          (util/response
                            problems#
                            ~headers
@@ -239,7 +239,7 @@
   parameters.
 
   The response body will be a list of data structures as returned by
-  clojure.spec/explain-data."
+  clojure.spec.alpha/explain-data."
   ([name params headers spec]
    (validate-action name params headers spec nil))
   ([name params headers spec request-params-path]
@@ -260,9 +260,9 @@
   (let [explain-to (or explain-to ::explain-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [val#           (get ~'context ~from)
-             conformed#     (clojure.spec/conform ~spec val#)
-             problems#      (when (= :clojure.spec/invalid conformed#)
-                              (clojure.spec/explain-data ~spec val#))
+             conformed#     (clojure.spec.alpha/conform ~spec val#)
+             problems#      (when (= :clojure.spec.alpha/invalid conformed#)
+                              (clojure.spec.alpha/explain-data ~spec val#))
              ctx# (assoc ~'context ~to conformed#)]
          (if problems#
            (assoc ctx# ~explain-to problems#)
@@ -360,8 +360,8 @@
                           someone]
                         '[selector]
                         ["mefogus@gmail.com"]
-                        {}))
-  )
+                        {})))
+
 
 (defn query-action
   "Returns a Pedestal interceptor that executes a Datomic query on

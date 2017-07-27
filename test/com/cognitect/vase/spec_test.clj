@@ -2,8 +2,8 @@
   (:require [com.cognitect.vase.spec :as vase.spec]
             [com.cognitect.vase :as vase]
             [com.cognitect.vase.service-route-table :as srt]
-            [clojure.spec :as s]
-            [clojure.spec.test :as stest]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]
             [clojure.test :refer :all]
             [io.pedestal.interceptor :as interceptor]))
 

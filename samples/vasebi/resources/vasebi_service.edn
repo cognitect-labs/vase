@@ -60,7 +60,7 @@
                        :product/type :product.type/produce
                        :product/brand-name "Sweet"}]
 
-                      [{:db/id #db/id[:db.part/user]
+                     [{:db/id #db/id[:db.part/user]
                        :sale/product [:product/name "Ham"]
                        :sale/store [:store/name "JoeMart"]
                        :sale/price 1000}
@@ -84,22 +84,23 @@
   ;; Global Specs for the API
   ;; ------------------------
   :vase/specs
-  {:vasebi.inbound-sale/store (clojure.spec/and string? not-empty)
-   :vasebi.inbound-sale/product (clojure.spec/and string? not-empty)
-   :vasebi.inbound/sale (clojure.spec/keys :req-un [:vasebi.inbound-sale/store
-                                                    :vasebi.inbound-sale/product])
-   :vasebi.inbound/sales (clojure.spec/+ :vasebi.inbound/sale)
+  {:vasebi.inbound-sale/store (clojure.spec.alpha/and string? not-empty)
+   :vasebi.inbound-sale/product (clojure.spec.alpha/and string? not-empty)
+   :vasebi.inbound/sale (clojure.spec.alpha/keys :req-un [:vasebi.inbound-sale/store
+                                                          :vasebi.inbound-sale/product])
+   :vasebi.inbound/sales (clojure.spec.alpha/+ :vasebi.inbound/sale)
 
-   :vasebi.store/name (clojure.spec/and string? not-empty)
-   :vasebi.store/state (clojure.spec/and string? not-empty (fn [x] (= 2 (count x))))
-   :vasebi.store/city (clojure.spec/and string? not-empty)
+   :vasebi.store/name (clojure.spec.alpha/and string? not-empty)
+   :vasebi.store/state (clojure.spec.alpha/and string? not-empty (fn [x] (= 2 (count x))))
+   :vasebi.store/city (clojure.spec.alpha/and string? not-empty)
    :vasebi.store/sqft pos-int?
    :vasebi.store/has-coffee-bar boolean?
-   :vasebi/store (clojure.spec/keys :req-un [:vasebi.store/name
-                                             :vasebi.store/state
-                                             :vasebi.store/city
-                                             :vasebi.store/sqft]
-                                    :opt-un [:vasebi.store/has-coffee-bar])}
+   :vasebi/store (clojure.spec.alpha/keys
+                   :req-un [:vasebi.store/name
+                            :vasebi.store/state
+                            :vasebi.store/city
+                            :vasebi.store/sqft]
+                   :opt-un [:vasebi.store/has-coffee-bar])}
 
   ;; API Tagged Chunks/Versions
   ;; --------------------------
@@ -146,12 +147,12 @@
                                                                    :response
                                                                    {:status 200
                                                                     :body (mapv (fn [res]
-                                                                           (assoc (merge (dissoc (:sale/store res) :db/id)
-                                                                                         (dissoc (:sale/product res) :db/id))
-                                                                                  ;; Let's convert sale prices (whole cents) into floating points
-                                                                                  :sale/price (/ (:sale/price res) 100.0)
-                                                                                  :product/type (get-in res [:sale/product :product/type :db/ident])))
-                                                                         (:vasebi/sales-data ctx))}))}]}}
+                                                                                 (assoc (merge (dissoc (:sale/store res) :db/id)
+                                                                                               (dissoc (:sale/product res) :db/id))
+                                                                                        ;; Let's convert sale prices (whole cents) into floating points
+                                                                                        :sale/price (/ (:sale/price res) 100.0)
+                                                                                        :product/type (get-in res [:sale/product :product/type :db/ident])))
+                                                                           (:vasebi/sales-data ctx))}))}]}}
     ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
     :vase.api/schemas [:vasebi/foodmart-sales
                        :vasebi/seed-data]
