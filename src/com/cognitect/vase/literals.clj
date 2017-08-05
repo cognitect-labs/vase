@@ -172,7 +172,7 @@
          (-> form :name keyword?)]}
    (let [enter (handle-intercept-option (:enter form))
          leave (handle-intercept-option (:leave form))
-         error (handle-intercept-option (:leave form))]
+         error (handle-intercept-option (:error form))]
      (i/interceptor {:name (:name form)
                      :enter enter
                      :leave leave
