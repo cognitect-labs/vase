@@ -104,7 +104,7 @@ hand-written Pedestal routes by concatenating the input to
 * [Adding Vase to an existing Pedestal service](./docs/adding_vase.md)
 * [Building Your First API](./docs/your_first_api.md)
 * [Design document](./docs/design.md)
-
+* [Fern Input for Vase](./docs/vase_with_fern.md) - A new way to write descriptors
 
 ## Contributing
 

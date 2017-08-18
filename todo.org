@@ -7,5 +7,6 @@
   com.cognitect.vase.api to make it easy to do this.
 ** TODO Vase as -main
 ** TODO Multiple fern files glommed into one service
-* TODO Move -main into its own namespace
+* DONE Move -main into its own namespace
+  CLOSED: [2017-08-18 Fri 09:42]
 - Implies making it handle both fern and edn files
