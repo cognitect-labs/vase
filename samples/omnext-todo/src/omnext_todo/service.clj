@@ -52,7 +52,8 @@
   If the request has a parameter `:demand`, it is an Om.next query.
   Otherwise, handle the request with our limited 'demand-style' function, 'query-results'"
   [request]
-  (let [demand-params (get-in request [:params :demand])
+  (let [demand-params (get-in request [:transit-params :demand]
+                              (get-in request [:params :demand]))
         parsed-demand-params (if (string? demand-params)
                                (clojure.edn/read-string demand-params)
                                demand-params)]
