@@ -168,8 +168,8 @@ multimethods for
 [`fern/literal`](https://github.com/cognitect-labs/fern/blob/master/src/fern.clj),
 then you can freely mix those with Vase's pre-defined literals.
 
-Suppose you want to aggregate data from an existing API into a
-Vase app. There are just two steps to make it happen.
+Suppose you want to aggregate data from an existing API into a Vase
+app. There are just two steps to make it happen.
 
 ## Provide a Multimethod for fern/literal
 
@@ -198,7 +198,8 @@ like.
 ## Add the Namespace to `vase/plugins`
 
 Your defmethod has to get evaluated before you create the
-service. Vase can do this for you if you add the namespace name to the `vase/plugins` key like this:
+service. Vase can do this for you if you add the namespace name to the
+`vase/plugins` key like this:
 
 ```
 {vase/plugins [example]
