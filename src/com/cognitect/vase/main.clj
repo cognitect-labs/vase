@@ -24,7 +24,7 @@
                parse-args
                (:! clojure.lang.ExceptionInfo ei (fe/print-other-exception ei))
                :filename)]
-    (when file
+    (when (and file (not= ::try/exit file))
       (try-> file
              fern/load-from-file
              (:! java.io.FileNotFoundException fnfe (fe/print-error-message (str "File not found: " (pr-str (.getMessage fnfe)))))
