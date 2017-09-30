@@ -20,16 +20,17 @@
 
 (defn -main
   [& args]
-  (try-> args
-         parse-args
-         (:! clojure.lang.ExceptionInfo ei (fe/print-other-exception ei))
+  (let [file (try-> args
+               parse-args
+               (:! clojure.lang.ExceptionInfo ei (fe/print-other-exception ei))
+               :filename)]
+    (when file
+      (try-> file
+             fern/load-from-file
+             (:! java.io.FileNotFoundException fnfe (fe/print-error-message (str "File not found: " (pr-str (.getMessage fnfe)))))
 
-         :filename
-         fern/load-from-file
-         (:! java.io.FileNotFoundException fnfe (fe/print-error-message (str "File not found: " (pr-str (.getMessage fnfe)))))
+             fern/prepare-service
+             (:! Throwable t (fe/print-evaluation-exception t file))
 
-         fern/prepare-service
-         (:! Throwable t (fe/print-evaluation-exception t))
-
-         a/start-service
-         (:! Throwable t (fe/print-other-exception t))))
+             a/start-service
+             (:! Throwable t (fe/print-other-exception t file))))))
