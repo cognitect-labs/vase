@@ -484,7 +484,7 @@ descriptors!
 ## Getting data in with `transact`
 
 In addition to rendering content, the Vase system also provides a
-`#vase/transact` action allowing the storage of incomming POST data.
+`#vase/transact` action allowing the storage of incoming POST data.
 
 Vase expects transaction data to arrive as a JSON entity body. The top
 level of the body is an object with the single key `payload`. The
