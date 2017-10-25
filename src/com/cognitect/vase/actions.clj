@@ -30,7 +30,7 @@
   with \"/users/:userid\", then the s-expression will have the symbol
   `'userid` bound to the value of that request parameter."
   (:require [clojure.walk :as walk]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as interceptor]
             [com.cognitect.vase.util :as util])
@@ -223,8 +223,8 @@
            ~(bind params) req-params#
            problems#      (mapv
                            #(dissoc % :pred)
-                           (:clojure.spec/problems
-                            (clojure.spec/explain-data ~spec req-params#)))
+                           (:clojure.spec.alpha/problems
+                            (clojure.spec.alpha/explain-data ~spec req-params#)))
            resp#          (util/response
                            problems#
                            ~headers
@@ -254,15 +254,15 @@
 
 (defn conform-action-exprs
   "Return code for a Pedestal interceptor function that performs
-  clojure.spec validation on the data attached at `from`. If the data
+  spec validation on the data attached at `from`. If the data
   does not conform, the explain-data will be attached at `explain-to`"
   [from spec to explain-to]
   (let [explain-to (or explain-to ::explain-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [val#           (get ~'context ~from)
-             conformed#     (clojure.spec/conform ~spec val#)
-             problems#      (when (= :clojure.spec/invalid conformed#)
-                              (clojure.spec/explain-data ~spec val#))
+             conformed#     (s/conform ~spec val#)
+             problems#      (when (= ::s/invalid conformed#)
+                              (s/explain-data ~spec val#))
              ctx# (assoc ~'context ~to conformed#)]
          (if problems#
            (assoc ctx# ~explain-to problems#)

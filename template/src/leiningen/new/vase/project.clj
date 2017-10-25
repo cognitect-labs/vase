@@ -3,8 +3,9 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
-                 [io.pedestal/pedestal.service "0.5.2"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha17"]
+                 ;; Tmp exclusion of core.async only needed until Vase uses Pedestal 0.5.3
+                 [io.pedestal/pedestal.service "0.5.2" :exclusions [org.clojure/core.async]]
                  [com.cognitect/pedestal.vase "0.9.2-SNAPSHOT"]
 
                  ;; Remove this line and uncomment one of the next lines to

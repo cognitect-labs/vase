@@ -2,12 +2,15 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-alpha14"]
+                 [org.clojure/clojure "1.9.0-alpha17"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5554" :exclusions [[org.slf4j/slf4j-api]
                                                                    [org.slf4j/slf4j-nop]]]
                  [io.rkn/conformity "0.4.0" :exclusions [com.datomic/datomic-free]]
+
+                 ;; Tmp. Work around problem also fixed in pedestal.service 0.5.3-SNAPSHOT
+                 [org.clojure/core.async "0.3.443"]
 
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.5.2"]

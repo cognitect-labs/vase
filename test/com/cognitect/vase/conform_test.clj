@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.test-helper :as helper]
-            [clojure.spec :as s]))
+            [clojure.spec.alpha :as s]))
 
 (s/def ::a string?)
 (s/def ::b boolean?)
@@ -14,13 +14,13 @@
 
 (deftest conform-action
   (testing "Happy path"
-    (is (not= :clojure.spec/invalid
+    (is (not= ::s/invalid
               (-> {:query-data {:a 1 :b true}}
                   (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
                   (get :shaped)))))
 
   (testing "Non-conforming inputs"
-    (is (= :clojure.spec/invalid
+    (is (= ::s/invalid
            (-> {:query-data {:a 1 :b "string-not-allowed"}}
                (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
                (get :shaped))))
