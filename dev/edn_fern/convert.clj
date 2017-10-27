@@ -1,5 +1,6 @@
 (ns edn-fern.convert
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str])
+  (:import [com.cognitect.vase.actions RespondAction RedirectAction ValidateAction TransactAction QueryAction]))
 
 (defn- kn [k]
   (keyword (name k)))
@@ -104,17 +105,42 @@
   [ret k v]
   (reduce-kv convert-schema ret v))
 
+(def ^:private fern-literals-for-action-types
+  {RespondAction  'vase/respond
+   RedirectAction 'vase/redirect
+   ValidateAction 'vase/validate
+   TransactAction 'vase.datomic/transact
+   QueryAction    'vase.datomic/query})
+
+(defn- make-action-lit
+  [action]
+  (when-not (fern-literals-for-action-types (type action))
+    (println "no mapping for " action ":" (type action)))
+  (lit (fern-literals-for-action-types (type action)) ))
+
+(defn- convert-single-route
+  [ret [path verbs]]
+  (into ret
+        (map
+         (fn [[verb action-or-actions]]
+           (let [rhs (if (sequential? action-or-actions)
+                       (mapv make-action-lit action-or-actions)
+                       (make-action-lit action-or-actions))]
+             [path verb rhs]))
+         verbs)))
+
 (defn- convert-routes
   [ret routesname routes]
-  (assoc ret routesname #{}))
+  (update ret routesname #(reduce convert-single-route (or % #{}) routes)))
 
 (defn- convert-api
-  [ret apiname {:keys [vase.api/routes vase.api/schemas vase.api/forward-headers]}]
+  [ret apiname {:keys [vase.api/routes vase.api/schemas vase.api/forward-headers vase.api/interceptors]}]
   (let [apiname    (symbolize apiname)
         routesname (routize apiname)
         ret        (assoc ret apiname (lit 'vase/api {:path          (pathize apiname)
                                                       :expose-api-at (str (pathize apiname) "/api")
-                                                      :on-request    [(r 'connection)]
+                                                      :on-request    (into [(r 'connection)]
+                                                                           (mapv (comp r symbolize) interceptors))
                                                       :on-startup    (into [(r 'connection)]
                                                                            (mapv (comp r symbolize) schemas))
                                                       :routes        (r routesname)}))]
