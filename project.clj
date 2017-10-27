@@ -13,7 +13,7 @@
                  [io.pedestal/pedestal.service "0.5.2"]
                  [io.pedestal/pedestal.jetty "0.5.2"]
 
-                 [com.cognitect/fern "0.1.2-SNAPSHOT"]
+                 [com.cognitect/fern "0.1.4-SNAPSHOT"]
 
                  ;; Cleanup
                  [commons-codec "1.10"]

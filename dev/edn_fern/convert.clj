@@ -1,6 +1,9 @@
 (ns edn-fern.convert
-  (:require [clojure.string :as str])
-  (:import [com.cognitect.vase.actions RespondAction RedirectAction ValidateAction TransactAction QueryAction]))
+  (:require [clojure.string :as str]
+            [io.pedestal.interceptor :as i])
+  (:import [com.cognitect.vase.actions RespondAction RedirectAction
+            ValidateAction TransactAction QueryAction ConformAction
+            InterceptAction ValidateAction AttachAction]))
 
 (defn- kn [k]
   (keyword (name k)))
@@ -9,7 +12,9 @@
   (symbol (str n "-" a)))
 
 (defn- symbolize [k]
-  (symbol (str (namespace k)) (name k)))
+  (if (namespace k)
+    (symbol (str (namespace k)) (name k))
+    (symbol (name k))))
 
 (defn- pathize [s]
   (str "/" (str/replace (str s) #"\." "/")))
@@ -95,43 +100,65 @@
   (let [schemaname  (symbolize schemaname)
         named-parts (map-indexed (fn [idx part]
                                    {(affix schemaname idx)
-                                    (convert-schema-part part)}) txes)
-        ret         (apply merge ret named-parts)]
-    (update-in ret [:requires schemaname] #(-> (or % [])
-                                               (into (mapv (comp r symbolize) requires))
-                                               (into (mapv r (mapcat keys named-parts)))))))
+                                    (convert-schema-part part)}) txes)]
+    (apply merge ret named-parts)))
 
 (defmethod convert :vase/norms
   [ret k v]
   (reduce-kv convert-schema ret v))
 
+(defn- remove-nils
+  [m]
+  (into {} (remove (comp nil? val) m)))
+
 (def ^:private fern-literals-for-action-types
-  {RespondAction  'vase/respond
-   RedirectAction 'vase/redirect
-   ValidateAction 'vase/validate
-   TransactAction 'vase.datomic/transact
-   QueryAction    'vase.datomic/query})
+  {RespondAction   ['vase/respond          [:params :edn-coerce :body :status :headers]]
+   RedirectAction  ['vase/redirect         [:params :body :status :headers :url]]
+   ValidateAction  ['vase/validate         [:params :headers :spec :request-params-path]]
+   ConformAction   ['vase/conform          [:from :to :spec :explain-to]]
+   InterceptAction ['vase/intercept        [:enter :leave :error]]
+   AttachAction    ['vase/attach           [:key :val]]
+   TransactAction  ['vase.datomic/transact [:properties :db-op :headers :to]]
+   QueryAction     ['vase.datomic/query    [:params :query :edn-coerce :constants :headers :to]]})
 
 (defn- make-action-lit
   [action]
-  (when-not (fern-literals-for-action-types (type action))
-    (println "no mapping for " action ":" (type action)))
-  (lit (fern-literals-for-action-types (type action)) ))
+  (if (symbol? action)
+    action
+    (let [[nm ks] (fern-literals-for-action-types (type action))]
+      (lit nm (remove-nils (select-keys action ks))))))
+
+(defn make-action-name
+  [action]
+  (if (not (symbol? action))
+    (symbolize (:name action))
+    action))
+
+(defn make-action-ref
+  [action]
+  (r (make-action-name action)))
 
 (defn- convert-single-route
-  [ret [path verbs]]
-  (into ret
-        (map
-         (fn [[verb action-or-actions]]
-           (let [rhs (if (sequential? action-or-actions)
-                       (mapv make-action-lit action-or-actions)
-                       (make-action-lit action-or-actions))]
-             [path verb rhs]))
-         verbs)))
+  [routesname ret path verbs]
+  (let [ret (update ret routesname
+                    #(into (or % #{})
+                           (for [[verb a-or-as] verbs]
+                             [path verb (if (sequential? a-or-as)
+                                          (mapv make-action-ref a-or-as)
+                                          (make-action-ref a-or-as))])))]
+    (into ret
+          (for [[verb a-or-as] verbs
+                a              (if (sequential? a-or-as) a-or-as [a-or-as])
+                :when (not (symbol? a))]
+            {(make-action-name a) (make-action-lit a)}))))
 
 (defn- convert-routes
   [ret routesname routes]
-  (update ret routesname #(reduce convert-single-route (or % #{}) routes)))
+  (reduce
+   (fn [m [path verbs]]
+     (convert-single-route routesname m path verbs))
+   ret
+   routes))
 
 (defn- convert-api
   [ret apiname {:keys [vase.api/routes vase.api/schemas vase.api/forward-headers vase.api/interceptors]}]
@@ -140,7 +167,7 @@
         ret        (assoc ret apiname (lit 'vase/api {:path          (pathize apiname)
                                                       :expose-api-at (str (pathize apiname) "/api")
                                                       :on-request    (into [(r 'connection)]
-                                                                           (mapv (comp r symbolize) interceptors))
+                                                                           (mapv symbolize interceptors))
                                                       :on-startup    (into [(r 'connection)]
                                                                            (mapv (comp r symbolize) schemas))
                                                       :routes        (r routesname)}))]
