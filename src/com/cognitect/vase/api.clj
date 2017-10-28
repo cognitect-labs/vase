@@ -1,7 +1,7 @@
 (ns com.cognitect.vase.api
   "Public functions for submitting a data structure to Vase and
   getting back routes, specs, and even a whole Pedestal service map."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]

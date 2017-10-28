@@ -30,9 +30,9 @@
  ;; ------------------------
  :vase/specs
  {:example.test/age (fn [age] (> age 21))
-  :example.test/name (clojure.spec/and string? not-empty)
-  :example.test/person (clojure.spec/keys :req-un [:example.test/name
-                                                   :example.test/age])}
+  :example.test/name (clojure.spec.alpha/and string? not-empty)
+  :example.test/person (clojure.spec.alpha/keys :req-un [:example.test/name
+                                                         :example.test/age])}
 
  ;; API Tags/Versions
  ;; ------------------
@@ -126,4 +126,3 @@
     "/intercept" {:get [io.pedestal.http/json-body #vase/respond {:name :example.v2/intercept
                                                                   :enforce-format true
                                                                   :body {:one 1}}]}}}}}
-

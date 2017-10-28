@@ -30,7 +30,7 @@
   with \"/users/:userid\", then the s-expression will have the symbol
   `'userid` bound to the value of that request parameter."
   (:require [clojure.walk :as walk]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as i]
             [com.cognitect.vase.util :as util])
@@ -226,8 +226,8 @@
            ~(bind params) req-params#
            problems#      (mapv
                            #(dissoc % :pred)
-                           (:clojure.spec/problems
-                            (clojure.spec/explain-data ~spec req-params#)))
+                           (:clojure.spec.alpha/problems
+                            (clojure.spec.alpha/explain-data ~spec req-params#)))
            resp#          (util/response
                            problems#
                            ~headers
@@ -259,9 +259,9 @@
   (let [explain-to (or explain-to ::explain-data)]
     `(fn [{~'request :request :as ~'context}]
        (let [val#           (get ~'context ~from)
-             conformed#     (clojure.spec/conform ~spec val#)
-             problems#      (when (= :clojure.spec/invalid conformed#)
-                              (clojure.spec/explain-data ~spec val#))
+             conformed#     (clojure.spec.alpha/conform ~spec val#)
+             problems#      (when (= :clojure.spec.alpha/invalid conformed#)
+                              (clojure.spec.alpha/explain-data ~spec val#))
              ctx# (assoc ~'context ~to conformed#)]
          (if problems#
            (assoc ctx# ~explain-to problems#)

@@ -4,7 +4,6 @@
             [com.cognitect.vase.actions :as actions]
             [com.cognitect.vase.test-helper :as helper]
             [com.cognitect.vase.test-db-helper :as db-helper]
-            [clojure.spec :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor.chain :as chain]))
 

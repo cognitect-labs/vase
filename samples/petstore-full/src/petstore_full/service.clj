@@ -25,8 +25,8 @@
   []
   (table/table-routes
    {}
-   [["/" :get [http/log-request http/html-body home-page] :route-name ::home-page]
-    ["/about" :get [http/html-body about-page] :route-name ::about-page]]))
+   [["/"      :get [http/log-request http/html-body home-page] :route-name ::home-page]
+    ["/about" :get [http/html-body about-page]                 :route-name ::about-page]]))
 
 ;; Vase app specific routes setting
 (defn app-routes
@@ -49,10 +49,11 @@
 (defn service
   []
   (let [descriptors (:descriptors (vase/load-edn-resource "vase-descriptors.edn"))
-        specs (load-specs descriptors)]
+        specs       (load-specs descriptors)]
+    (def *r (routes specs))
     (vase/ensure-schema specs)
-    {:env :prod
-     ::http/routes (routes specs)
+    {:env                 :prod
+     ::http/routes        (routes specs)
      ::http/resource-path "/public"
-     ::http/type :jetty
-     ::http/port 8888}))
+     ::http/type          :jetty
+     ::http/port          8888}))
