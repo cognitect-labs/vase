@@ -1,61 +1,45 @@
 (ns {{namespace}}.service
-  (:require [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]
-            [io.pedestal.http.body-params :as body-params]
-            [ring.util.response :as ring-resp]
-            [com.cognitect.vase :as vase]))
+  (:require [com.cognitect.vase.try :as try :refer [try->]]
+            [fern.easy :as fe]
+            [com.cognitect.vase.fern :as fern]
+            [com.cognitect.vase.api :as a])
+  (:gen-class))
 
-(defn about-page
-  [request]
-  (ring-resp/response (format "Clojure %s - served from %s"
-                              (clojure-version)
-                              (route/url-for ::about-page))))
+(defn run-server
+  [filename & {:as opts}]
+  (try-> filename
+         fern/load-from-file
+         (:! java.io.FileNotFoundException fnfe (fe/print-error-message (str "File not found: " (pr-str (.getMessage fnfe)))))
 
-(defn home-page
-  [request]
-  (ring-resp/response "Hello World!"))
+         fern/prepare-service
+         (:! Throwable t (fe/print-evaluation-exception t filename))
 
-;; Defines "/" and "/about" routes with their associated :get handlers.
-;; The interceptors defined after the verb map (e.g., {:get home-page}
-;; apply to / and its children (/about).
-(def common-interceptors [(body-params/body-params) http/html-body])
+         (merge opts)
+         a/start-service
+         (:! Throwable t (fe/print-other-exception t filename))))
 
-;; Tabular routes
-(def routes #{["/" :get (conj common-interceptors `home-page)]
-              ["/about" :get (conj common-interceptors `about-page)]})
+(defn run-dev []
+  (run-server "{{namespace}}_service.fern") :io.pedestal.http/join? false)
 
-(def service
-  {:env :prod
-   ;; You can bring your own non-default interceptors. Make
-   ;; sure you include routing and set it up right for
-   ;; dev-mode. If you do, many other keys for configuring
-   ;; default interceptors will be ignored.
-   ;; ::http/interceptors []
+(def vase-fern-url "https://github.com/cognitect-labs/vase/blob/master/docs/vase_and_fern.md")
 
-   ;; Uncomment next line to enable CORS support, add
-   ;; string(s) specifying scheme, host and port for
-   ;; allowed source(s):
-   ;;
-   ;; "http://localhost:8080"
-   ;;
-   ;;::http/allowed-origins ["scheme://host:port"]
+(def usage
+  (str
+   "Usage: vase _filename_\n\nVase takes exactly one filename, which must be in Fern format.\nSee "
+   vase-fern-url
+   " for details."))
 
-   ::route-set routes
-   ::vase/api-root "/api"
-   ::vase/spec-resources ["{{namespace}}_service.edn"]
+(defn- parse-args
+  [[filename & stuff]]
+  (if (or (not filename) (not (empty? stuff)))
+    (throw (ex-info usage {:filename filename}))
+    {:filename filename}))
 
-   ;; Root for resource interceptor that is available by default.
-   ::http/resource-path "/public"
-
-   ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
-   ::http/type :jetty
-   ;;::http/host "localhost"
-   ::http/port 8080
-   ;; Options to pass to the container (Jetty)
-   ::http/container-options {:h2c? true
-                             :h2? false
-                             ;:keystore "test/hp/keystore.jks"
-                             ;:key-password "password"
-                             ;:ssl-port 8443
-                             :ssl? false}})
-
+(defn -main
+  [& args]
+  (let [file (try-> args
+               parse-args
+               (:! clojure.lang.ExceptionInfo ei (fe/print-other-exception ei))
+               :filename)]
+    (when (and file (not= ::try/exit file))
+      (run-server file))))

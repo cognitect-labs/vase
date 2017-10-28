@@ -1,0 +1,6 @@
+{vase/service  (fern/lit vase/service
+                         {:apis        []
+                          :service-map @http-options})
+ http-options  {:io.pedestal.http/port          8080
+                :io.pedestal.http/type          :jetty
+                :io.pedestal.http/resource-path "public"}}

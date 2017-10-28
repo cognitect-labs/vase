@@ -1,5 +1,6 @@
 * TODO Util to convert terse routes to table routes
-* TODO Util to convert edn vase descriptor to fern descriptor
+* DONE Util to convert edn vase descriptor to fern descriptor
+  CLOSED: [2017-10-28 Sat 08:12]
 * TODO (Maybe) Util to format/sort/organize fern descriptors
 * TODO Docs & sample code for
 ** TODO Add Vase to existing Pedestal service

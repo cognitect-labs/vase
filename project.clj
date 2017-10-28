@@ -15,6 +15,9 @@
 
                  [com.cognitect/fern "0.1.4-SNAPSHOT"]
 
+                 ;; Nice errors
+                 [expound "0.3.1"]
+
                  ;; Cleanup
                  [commons-codec "1.10"]
                  [cheshire "5.8.0"]]

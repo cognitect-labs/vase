@@ -5,14 +5,29 @@
 # Vase: Data-driven microservices
 
 This system provides a data-driven and extensible way to describe and
-run HTTP APIs that are backed by a durable database (Datomic).
+run HTTP APIs. Building blocks make it very easy to use Datomic as a
+durable database. Other databases can be added via an extension mechanism.
 
-### Vase should be considered beta technology
+## Major Changes Since v0.9
 
-Vase has been used on real-world projects. Each new project teaches us
-something more about what Vase can do. We're continuing to improve its
-utility and usability. You may find some rough edges here and
-there. When you do, raise an issue so we can make it better.
+We learned from using Vase on real-world projects and from hearing
+feedback in our user community. People like the promise of Vase but
+found it hard to use.
+
+This release aims to make Vase much easier for common cases:
+
+1. A new input format called
+   [Fern](https://github.com/cognitect-labs/fern) lets us produce much
+   better error messages when something goes wrong.
+2. Step-by-step examples show how to grow an API from scratch
+   rather than relying on the Leiningen template.
+3. A new public API allows applications to skip the files altogether
+   and directly feed Vase with data structures to describe the
+   application. You can produce those however you like, from code,
+   files, values in a database... whatever.
+4. Datomic has been "demoted" by one namespace level so we can add
+   support for other external integrations. Instead of `vase/query`,
+   for example, you'll now use `vase.datomic/query`.
 
 ## Releases and Dependency Information
 
@@ -44,24 +59,52 @@ Stable versions are currently deployed to the Clojars repository.
 ```
 
 
-## Getting Started
+# Getting Started
+
+Your path to get running depends on what you need to do:
+
+1. Just build an API for CRUD operations: Run Vase standalone.
+2. Integrate with hand-written routes: Add Vase to an existing
+   Pedestal project.
+3. Use Vase in a new project, for more than just CRUD: Use the template
+3. Extend Vase with new actions: Create Actions.
+
+## Prerequisites
 
 By default, Vase uses an in-memory Datomic database, using the
-[publicly available Datomic-free](https://clojars.org/com.datomic/datomic-free)
-version located in Clojars.
+[publicly available
+Datomic-free](https://clojars.org/com.datomic/datomic-free) version
+located in Clojars.
 
-Everything you need to get up and running with Vase is packaged in Vase itself.
-Vase is completely self-contained -- You don't need to setup Datomic or create a MyDatomic account.
+## Run Vase Standalone
 
-### Using the template
+If you just want to run an API that does CRUD (create, read, update,
+delete) operations on a database, then you can run Vase
+directly. Download the [latest uberjar
+JAR](https://clojars.org/com.cognitect/pedestal.vase) from Clojars and
+use it with `java -jar`.
 
-This repository also includes a Leiningen [template](./template) for
-getting started.  Look at the [template's
-README](./template/README.md) for local/developer setup, otherwise
+```
+java -jar vase-standalone.jar my-service.fern
+```
+
+This path does assume you're using Fern for your input syntax. Vase
+will look for the top-level key `vase/service` in your Fern
+environment.
+
+## Use the template
+
+If you want to do more than CRUD, you will need a project. This
+repository includes a
+Leiningen [template](./template) for getting started. Look at the
+[template's README](./template/README.md) for local/developer setup,
+otherwise
 
 `lein new vase my-service`
 
-### Adding Vase to a Pedestal project
+Look at `my-service/src/
+
+## Adding Vase to an Existing Pedestal project
 
 Vase turns API descriptions into Pedestal routes. The API descriptions
 specify actions for routes, these are turned into interceptors in the
@@ -104,7 +147,10 @@ hand-written Pedestal routes by concatenating the input to
 * [Adding Vase to an existing Pedestal service](./docs/adding_vase.md)
 * [Building Your First API](./docs/your_first_api.md)
 * [Design document](./docs/design.md)
-* [Fern Input for Vase](./docs/vase_with_fern.md) - A new way to write descriptors
+* [Fern Input for Vase](./docs/vase_with_fern.md) - A new way to write
+  descriptors
+* [Migrating EDN to Fern](./docs/migrating_edn_to_fern.md) - Tooling
+  to help port your descriptors
 
 ## Contributing
 

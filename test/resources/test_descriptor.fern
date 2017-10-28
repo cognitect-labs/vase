@@ -146,6 +146,6 @@
                                    {:user/userId 503  :user/userEmail "jill@example.com"})
 
  example.test/age        (fn [age] (> age 21))
- example.test/name       (clojure.spec/and string? not-empty)
- example.test/person     (clojure.spec/keys :req-un [:example.test/name :example.test/age])
+ example.test/name       (clojure.spec.alpha/and string? not-empty)
+ example.test/person     (clojure.spec.alpha/keys :req-un [:example.test/name :example.test/age])
 }

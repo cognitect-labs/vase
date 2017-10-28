@@ -4,13 +4,11 @@ FIXME
 
 ## Getting Started
 
-1. Start the application: `lein run`
-2. Go to [localhost:8080](http://localhost:8080/) to see: `Hello World!`
-3. Read your app's source code at src/{{sanitized}}/service.clj. Explore the docs of functions
+1. Start the application: `lein run resources/{{namespace}}_service.fern`
+2. Read your app's source code at src/{{sanitized}}/service.clj. Explore the docs of functions
    that define routes and responses.
-4. See your Vase API Specification at `resources/{{namespace}}_service.edn`.
-5. Run your app's tests with `lein test`. Read the tests at test/{{sanitized}}/service_test.clj.
-6. Learn more! See the [Links section below](#links).
+3. See your Vase API Specification at `resources/{{namespace}}_service.fern`.
+4. Learn more! See the [Links section below](#links).
 
 
 ## Configuration
@@ -47,5 +45,3 @@ Once the image it built, it's cached.  To delete the image and build a new one:
 
  * [Pedestal examples](https://github.com/pedestal/samples)
  * [Vase examples](https://github.com/cognitect-labs/vase/samples)
-
-

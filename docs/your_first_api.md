@@ -18,19 +18,24 @@ After reading this guide, you will be able to:
 It may help to understand the [design](./design.md) of the system and
 the file formats used before you begin. The most important pieces:
 
-* Vase descriptors are usually stored in [Extensible Data Notation](https://github.com/edn-format/edn).
-* Vase descriptors are just Clojure data in memory, so the EDN format is a convenience not a requirement.
+* Vase descriptors are usually written in [Fern](https://github.com/cognitect-labs/fern).
+* Vase descriptors are just Clojure data in memory. The namespace
+  `com.cognitect.vase.api` has clojure.spec definitions of the inputs
+  needed.
 * Vase services use JSON as their data exchange format.
 
-It also important to note that the terms *service*, *server*, *container* are all used interchangeably.
+It also important to note that the terms *service*, *server*,
+*container* are all used interchangeably.
 
 ## Setting Up
 
-First, be sure you have a Datomic transactor running. See
-[the Datomic docs](http://docs.datomic.com) to get set up. Note that the
-template project uses Datomic Pro. (You can change the project.clj
-dependency to use Datomic Free. Be sure to make the corresponding
-change in the `:datomic-uri` later.)
+The examples use an in-memory Datomic instance. For that, you don't
+need anything extra running. But if you want to make your data
+durable, you'll need a Datomic transactor running. See [the Datomic
+docs](http://docs.datomic.com) to get set up. Note that the template
+project uses Datomic Pro. (You can change the project.clj dependency
+to use Datomic Free. Be sure to make the corresponding change in the
+`:datomic-uri` later.)
 
 Create a new project from the Vase leiningen template:
 
@@ -81,6 +86,8 @@ INFO  o.e.jetty.server.AbstractConnector - Started ServerConnector@5d04c566{HTTP
 INFO  org.eclipse.jetty.server.Server - Started @85814ms
 ```
 
+That means your service is up and running on port 8080.
+
 ## A Personal Inventory System
 
 Let's build a system to handle basic user accounts and can track items
@@ -102,75 +109,89 @@ And we might have URLs that:
  * Fetch a user's owned-item list given their user ID
  * etc.
 
-We put the description into a `.edn` file that our service loads. (EDN
-is specified by https://github.com/edn-format/edn.) This description
+We put the description into a [`.fern`](https://github.com/cognitect-labs/fern) file that our service loads. This description
 tells Vase what API a service offers, what schema it defines, and what
 specifications the data must follow.
 
 The Vase template created `resources/your-first-api_service.edn` with
-a lot of examples. For the moment, it has too much. Just delete that
-file and start a fresh one with these contents:
+just the minimum you need to get started. Excluding the commented-out
+portions, it should look like this:
 
 ```clojure
-{:activated-apis []
- :datomic-uri "datomic:mem://example"
- :descriptor
-
- {:vase/norms {}
-  :vase/specs {}
-  :vase/apis  {}}}
+{vase/service  (fern/lit vase/service
+                         {:apis []
+                          :service-map @http-options})
+ http-options  {:io.pedestal.http/port 8080}}
 ```
 
-This says we have no schema, no APIs, no specs, and nothing will
-run. Not very exciting, is it? It gets better in a bit.
+This defines a Vase service, but not a very exciting one. It has no
+APIs, no schema, and no specs. It gets better in a bit.
 
-Here are the meanings of the top-level keys:
+On the left, we have `vase/service` as a symbol. That is the only
+"magic symbol" on the left. Vase knows to look for this special symbol
+when it starts up. On the right, we have a [Fern
+literal](https://github.com/cognitect-labs/fern#usage). Vase defines a
+bunch of Fern literals. This literal is also called `vase/service` and
+it means Fern should create a service record based on the contents of the map.
+
+A `vase/service` record can have the following keys:
 
 | Key               | Type    | Meaning |
 |-------------------|---------|---------|
-| `:activated-apis` | Vector of API "names." | Routes for these APIs will be created. Schema used by these APIs will be applied. |
-| `:datomic-uri`    | String with a [Datomic URI](http://docs.datomic.com/javadoc/datomic/Peer.html#connect-java.lang.Object-) | This is the database that Vase will use. If it doesn't exist, Vase will create it. |
-| `:descriptor`     | Map with specific keys expected | Holds the schemas (`:vase/norms`), specs (`:vase/specs`), and APIs (`:vase/apis` |
+| `:apis`          | Vector of APIs | Routes for these APIs will be created. Schema used by these APIs will be applied. |
+| `:service-map`  | Map | These are HTTP parameters for starting a Pedestal service |
+
+The `:apis` key needs a vector of actual APIs. But defining them
+directly in the right-hand side of the file would get awkward and hard
+to read. Fern lets us use references to locate the APIs elsewhere in
+the file:
+
+```
+{vase/service  (fern/lit vase/service {})}
+```
 
 ## Building the data model
 
 We often start with a model of the entities a service must manipulate.
 
-Data models are defined with a schema (called "norms" for historical
-reasons.)  You may split your schema up into logical pieces that map
-directly to your application domain.  In our example, we'll define
-one part of the schema for Items, and another part for Users.
+Data models are defined with a schema. You may split your schema up
+into logical pieces that map directly to your application domain. In
+our example, we'll define one part of the schema for Items, and
+another part for Users.
 
-The `:vase/norms` key is where we put schema definitions. It holds a
-map of "schema name" to schema definition. The schema name is a
-keyword that you choose. We recommend using a namespaced keyword. It's
-best to avoid using `vase` as part of your namespace. It's not a
-reserved name, but you may confuse parts of your application with
-parts that Vase requires.
+We can define a schema as a symbol whose right-hand side is a
+collection of attributes.  The schema name is any symbol you
+choose. We recommend using a namespaces for clarity. It's best to
+avoid using `vase` as part of your namespace. It's not a reserved
+name, but you may confuse parts of your application with parts that
+Vase requires.
 
 To start with, let's make space for our two schemas:
 
 ```clojure
- :vase/norms
-  {:accounts/item {}
-   :accounts/user {}
-  }
+ accounts/item   (fern/lit vase.datomic/attributes)
+ accounts/user   (fern/lit vase.datomic/attributes)
 ```
 
-(This goes inside the map attached to `:descriptor`.)
+This says we're building one schema named `accounts/item` and another
+named `accounts/user`. We'll define attributes for Items and Users
+inside the Fern literals on the right-hand side.
 
-This says we're building one schema named `:accounts/item` and another
-named `:accounts/user`. The first component of a schema is defining
-its normalized, master form.  That's done using the `:vase/norms`
-entry. In this map, we'll define attributes for Items and Users.
-You'll notice that the Users schema requires the Items schema, so that
-we can describe a user's owned items. You'll also notice that
-attributes of a given entity are defined in terms of database
-transactions (*txes*) that describe them.
+```clojure
+ accounts/item   (fern/lit vase.datomic/attributes
+                           [:item/itemId      :one :long   :identity "The unique identifier for an item"]
+                           [:item/name        :one :string           "The name of an item"]
+                           [:item/description :one :string           "A short description of the item"]])
 
-Vase offers a reader literal shorthand called `#vase/schema-tx` for
-defining Datomic schema transactions within `:vase.norms/txes`. Its
-body is a vector of vectors.  Each subvector defines an attribute
+ accounts/user   (fern/lit vase.datomic/attributes
+                           [:user/userId      :one  :long   :identity "The unique identifier for a user"]
+                           [:user/email       :one  :string :unique   "The email address for a given user"]
+                           [:user/items       :many :ref              "The collection of items a user owns"]])
+```
+
+The `vase.datomic/attributes` literal offers a shorthand notation for
+attributes. It takes an arbitrary number of vectors, where each vector
+defines an attribute. Each vector defines an attribute
 name, its cardinality (`:one` or `:many`), its type, some optional
 flags, and a doc string.
 
@@ -186,25 +207,22 @@ definition for Datomic:
 | `:component`   | The entity referenced by this attribute should be retracted when this one is. (Cascading delete) | `:db/isComponent true` |
 | `:no-history`  | Do not preserve old values of this attribute                      | `:db/noHistory true`             |
 
-
 Even though the short-schema version covers most of the use cases
 you'll need, you're always free to use full Datomic
 [schema](http://docs.datomic.com/schema.html) definitions like:
 
 ```clojure
-:vase.norm/txes [[{:db/id          #db/id[:db.part/db]
-                   :db/ident       :item/name
-                   :db/valueType   :db.type/string
-                   :db/cardinality :db.cardinality/one
-                   :db/doc         "The name of an item"}]]
+ accounts/item   (fern/lit vase.datomic/tx
+                           {:db/id          #db/id[:db.part/db]
+                            :db/ident       :item/name
+                            :db/valueType   :db.type/string
+                            :db/cardinality :db.cardinality/one
+                            :db/doc         "The name of an item"}]]
 ```
 
-A common convention for attribute names is that the namespace
-identifies the "entity type" that the attribute belongs to. This is
-strictly for human consumption, though. Datomic doesn't have any
-notion of entity type and doesn't care how you mix and match
-attributes.
-
+Notice that this uses the `vase.datomic/tx` literal, whose body is an
+arbitrary number of Datomic transaction elements (either entity maps
+like this one or datoms.)
 
 Fill in the schema parts like this:
 

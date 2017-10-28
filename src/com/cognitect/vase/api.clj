@@ -2,6 +2,7 @@
   "Public functions for submitting a data structure to Vase and
   getting back routes, specs, and even a whole Pedestal service map."
   (:require [clojure.spec.alpha :as s]
+            [expound.alpha :as expound]
             [clojure.string :as str]
             [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]
@@ -88,7 +89,7 @@
   ([spec starter-map]
    (let [conformed (s/conform ::service spec)]
      (if (s/invalid? conformed)
-       conformed
+       (throw (ex-info (str "Can't create service map.\n" (expound/expound-str ::service spec)) {}))
        (-> starter-map
            (merge (:service-map conformed))
            (add-routes (collect-routes conformed))
