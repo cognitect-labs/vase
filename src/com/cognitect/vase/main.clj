@@ -2,7 +2,8 @@
   (:require [com.cognitect.vase.try :as try :refer [try->]]
             [fern.easy :as fe]
             [com.cognitect.vase.fern :as fern]
-            [com.cognitect.vase.api :as a]))
+            [com.cognitect.vase.api :as a])
+  (:gen-class))
 
 (def vase-fern-url "https://github.com/cognitect-labs/vase/blob/master/docs/vase_and_fern.md")
 
