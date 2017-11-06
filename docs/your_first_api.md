@@ -268,7 +268,7 @@ These are the action literals:
 | `#vase/query`     | Respond with the results of a database query           |
 | `#vase/transact`  | Add or update data in the database                     |
 | `#vase/validate`  | Validate data against specs                            |
-| `#vase/intercept` | Apply a hand-crafted, artisinal interceptor            |
+| `#vase/intercept` | Apply a hand-crafted, artisanal interceptor            |
 
 An API usually depends on some amount of schema. In this example,
 we've added a dependency from the `:accounts/v1` API to the User
