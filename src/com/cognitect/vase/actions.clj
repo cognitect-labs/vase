@@ -5,8 +5,8 @@
   interceptors. These are the main public entry points, and are used
   by the `literals` namespace when loading Vase descriptors.
 
-  Take care to avoid code generation during requst processing. It is
-  time consuming, so it should be done at application startup time
+  Take care to avoid code generation during request processing. It is
+  time-consuming, so it should be done at application startup time
   instead.
 
   Actions are created by emitting code (in the functions named
