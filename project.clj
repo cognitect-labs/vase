@@ -2,7 +2,7 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-beta3" :scope "provided"]
+                 [org.clojure/clojure "1.9.0" :scope "provided"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5561.62" :exclusions [[org.slf4j/slf4j-api]
