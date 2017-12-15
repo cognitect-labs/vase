@@ -6,8 +6,8 @@
 ** TODO Add Vase to existing Pedestal service
 - Implies changes to com.cognitect.vase.fern and
   com.cognitect.vase.api to make it easy to do this.
-** TODO Vase as -main
-** TODO Multiple fern files glommed into one service
+** DONE Vase as -main
+   CLOSED: [2017-12-15 Fri 14:58]
 * DONE Move -main into its own namespace
   CLOSED: [2017-08-18 Fri 09:42]
 - Implies making it handle both fern and edn files
