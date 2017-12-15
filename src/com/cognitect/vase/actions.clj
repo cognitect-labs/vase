@@ -33,7 +33,9 @@
             [clojure.spec.alpha :as s]
             [datomic.api :as d]
             [io.pedestal.interceptor :as i]
-            [com.cognitect.vase.util :as util])
+            [com.cognitect.vase.edn :as edn]
+            [com.cognitect.vase.util :as util]
+            [com.cognitect.vase.response :as response])
   (:import java.net.URLDecoder))
 
 ;; Code generation tools
@@ -51,7 +53,7 @@
 (defn coerce-arg-val
   ([v]
    (try
-       (util/read-edn v)
+       (edn/read v)
        (catch Exception e v)))
   ([args k]
    (let [v (get args k)]
@@ -158,7 +160,7 @@
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) (coerce-params req-params# ~(mapv util/ensure-keyword (or edn-coerce [])))
-           resp#          (util/response
+           resp#          (response/response
                            ~(or body "")
                            ~headers
                            ~(or status 200))]
@@ -194,7 +196,7 @@
   `(fn [{~'request :request :as ~'context}]
      (let [req-params#    (merged-parameters ~'request)
            ~(bind params) req-params#
-           resp#          (util/response
+           resp#          (response/response
                            ~(or body "")
                            (merge ~headers {"Location" ~(or url "")})
                            ~(or status 302))]
@@ -228,10 +230,10 @@
                            #(dissoc % :pred)
                            (:clojure.spec.alpha/problems
                             (clojure.spec.alpha/explain-data ~spec req-params#)))
-           resp#          (util/response
+           resp#          (response/response
                            problems#
                            ~headers
-                           (util/status-code problems# (:errors ~'context)))]
+                           (response/status-code problems# (:errors ~'context)))]
        (if (or (empty? (:io.pedestal.interceptor.chain/queue ~'context))
                (seq problems#))
          (assoc ~'context :response resp#)
@@ -337,11 +339,11 @@
                                                          "  Required: " ~(mapv util/ensure-keyword variables))
                               (hash-set? query-result#) (into [] query-result#)
                               :else                     query-result#)
-             resp#          (util/response
+             resp#          (response/response
                              response-body#
                              ~headers
                              (if query-result#
-                               (util/status-code response-body# (:errors ~'context))
+                               (response/status-code response-body# (:errors ~'context))
                                400))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
@@ -403,10 +405,10 @@
                              conn#
                              tx-data#
                              args#)
-             resp#          (util/response
+             resp#          (response/response
                              response-body#
                              ~headers
-                             (util/status-code response-body# (:errors ~'context)))]
+                             (response/status-code response-body# (:errors ~'context)))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
            (-> ~'context
