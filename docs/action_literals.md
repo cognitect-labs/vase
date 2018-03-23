@@ -56,7 +56,7 @@ generate a response.
 Apply specs to data on the context, reattaching the conformed data to
 the context.
 
-| Param       | Meaining                                                                                                                                  |
+| Param       | Meaning                                                                                                                                  |
 |-------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | :name       | Name of the interceptor.                                                                                                                  |
 | :from       | The context map key where data will be found.                                                                                             |
