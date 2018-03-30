@@ -2,15 +2,15 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/pedestal.vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.9.0-beta3"]
+                 [org.clojure/clojure "1.9.0"]
 
                  ;; Datomic
-                 [com.datomic/datomic-free "0.9.5561.62" :exclusions [[org.slf4j/slf4j-api]
-                                                                      [org.slf4j/slf4j-nop]]]
+                 [com.datomic/datomic-free "0.9.5697" :exclusions [[org.slf4j/slf4j-api]
+                                                                   [org.slf4j/slf4j-nop]]]
                  [io.rkn/conformity "0.5.1" :exclusions [com.datomic/datomic-free]]
 
                  ;; Tmp. Work around problem also fixed in pedestal.service 0.5.3-SNAPSHOT
-                 [org.clojure/core.async "0.3.443"]
+                 [org.clojure/core.async "0.4.474"]
 
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.5.3"]
@@ -18,7 +18,7 @@
                  ;; Cleanup
                  [commons-codec "1.11"]
                  [cheshire "5.8.0"]]
-  :pedantic? :abort
+  :pedantic? :warn
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
              :dev {:aliases {"crepl" ["trampoline" "run" "-m" "clojure.main/main"]
@@ -29,7 +29,7 @@
                                     "test/resources"]
                    :dependencies [[org.clojure/tools.trace "0.7.9"]
                                   [org.clojure/tools.namespace "0.3.0-alpha3" :exclusions [[org.clojure/tools.reader]]]
-                                  [org.clojure/tools.reader "1.1.0"]
+                                  [org.clojure/tools.reader "1.2.2"]
                                   [io.pedestal/pedestal.jetty "0.5.3"]
                                   [org.clojure/test.check "0.9.0"]
                                    ;; Logging

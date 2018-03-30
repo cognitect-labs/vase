@@ -9,7 +9,7 @@
 ;
 ; You must not remove this notice, or any other, from this software.
 
-(defproject vase/lein-template "0.9.2-SNAPSHOT"
+(defproject vase/lein-template "0.9.3-SNAPSHOT"
   :description "A Pedestal Service + Vase template."
   :url "https://github.com/pedestal/pedestal"
   :scm "https://github.com/pedestal/pedestal"
