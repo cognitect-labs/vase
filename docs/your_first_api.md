@@ -729,22 +729,7 @@ other persistent stores, you will need to first
 [obtain a Datomic Starter or Datomic Pro license](http://www.datomic.com/get-datomic.html)
 and install the software on your machine.
 
-You'll also need to reference datomic-pro in your dependencies. Doing so is somewhat
-non-standard, because the library is not available on [Clojars](https://clojars.org/).
-Instead, you will need to install it manually into your machine's Maven repo.
-Fortunately, the Datomic installation offers a short script to ease this process.
-
-Simply:
-
-```
-cd <your_datomic_directory>
-bin/maven-install
-```
-
-One warning: this script assumes that you've previously installed Maven on your
-computer. If you don't already have it, it's typically just the usual one-line
-invocation. E.g., on Ubuntu (or other Debian-based Linux distros) you would
-do `sudo apt install maven`.
+You'll also need to reference datomic-pro in your dependencies.
 
 You will then need to change your project's dependencies to reference the
 correct version of Datomic (in the project's `project.clj` or `build.boot`
