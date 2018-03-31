@@ -26,11 +26,14 @@ It also important to note that the terms *service*, *server*, *container* are al
 
 ## Setting Up
 
-First, be sure you have a Datomic transactor running. See
-[the Datomic docs](http://docs.datomic.com) to get set up. Note that the
-template project uses Datomic Pro. (You can change the project.clj
-dependency to use Datomic Free. Be sure to make the corresponding
-change in the `:datomic-uri` later.)
+Note that the template project uses Datomic Free and therefore offers
+only an in-memory store. Later, you can change to a persistent store.
+You'll have get a Datomic license (free versions are available),
+launch a Datomic transactor, make minor changes to your project.clj
+or build.boot, and update the `:datomic-uri` value in your EDN
+descriptor file.  This is explained below, as well as
+in [the Datomic docs](http://docs.datomic.com).
+
 
 Create a new project from the Vase leiningen template:
 
@@ -715,10 +718,62 @@ An example of simple constants follows - observe our last change to the schema b
 
 ## Be Persistent
 
-So far, we've used an in-memory URI for Datomic. That means just what
-it sounds like: values are only stored in memory. To make it
-persistent, you need to pick a [storage engine](http://docs.datomic.com/storage.html#storage-services) and update the
-`:datomic-uri` value.
+So far, we've used an in-memory URI for Datomic. That means just what it sounds like:
+values are only stored in memory. To make it persistent, you need to pick
+a [storage engine](http://docs.datomic.com/storage.html#storage-services) and update the
+`:datomic-uri` value. For your initial efforts,
+Datomic's [dev storage protocol](http://docs.datomic.com/dev-setup.html) may suffice.
+
+By default, Vase uses the free version of Datomic. In order to configure dev or
+other persistent stores, you will need to first
+[obtain a Datomic Starter or Datomic Pro license](http://www.datomic.com/get-datomic.html)
+and install the software on your machine.
+
+You'll also need to reference datomic-pro in your dependencies. Doing so is somewhat
+non-standard, because the library is not available on [Clojars](https://clojars.org/).
+Instead, you will need to install it manually into your machine's Maven repo.
+Fortunately, the Datomic installation offers a short script to ease this process.
+
+Simply:
+
+```
+cd <your_datomic_directory>
+bin/maven-install
+```
+
+One warning: this script assumes that you've previously installed Maven on your
+computer. If you don't already have it, it's typically just the usual one-line
+invocation. E.g., on Ubuntu (or other Debian-based Linux distros) you would
+do `sudo apt install maven`.
+
+You will then need to change your project's dependencies to reference the
+correct version of Datomic (in the project's `project.clj` or `build.boot`
+file). This is slightly subtle because the template actually did not add any
+direct reference to Datomic in your project. Instead, it included a dependency
+on Vase which, in turn, depends on datamic-free.
+
+So, you will need to add an explicit dependency on datamic-pro, and neutralize Vase's
+inclusion of datomic-free:
+
+Look for the existing Vase dependency, e.g.,
+```
+[com.cognitect/pedestal.vase "0.9.1-SNAPSHOT"]
+```
+
+and change it to
+
+```
+[com.datomic/datomic-pro "0.9.NNNN" :exclusions [[com.fasterxml.jackson.core/jackson-core]
+                                                 [com.fasterxml.jackson.core/jackson-databind]
+                                                 [joda-time]]]
+
+[com.cognitect/pedestal.vase "0.9.1-SNAPSHOT" :exclusions [com.datomic/datomic-free]]
+```
+
+where `NNNN` is the version of Datomic you've installed.
+
+You can see an example of this in the samples at
+[../samples/petstore-full/project.clj-with-datomic-pro](../samples/petstore-full/project.clj-with-datomic-pro).
 
 ## Wrapping Up
 
