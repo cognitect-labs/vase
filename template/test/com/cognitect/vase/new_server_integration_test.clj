@@ -18,10 +18,7 @@
 
 (def lein (or (System/getenv "LEIN_CMD") "lein"))
 
-(def project-dir
-  (->
-   (ClassLoader/getSystemResource *file*)
-   io/file .getParent io/file .getParent))
+(def project-dir (io/file "."))
 
 ;; This code was heavily inspired by Overtone's version, thanks!
 ;; https://github.com/overtone/overtone/blob/e3de1f7ac59af7fa3cf75d696fbcfc2a15830594/src/overtone/helpers/file.clj#L360
@@ -56,7 +53,7 @@
   (let [app-name "test-app"
         full-app-name (.getPath (io/file tempdir app-name))]
     (println (sh/with-sh-dir project-dir (sh/sh lein "install")))
-    (println (sh/with-sh-dir tempdir (sh/sh lein "new" "vase" app-name)))
+    (println (sh/with-sh-dir tempdir (sh/sh lein "new" "vase" app-name "--snapshot")))
     (println "Created app at" full-app-name)
     (is (.exists (io/file full-app-name "project.clj")))
     (is (.exists (io/file full-app-name "README.md")))

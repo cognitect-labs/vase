@@ -18,6 +18,7 @@ jobs:
           paths:
             - ~/.m2
           key: vase-{{ checksum "project.clj" }}
+      - run: cd template && lein test
       - run: lein do test, uberjar
       - store_artifacts:
           path: target/uberjar/vase.jar

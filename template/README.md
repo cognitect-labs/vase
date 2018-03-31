@@ -15,4 +15,6 @@ There are two ways to try out local changes to this template:
 2. `lein install` in this directory; ensure the correct version of the template is in :plugins of your
    `~/.lein/profiles.clj`; generate a new app.
 
+Test this template by running `lein test` from within the `template/` directory
+
 <!-- Copyright 2017 Cognitect, Inc. -->
