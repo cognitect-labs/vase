@@ -49,7 +49,7 @@
      "/redirect-to-param" {:get #vase/redirect {:name :{{namespace}}.v1/ar-page
                                                 :params [someurl]
                                                 :url someurl}}
-     ;; Validate (with clojure.spec) happens on the entire `param` map
+     ;; Validate happens on the entire `param` map
      "/validate" {:post #vase/validate {:name :{{namespace}}.v1/validate-page
                                         :spec :{{namespace}}.test/person}}
      ;; Just use datomic queries
@@ -103,4 +103,3 @@
     ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
     :vase.api/schemas [:{{namespace}}/user-schema]
     :vase.api/forward-headers ["vaserequest-id"]}}}}
-

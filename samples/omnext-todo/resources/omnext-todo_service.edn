@@ -20,10 +20,11 @@
   ;; ------------------------
   :vase/specs
   {:todo/category keyword?
-   :todo/title (clojure.spec/and string? not-empty)
-   :omnext-todo/todo (clojure.spec/keys :req [:todo/title]
+   :todo/title (clojure.spec.alpha/and string? not-empty)
+   :omnext-todo/todo (clojure.spec.alpha/keys :req [:todo/title]
                                         :opt [:todo/category])
-   :omnext-todo/todos (clojure.spec/+ :omnext-todo/todo)}
+   :omnext-todo/todos (clojure.spec.alpha/+ :omnext-todo/todo
+                       )}
 
   ;; API Tagged Chunks/Versions
   ;; --------------------------
@@ -65,4 +66,3 @@
     ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
     :vase.api/schemas [:omnext-todo/base-schema]
     :vase.api/forward-headers ["vaserequest-id"]}}}}
-

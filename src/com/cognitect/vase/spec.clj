@@ -1,6 +1,6 @@
 (ns com.cognitect.vase.spec
-  "Contains the clojure.spec definitions for the Vase
-   application specification."
+  "Contains the clojure.spec.alpha definitions for the Vase
+  application specification."
   (:require [io.pedestal.interceptor :as interceptor]
             [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]))

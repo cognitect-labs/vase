@@ -213,7 +213,7 @@
 
 (defn validate-action-exprs
   "Return code for a Pedestal interceptor function that performs
-  clojure.spec validation on the parameters."
+  clojure.spec.alpha validation on the parameters."
   [params headers spec request-params-path]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   `(fn [{~'request :request :as ~'context}]
@@ -239,7 +239,7 @@
   parameters.
 
   The response body will be a list of data structures as returned by
-  clojure.spec/explain-data."
+  clojure.spec.alpha/explain-data."
   ([name params headers spec]
    (validate-action name params headers spec nil))
   ([name params headers spec request-params-path]

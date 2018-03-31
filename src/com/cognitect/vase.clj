@@ -51,8 +51,8 @@
 
 (defn specs
   "Given a app-spec or collection of app-specs,
-  extract all defined clojure.specs and evaluate them,
-  placing them in clojure.spec's registry."
+  extract all defined Clojure specs and evaluate them,
+  placing them in spec's registry."
   [spec-or-specs]
   (let [edn-specs (if (sequential? spec-or-specs) spec-or-specs [spec-or-specs])
         descriptors (map :descriptor edn-specs)]

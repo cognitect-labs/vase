@@ -1,6 +1,6 @@
 (ns vasebi.server
   (:gen-class) ; for -main method in uberjar
-  (:require [clojure.spec :as spec]
+  (:require [clojure.spec.alpha :as spec]
             [io.pedestal.http :as server]
             [io.pedestal.http.route :as route]
             [com.cognitect.vase :as vase]
@@ -49,18 +49,18 @@
   [& args]
   (println "\nCreating your [DEV] server...")
   (-> service/service ;; start with production configuration
-      (merge {:env :dev
+      (merge {:env                     :dev
               ;; do not block thread that starts web server
-              ::server/join? false
+              ::server/join?           false
               ;; Routes can be a function that resolve routes,
               ;;  we can use this to set the routes to be reloadable
-              ::server/routes #(route/expand-routes
-                                 (::routes (activate-vase (deref #'service/routes)
-                                                          (::vase/api-root service/service)
-                                                          (mapv (fn [res-str]
-                                                                  (str "resources/" res-str))
-                                                                (::vase/spec-resources service/service))
-                                                          vase/load-edn-file)))
+              ::server/routes          #(route/expand-routes
+                                         (::routes (activate-vase (deref #'service/routes)
+                                                                  (::vase/api-root service/service)
+                                                                  (mapv (fn [res-str]
+                                                                          (str "resources/" res-str))
+                                                                        (::vase/spec-resources service/service))
+                                                                  vase/load-edn-file)))
               ;; all origins are allowed in dev mode
               ::server/allowed-origins {:creds true :allowed-origins (constantly true)}})
       ;; Wire up interceptor chains
@@ -93,4 +93,3 @@
 ;;  [_]
 ;;  (server/servlet-destroy @servlet)
 ;;  (reset! servlet nil))
-
