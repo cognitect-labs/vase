@@ -7,7 +7,7 @@
   (:import (java.io ByteArrayInputStream
                     FileInputStream
                     File)
-           (javax.xml.bind DatatypeConverter)))
+           (java.util Base64)))
 
 (defn map-vals
   [f m]
@@ -19,10 +19,15 @@
   ([^String text ^String encoding]
    (ByteArrayInputStream. (.getBytes text encoding))))
 
+(defn- bytes-to-base64-str
+  "Convert a byte array into a base-64 encoded string."
+  [^bytes bytes]
+  (.encodeToString (Base64/getEncoder) bytes))
+
 (defn short-hash []
   (subs
-    (DatatypeConverter/printBase64Binary
-      (byte-array (loop [i 0
+    (bytes-to-base64-str
+      (byte-array (loop [i   0
                          ret (transient [])]
                     (if (< i 8)
                       (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
