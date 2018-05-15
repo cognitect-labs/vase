@@ -19,14 +19,9 @@
   ([^String text ^String encoding]
    (ByteArrayInputStream. (.getBytes text encoding))))
 
-(defn- bytes-to-base64-str
-  "Convert a byte array into a base-64 encoded string."
-  [^bytes bytes]
-  (.encodeToString (Base64/getEncoder) bytes))
-
 (defn short-hash []
   (subs
-    (bytes-to-base64-str
+    (.encodeToString (Base64/getEncoder)
       (byte-array (loop [i   0
                          ret (transient [])]
                     (if (< i 8)
