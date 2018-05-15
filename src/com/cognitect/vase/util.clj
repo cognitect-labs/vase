@@ -22,7 +22,7 @@
 (defn short-hash []
   (subs
     (.encodeToString (Base64/getEncoder)
-      (byte-array (loop [i   0
+      (byte-array (loop [i 0
                          ret (transient [])]
                     (if (< i 8)
                       (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
