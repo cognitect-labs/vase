@@ -16,7 +16,7 @@
                  [io.pedestal/pedestal.service "0.5.3"]
                  [io.pedestal/pedestal.jetty "0.5.3"]
 
-                 [com.cognitect/fern "0.1.4-SNAPSHOT"]
+                 [com.cognitect/fern "0.1.3"]
 
                  ;; Nice errors
                  [expound "0.3.1"]
@@ -28,6 +28,11 @@
   :pedantic? :warn
   :uberjar-name "vase-standalone.jar"
   :plugins [[camechis/deploy-uberjar "0.3.0"]]
+  :jvm-opts ~(let [version     (System/getProperty "java.version")
+                   [major _ _] (clojure.string/split version #"\.")]
+               (if (>= (java.lang.Integer/parseInt major) 9)
+                 ["--add-modules" "java.xml.bind"]
+                 []))
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
              :dev {:aliases {"crepl" ["trampoline" "run" "-m" "clojure.main/main"]

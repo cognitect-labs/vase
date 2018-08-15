@@ -47,7 +47,7 @@
   (walk/postwalk
    #(cond-> %
       (string? %)
-      (URLDecoder/decode %))
+      URLDecoder/decode)
    m))
 
 (defn coerce-arg-val
