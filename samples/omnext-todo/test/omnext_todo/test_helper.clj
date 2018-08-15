@@ -9,6 +9,8 @@
             [omnext-todo.server :as server]
             [omnext-todo.service]))
 
+(def write-edn pr-str)
+
 (defn new-service
   "This generates a new testable service for use with io.pedestal.test/response-for.
   It will also create a new Datomic DB (randomized URI)."
@@ -87,7 +89,7 @@
                  :post URL-path
                  :headers (merge {"Content-Type" "application/edn"}
                                  (:headers opts))
-                 :body (util/write-edn payload))))
+                 :body (write-edn payload))))
 
 (defn response-data
   "Return the parsed payload data from a vase api http response."
@@ -104,4 +106,3 @@
 (defn new-req-ctx
   [& {:as headers}]
   {:request {:headers headers}})
-

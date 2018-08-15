@@ -11,7 +11,8 @@
   ([params coercions exprs status]
    (make-respond params coercions exprs status {}))
   ([params coercions exprs status headers]
-   (actions/respond-action :responder params coercions exprs status headers)))
+   (interceptor/-interceptor
+    (actions/->RespondAction :responder params coercions exprs status headers ""))))
 
 (deftest respond-action
   (testing "static response"

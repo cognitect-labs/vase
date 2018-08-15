@@ -145,14 +145,14 @@
                                                             (assoc ctx
                                                                    :response
                                                                    {:status 200
-                                                                    :body   (mapv (fn [res]
-                                                                                    (assoc (merge (dissoc (:sale/store res) :db/id)
-                                                                                                  (dissoc (:sale/product res) :db/id))
-                                                                                           ;; Let's convert sale prices (whole cents) into floating points
-                                                                                           :sale/price (/ (:sale/price res) 100.0)
-                                                                                           :product/type (get-in res [:sale/product :product/type :db/ident])))
-                                                                                  (:vasebi/sales-data ctx))}))}]}}
+                                                                    :body (mapv (fn [res]
+                                                                                  (assoc (merge (dissoc (:sale/store res) :db/id)
+                                                                                                (dissoc (:sale/product res) :db/id))
+                                                                                         ;; Let's convert sale prices (whole cents) into floating points
+                                                                                         :sale/price (/ (:sale/price res) 100.0)
+                                                                                         :product/type (get-in res [:sale/product :product/type :db/ident])))
+                                                                                (:vasebi/sales-data ctx))}))}]}}
                                         ;:vase.api/interceptors [] ;; Any extra interceptors to apply to this API chunk/version
-    :vase.api/schemas         [:vasebi/foodmart-sales
-                               :vasebi/seed-data]
+    :vase.api/schemas [:vasebi/foodmart-sales
+                       :vasebi/seed-data]
     :vase.api/forward-headers ["vaserequest-id"]}}}}

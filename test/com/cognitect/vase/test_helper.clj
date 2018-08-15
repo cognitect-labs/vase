@@ -7,6 +7,8 @@
             [com.cognitect.vase.service-route-table :as srt]
             [io.pedestal.interceptor.chain :as chain]))
 
+(def write-edn pr-str)
+
 (defn new-service
   "This generates a new testable service for use with io.pedestal.test/response-for."
   ([]            (new-service (srt/service-map)))
@@ -71,7 +73,7 @@
                  :post URL-path
                  :headers (merge {"Content-Type" "application/edn"}
                                  (:headers opts))
-                 :body (util/write-edn payload))))
+                 :body (write-edn payload))))
 
 (defn response-data
   "Return the parsed payload data from a vase api http response."

@@ -63,11 +63,11 @@
 
   (testing "helpful error messages"
     (are [bad-input msg-pattern] (thrown-with-msg? Throwable msg-pattern (read-string bad-input))
-      "#vase/schema-tx()"
+      "#vase/schema-tx{}"
       #"must be a vector"
 
       "#vase/schema-tx[()]"
-      #"only contain other vectors"
+      #"nested elements must be vectors"
 
       "#vase/schema-tx[:e/a :one :long :identity \"Doc\"]"
       #"must look like this"

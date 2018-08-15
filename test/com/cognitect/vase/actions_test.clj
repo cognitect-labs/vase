@@ -35,9 +35,9 @@
       (actions/dynamic-interceptor :error-only [] {:error identity}))))
 
 (deftest builtin-actions-are-interceptors
-  (are [x] (interceptor/interceptor? x)
-    (actions/respond-action  :responder  [] [] "Body content" 203 {})
-    (actions/redirect-action :redirector [] "Body content" 303 {} "https://www.example.com")
-    (actions/validate-action :validator  [] {} [])
-    (actions/query-action    :query      [] [] [] [] {} nil)
-    (actions/transact-action :transact   [] :vase/assert-entity {} nil)))
+  (are [x] (interceptor/interceptor? (interceptor/-interceptor x))
+    (actions/map->RespondAction {})
+    (actions/map->RedirectAction {})
+    (actions/map->ValidateAction {})
+    (actions/map->QueryAction {})
+    (actions/map->TransactAction {})))

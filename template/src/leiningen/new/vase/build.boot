@@ -6,21 +6,21 @@
             :source-paths #{"src"}
             :test-paths #{"test"}
             :resource-paths #{"resources" "config"}
-            :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
-                           [io.pedestal/pedestal.service "0.5.2"]
-                           [com.cognitect/pedestal.vase "0.9.2-SNAPSHOT"]
+            :dependencies [[org.clojure/clojure "1.9.0-beta3"]
+                           [io.pedestal/pedestal.service "0.5.3"]
+                           [com.cognitect/pedestal.vase "0.9.3-SNAPSHOT"]
 
                            ;; Remove this line and uncomment one of the next lines to
                            ;; use Immutant or Tomcat instead of Jetty:
-                           [io.pedestal/pedestal.jetty "0.5.2"]
-                           ;; [io.pedestal/pedestal.immutant "0.5.2-SNAPSHOT"]
-                           ;; [io.pedestal/pedestal.tomcat "0.5.2-SNAPSHOT"]
+                           [io.pedestal/pedestal.jetty "0.5.3"]
+                           ;; [io.pedestal/pedestal.immutant "0.5.3"]
+                           ;; [io.pedestal/pedestal.tomcat "0.5.3"]
 
-                           [ch.qos.logback/logback-classic "1.1.8" :exclusions [org.slf4j/slf4j-api]]
-                           [org.slf4j/jul-to-slf4j "1.7.22"]
-                           [org.slf4j/jcl-over-slf4j "1.7.22"]
-                           [org.slf4j/log4j-over-slf4j "1.7.22"]]
-            :dev-dependencies [[io.pedestal/pedestal.service-tools "0.5.2"]
+                           [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
+                           [org.slf4j/jul-to-slf4j "1.7.25"]
+                           [org.slf4j/jcl-over-slf4j "1.7.25"]
+                           [org.slf4j/log4j-over-slf4j "1.7.25"]]
+            :dev-dependencies [[io.pedestal/pedestal.service-tools "0.5.3"]
                                [org.clojure/tools.namespace "0.3.0-alpha3"]]
             :external {:nrepl-options {:bind "127.0.0.1"
                                        :reply true}
@@ -104,4 +104,3 @@
         (pom)
         (uber)
         (jar :main (get-in proj [:external :main]))))
-

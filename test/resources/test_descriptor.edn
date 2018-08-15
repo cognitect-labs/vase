@@ -29,8 +29,13 @@
  ;; Global Specs for the API
  ;; ------------------------
  :vase/specs
+<<<<<<< HEAD
  {:example.test/age    (fn [age] (> age 21))
   :example.test/name   (clojure.spec.alpha/and string? not-empty)
+=======
+ {:example.test/age (fn [age] (> age 21))
+  :example.test/name (clojure.spec.alpha/and string? not-empty)
+>>>>>>> fern-input
   :example.test/person (clojure.spec.alpha/keys :req-un [:example.test/name
                                                          :example.test/age])}
 
@@ -125,4 +130,8 @@
                                       :body           {:just-a-key "Another Hello World Route"}}}
     "/intercept" {:get [io.pedestal.http/json-body #vase/respond {:name           :example.v2/intercept
                                                                   :enforce-format true
+<<<<<<< HEAD
                                                                   :body           {:one 1}}]}}}}}
+=======
+                                                                  :body {:one 1}}]}}}}}
+>>>>>>> fern-input

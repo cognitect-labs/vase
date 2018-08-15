@@ -1,0 +1,74 @@
+{;; The only "magic" key here is `vase/service`. Vase finds everything
+ ;; else by following references
+ vase/service               (fern/lit vase/service
+                                      {:apis        [@petstore/v1]
+                                       :service-map @http-options})
+
+ ;; For in-memory, use this definition
+ datomic-uri                "datomic:mem:/pet-store"
+
+ ;; For on-disk Datomic, use this definition
+ ;; datomic                 "datomic:dev://localhost:4334/petstore"
+
+ ;; Configure Jetty, via Pedestals' service map.
+ http-options               {:io.pedestal.http/resource-path  "/public"
+                             :io.pedestal.http/port           8080
+                             :io.pedestal.http/secure-headers {:content-security-policy-settings
+                                                               {:object-src "none"}}}
+
+ ;; The connection is used in the :on-startup and :on-request chains.
+ connection                 (fern/lit vase.datomic/connection @datomic-uri)
+
+ ;; Define an API
+ petstore/v1                (fern/lit vase/api
+                                      {:path          "/petstore/v1"
+                                       :expose-api-at "/petstore/api"
+                                       :on-request    [@connection io.pedestal.http/json-body]
+                                       :on-startup    [@connection @petstore.v1/schema @petstore.v1/seed]
+                                       :routes        @petstore.v1/routes})
+
+ ;; The schema used by the API
+ petstore.v1/schema         (fern/lit vase.datomic/attributes
+                                      [:pet/id   :one :long :unique "The id of a pet"]
+                                      [:pet/name :one :string       "The name of a pet"]
+                                      [:pet/tag  :one :string       "The tag of a pet"])
+
+ petstore.v1/seed           (fern/lit vase.datomic/tx
+                                      {:pet/id 1
+                                       :pet/name "Fido"}
+                                      {:pet/id 2
+                                       :pet/name "Spot"}
+                                      {:pet/id 3
+                                       :pet/name "Itchy"}
+                                      {:pet/id 4
+                                       :pet/name "Scratchy"}
+                                      {:pet/id 5
+                                       :pet/name "Cerberus"})
+
+ petstore.v1/routes         #{["/pet/:id"   :get    @petstore.v1/find-a-pet]
+                              ["/pets"      :delete @petstore.v1/delete-a-pet]
+                              ["/pets"      :get    @petstore.v1/find-pets]
+                              ["/pets"      :post   @petstore.v1/add-pets]}
+
+ petstore.v1/add-pets      (fern/lit vase.datomic/transact
+                                      {:db-op      :vase/assert-entity
+                                       :properties [:pet/id
+                                                    :pet/name
+                                                    :pet/tag]})
+
+ petstore.v1/delete-a-pet  (fern/lit vase.datomic/transact
+                                      {:db-op      :vase/retract-entity
+                                       :properties [:pet/id]})
+
+ petstore.v1/find-a-pet    (fern/lit vase.datomic/query
+                                      {:edn-coerce [id]
+                                       :params     [id]
+                                       :query      [:find (pull ?e [*])
+                                                    :in $ ?id
+                                                    :where [?e :pet/id ?id]]})
+
+ petstore.v1/find-pets     (fern/lit vase.datomic/query
+                                      {:params []
+                                       :query  [:find (pull ?e [*])
+                                                :in $
+                                                :where [?e :pet/id ?id]]})}
