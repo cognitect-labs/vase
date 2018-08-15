@@ -45,10 +45,10 @@
   This opens up the potential for non-sanitized input to be rendered."
   [m]
   (walk/postwalk
-   #(cond-> %
-      (string? %)
-      URLDecoder/decode)
-   m))
+    #(cond-> %
+       (string? %)
+       URLDecoder/decode)
+    m))
 
 (defn coerce-arg-val
   ([v]
