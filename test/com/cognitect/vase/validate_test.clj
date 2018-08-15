@@ -9,7 +9,8 @@
 
 (defn make-validate
   [spec]
-  (actions/validate-action :validator [] {} spec))
+  (interceptor/-interceptor
+   (actions/->ValidateAction :validator [] {} spec nil "")))
 
 (defn- with-body [body]
   (assoc-in (helper/new-ctx) [:request :edn-params] body))

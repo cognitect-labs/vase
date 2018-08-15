@@ -16,7 +16,8 @@
 
 (defn make-query
   [query variables coercions constants to]
-  (actions/query-action :query query variables coercions constants {} to))
+  (interceptor/-interceptor
+   (actions/->QueryAction :query variables query coercions constants {} to "")))
 
 (defn- context-with-db []
   (let [conn (db-helper/connection)]

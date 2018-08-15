@@ -6,12 +6,14 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [io.pedestal/pedestal.service "0.5.3"]
                  [com.cognitect/pedestal.vase "0.9.3"]
+                 [io.pedestal/pedestal.service "0.5.3"]
+                 [com.cognitect/pedestal.vase "0.9.3"]
 
                  ;; Remove this line and uncomment one of the next lines to
                  ;; use Immutant or Tomcat instead of Jetty:
                  [io.pedestal/pedestal.jetty "0.5.3"]
-                 ;; [io.pedestal/pedestal.immutant "0.5.2-SNAPSHOT"]
-                 ;; [io.pedestal/pedestal.tomcat "0.5.2-SNAPSHOT"]
+                 ;; [io.pedestal/pedestal.immutant "0.5.3"]
+                 ;; [io.pedestal/pedestal.tomcat "0.5.3"]
 
                  [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
@@ -23,5 +25,5 @@
   ;:java-agents [[org.mortbay.jetty.alpn/jetty-alpn-agent "2.0.3"]]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "{{namespace}}.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.3"]]}
-             :uberjar {:aot [{{namespace}}.server]}}
-  :main ^{:skip-aot true} {{namespace}}.server)
+             :uberjar {:aot [{{namespace}}.service]}}
+  :main ^{:skip-aot true} {{namespace}}.service)

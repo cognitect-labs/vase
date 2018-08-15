@@ -16,11 +16,11 @@
 (def accepted-cards          #{:one :many})
 
 (def schema-tx-usage
-  "#vase/schema-tx[[ _attribute-name_ _cardinality_ _type_ _toggles_* _docstring_ ]* ]")
+  "[ _attribute-name_ _cardinality_ _type_ _toggles_* _docstring_ ]")
 
 (defmacro schema-problem
   [flavor actual]
-  `(str "#vase/schema-tx must look like this:\n\n"
+  `(str "A schema attribute must look like this:\n\n"
        schema-tx-usage
        "\n\n"
        ~flavor
@@ -66,73 +66,35 @@
                    opt-toggles))))
 
 (defn schema-tx [form]
-  (schema-assert (vector? form) "The top level must be a vector." form)
-  (schema-assert (every? vector? form) "The top level vector must only contain other vectors" form)
+  (schema-assert (sequential? form) "The top level must be a vector or list." form)
+  (schema-assert (every? vector? form) "The nested elements must be vectors" form)
   (mapv parse-schema-vec form))
 
 ;; Routing/Action literals
 ;; -----------------------
 
-(defrecord RespondAction [name params edn-coerce body status headers doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (actions/respond-action name params edn-coerce body status headers)))
-
 (defn respond [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->RespondAction form))
-
-(defmethod print-method RespondAction [t ^java.io.Writer w]
-  (.write w (str "#vase/respond" (into {} t))))
-
-(defrecord RedirectAction [name params body status headers url]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (actions/redirect-action name params body status headers url)))
+  (actions/map->RespondAction form))
 
 (defn redirect [form]
   {:pre [(map? form)
          (:url form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->RedirectAction form))
-
-(defmethod print-method RedirectAction [t ^java.io.Writer w]
-  (.write w (str "#vase/redirect" (into {} t))))
-
-(defrecord ValidateAction [name params headers spec request-params-path doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (let [params (or params [])]
-      (actions/validate-action name params headers spec request-params-path))))
+  (actions/map->RedirectAction form))
 
 (defn validate [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->ValidateAction form))
-
-(defmethod print-method ValidateAction [t ^java.io.Writer w]
-  (.write w (str "#vase/validate" (into {} t))))
-
-(defrecord ConformAction [name from spec to explain-to doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (actions/conform-action name from spec to explain-to)))
+  (actions/map->ValidateAction form))
 
 (defn conform [form]
   {:pre [(map? form)]}
-  (map->ConformAction form))
-
-(defmethod print-method ConformAction [t ^java.io.Writer w]
-  (.write w (str "#vase/conform" (into {} t))))
-
-(defrecord QueryAction [name params query edn-coerce constants headers to doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (actions/query-action name query params (into #{} edn-coerce) constants headers to)))
+  (actions/map->ConformAction form))
 
 (defn query [form]
   {:pre [(map? form)
@@ -140,40 +102,20 @@
          (-> form :query vector?)
          (:name form)
          (-> form :name keyword?)]}
-  (map->QueryAction form))
-
-(defmethod print-method QueryAction [t ^java.io.Writer w]
-  (.write w (str "#vase/query" (into {} t))))
-
-(defrecord TransactAction [name properties db-op headers to doc]
-  i/IntoInterceptor
-  (-interceptor [_]
-    (actions/transact-action name properties db-op headers to)))
+  (actions/map->QueryAction form))
 
 (defn transact [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-  (map->TransactAction (merge {:db-op :vase/assert-entity} form)))
-
-(defmethod print-method TransactAction [t ^java.io.Writer w]
-  (.write w (str "#vase/transact" (into {} t))))
-
-(defn- handle-intercept-option [x]
-  (cond
-    (list? x) (eval x)
-    (symbol? x) (resolve x)
-    (var? x) (deref x)
-    :else x))
+  (actions/map->TransactAction (merge {:db-op :vase/assert-entity} form)))
 
 (defn intercept [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
-   (let [enter (handle-intercept-option (:enter form))
-         leave (handle-intercept-option (:leave form))
-         error (handle-intercept-option (:error form))]
-     (i/interceptor {:name (:name form)
-                     :enter enter
-                     :leave leave
-                     :error error})))
+  (actions/map->InterceptAction form))
+
+(defn attach [form]
+  {:pre [(map? form)]}
+  (actions/map->AttachAction form))
