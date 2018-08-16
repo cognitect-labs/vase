@@ -32,8 +32,6 @@
   (let [s (str base path)]
     (str/replace s #"//" "/")))
 
-;; TODO - coll? returns true on records. We need to be more specific
-;; about whether we have one thing or several
 (defn- base-interceptors
   [on-request {:keys [interceptors]}]
   (let [[one-or-many intc] interceptors]
@@ -44,7 +42,7 @@
 (defn- routes-for-api
   [api]
   (let [base   (:path api "/")
-        on-req (:on-request api [])]
+        on-req (or (:on-request api) [])]
     (mapv
      (fn [route]
        [(base-route base route)
