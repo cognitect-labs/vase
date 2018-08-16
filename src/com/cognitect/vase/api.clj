@@ -15,10 +15,12 @@
 
 (s/def ::interceptor  interceptor?)
 (s/def ::interceptors (s/coll-of ::interceptor :min-count 1))
+(s/def ::route-name   keyword?)
 (s/def ::route        (s/cat :path ::path
                              :verb #{:get :put :post :delete :head :options :patch}
                              :interceptors (s/or :single ::interceptor
-                                                 :vector ::interceptors)))
+                                             :vector ::interceptors)
+                             :route-name (s/? ::route-name)))
 (s/def ::routes       (s/coll-of ::route :min-count 1))
 (s/def ::on-startup   (s/nilable ::interceptors))
 (s/def ::on-request   (s/nilable ::interceptors))
@@ -44,11 +46,13 @@
   (let [base   (:path api "/")
         on-req (or (:on-request api) [])]
     (mapv
-     (fn [route]
-       [(base-route base route)
-        (:verb route)
-        (base-interceptors on-req route)])
-     (:routes api #{}))))
+      (fn [route]
+        (cond-> [(base-route base route)
+                 (:verb route)
+                 (base-interceptors on-req route)]
+          (some? (:route-name route))
+          (into [:route-name (:route-name route)])))
+      (:routes api #{}))))
 
 (defn- collect-routes
   [spec]
