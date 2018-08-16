@@ -1,4 +1,4 @@
-(defproject com.cognitect/pedestal.vase "0.9.4-SNAPSHOT"
+(defproject com.cognitect/pedestal.vase "0.9.4"
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/vase"
   :dependencies [;; Platform
@@ -9,12 +9,9 @@
                                                                    [org.slf4j/slf4j-nop]]]
                  [io.rkn/conformity "0.5.1" :exclusions [com.datomic/datomic-free]]
 
-                 ;; Tmp. Work around problem also fixed in pedestal.service 0.5.3-SNAPSHOT
-                 [org.clojure/core.async "0.4.474"]
-
                  ;; Pedestal
-                 [io.pedestal/pedestal.service "0.5.3"]
-                 [io.pedestal/pedestal.jetty "0.5.3"]
+                 [io.pedestal/pedestal.service "0.5.4"]
+                 [io.pedestal/pedestal.jetty "0.5.4"]
 
                  [com.cognitect/fern "0.1.3"]
 
@@ -52,7 +49,7 @@
                                   [org.slf4j/jcl-over-slf4j "1.7.25"]
                                   [org.slf4j/log4j-over-slf4j "1.7.25"]]}
              :test {:dependencies [[org.clojure/test.check "0.9.0"]
-                                   [io.pedestal/pedestal.service-tools "0.5.3" :exclusions [[org.slf4j/log4j-over-slf4j]
+                                   [io.pedestal/pedestal.service-tools "0.5.4" :exclusions [[org.slf4j/log4j-over-slf4j]
                                                                                             [org.slf4j/jul-to-slf4j]
                                                                                             [org.slf4j/jcl-over-slf4j]]]]
                     :resource-paths ["resources"
