@@ -33,4 +33,5 @@
              [".gitignore"                           (render ".gitignore"        data)]
              ["src/{{sanitized}}/service.clj"        (render "service.clj"       data)]
              ["resources/{{namespace}}_service.fern" (render "vase_service.fern" data)]
-             ["config/logback.xml"                   (render "logback.xml"       data)])))
+             ["config/logback.xml"                   (render "logback.xml"       data)]
+             ["test/{{sanitized}}/service_test.clj"  (render "service_test.clj"  data)])))

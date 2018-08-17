@@ -1,18 +1,17 @@
 (def proj '{:app {:project {{raw-name}}
                   :version "0.0.1-SNAPSHOT"
                   :description "FIXME: write description"
-                  :license {:name "Eclipse Public License"
-                            :url "http://www.eclipse.org/legal/epl-v10.html"}}
+                  :license {"Eclipse Public License" "http://www.eclipse.org/legal/epl-v10.html"}}
             :source-paths #{"src"}
             :test-paths #{"test"}
             :resource-paths #{"resources" "config"}
-            :dependencies [[org.clojure/clojure "1.9.0-beta3"]
-                           [io.pedestal/pedestal.service "0.5.3"]
-                           [com.cognitect/pedestal.vase "0.9.3-SNAPSHOT"]
+            :dependencies [[org.clojure/clojure "1.9.0"]
+                           [io.pedestal/pedestal.service "0.5.4"]
+                           [com.cognitect/pedestal.vase "0.9.4-SNAPSHOT"]
 
                            ;; Remove this line and uncomment one of the next lines to
                            ;; use Immutant or Tomcat instead of Jetty:
-                           [io.pedestal/pedestal.jetty "0.5.3"]
+                           [io.pedestal/pedestal.jetty "0.5.4"]
                            ;; [io.pedestal/pedestal.immutant "0.5.3"]
                            ;; [io.pedestal/pedestal.tomcat "0.5.3"]
 
@@ -20,7 +19,7 @@
                            [org.slf4j/jul-to-slf4j "1.7.25"]
                            [org.slf4j/jcl-over-slf4j "1.7.25"]
                            [org.slf4j/log4j-over-slf4j "1.7.25"]]
-            :dev-dependencies [[io.pedestal/pedestal.service-tools "0.5.3"]
+            :dev-dependencies [[io.pedestal/pedestal.service-tools "0.5.4"]
                                [org.clojure/tools.namespace "0.3.0-alpha3"]]
             :external {:nrepl-options {:bind "127.0.0.1"
                                        :reply true}
