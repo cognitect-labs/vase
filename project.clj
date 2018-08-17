@@ -1,4 +1,4 @@
-(defproject com.cognitect/pedestal.vase "0.9.4"
+(defproject com.cognitect/pedestal.vase "0.9.4-SNAPSHOT"
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/vase"
   :dependencies [;; Platform
