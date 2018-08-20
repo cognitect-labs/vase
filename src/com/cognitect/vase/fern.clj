@@ -119,7 +119,8 @@
 
 (defn- constructed-stock-interceptors
   []
-  {'io.pedestal.http.ring-middlewares/session (ring-middlewares/session)})
+  {'io.pedestal.http.ring-middlewares/session (ring-middlewares/session)
+   'io.pedestal.http.body-params/body-params (io.pedestal.http.body-params/body-params)})
 
 (defn stock-interceptors
   []
