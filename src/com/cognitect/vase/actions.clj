@@ -253,6 +253,16 @@
 (defmethod print-method ValidateAction [t ^java.io.Writer w]
   (.write w (str "#vase/validate" (into {} t))))
 
+(defn- get-or-get-in
+  [mapsym wheresym]
+  (list (if (vector? wheresym) `get-in `get)
+    mapsym wheresym))
+
+(defn- assoc-or-assoc-in
+  [mapsym wheresym valsym]
+  (list (if (vector? wheresym) `assoc-in `assoc)
+    mapsym wheresym valsym))
+
 (defn conform-action-exprs
   "Return code for a Pedestal interceptor function that performs
   spec validation on the data attached at `from`. If the data
@@ -260,13 +270,13 @@
   [from spec to explain-to]
   (let [explain-to (or explain-to ::explain-data)]
     `(fn [{~'request :request :as ~'context}]
-       (let [val#           (get ~'context ~from)
-             conformed#     (clojure.spec.alpha/conform ~spec val#)
-             problems#      (when (= :clojure.spec.alpha/invalid conformed#)
-                              (clojure.spec.alpha/explain-data ~spec val#))
-             ctx# (assoc ~'context ~to conformed#)]
-         (if problems#
-           (assoc ctx# ~explain-to problems#)
+       (let [val#           ~(get-or-get-in 'context from)
+             ~'conformed     (clojure.spec.alpha/conform ~spec val#)
+             ~'problems      (when (= :clojure.spec.alpha/invalid ~'conformed)
+                               (clojure.spec.alpha/explain-data ~spec val#))
+             ctx#           ~(assoc-or-assoc-in 'context to 'conformed)]
+         (if ~'problems
+           ~(assoc-or-assoc-in 'context explain-to 'problems)
            ctx#)))))
 
 (defrecord ConformAction [name from spec to explain-to doc]
@@ -332,7 +342,7 @@
              query-result#  (when (every? some? query-params#)
                               (apply d/q '~query db# query-params#))
              missing-params?# (not (every? some? query-params#))
-             response-body# (cond
+             ~'response-body (cond
                               missing-params?#          (str
                                                          "Missing required query parameters; One or more parameters was `nil`."
                                                          "  Got: " (keys ~args-sym)
@@ -340,14 +350,14 @@
                               (hash-set? query-result#) (into [] query-result#)
                               :else                     query-result#)
              resp#          (response/response
-                             response-body#
+                             ~'response-body
                              ~headers
                              (if query-result#
-                               (response/status-code response-body# (:errors ~'context))
+                               (response/status-code ~'response-body (:errors ~'context))
                                400))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
-           (assoc ~'context ~to response-body#))))))
+           ~(assoc-or-assoc-in 'context to 'response-body))))))
 
 (comment
   (clojure.pprint/pprint
@@ -360,7 +370,8 @@
                           someone]
                         '[selector]
                         ["mefogus@gmail.com"]
-                        {}))
+                        {}
+                        nil))
   )
 
 (defrecord QueryAction [name params query edn-coerce constants headers to doc]
@@ -401,19 +412,19 @@
                              (get-in ~'request [:json-params :payload]))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)
-             response-body# (apply-tx
+             ~'response-body (apply-tx
                              conn#
                              tx-data#
                              args#)
              resp#          (response/response
-                             response-body#
+                             ~'response-body
                              ~headers
-                             (response/status-code response-body# (:errors ~'context)))]
+                             (response/status-code ~'response-body (:errors ~'context)))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
-           (-> ~'context
-               (assoc ~to response-body#)
-               (assoc-in [:request :db] (d/db conn#))))))))
+           (assoc-in
+             ~(assoc-or-assoc-in 'context to 'response-body)
+             [:request :db] (d/db conn#)))))))
 
 (defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
@@ -452,7 +463,7 @@
 (defn- attach-action-exprs
   [key val]
   `(fn [~'context]
-     (assoc ~'context ~key ~val)))
+     ~(assoc-or-assoc-in 'context key val)))
 
 (defrecord AttachAction [name key val]
   i/IntoInterceptor
