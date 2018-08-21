@@ -12,6 +12,7 @@
             [com.cognitect.vase.actions :as actions]
             [io.pedestal.interceptor :as i]
             [datomic.api :as d]
+            [datomic.client.api :as client]
             [com.cognitect.vase.literals :as literals]
             [io.pedestal.log :as log])
   (:import [clojure.lang IObj]))
@@ -84,6 +85,39 @@
   (if (map? uri-or-map)
     (map->Connection uri-or-map)
     (map->Connection {:uri uri-or-map :allow-create? true})))
+
+(defrecord CloudConnection [client-config db-name]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (let [client (client/client client-config)
+          _      (client/create-database client {:db-name db-name})
+          cxn    (client/connect client {:db-name db-name})]
+      (i/map->Interceptor
+        {:enter
+         (fn [ctx]
+           (update ctx :request assoc
+             :client client
+             :conn   cxn
+             :db     (client/db cxn)))}))))
+
+(defrecord CloudTx [assertions]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (i/map->Interceptor
+     {:enter
+      (fn [ctx]
+        (if-let [conn (-> ctx :request :conn)]
+          (let [tx-result (client/transact conn {:tx-data assertions})]
+            (log/info :tx-result tx-result))
+          (log/warn :msg "Cannot execute Tx" :reason :no-connection))
+        ctx)})))
+
+(defmethod f/literal 'vase.datomic.cloud/client [_ client-config db-name]
+  (->CloudConnection client-config db-name))
+
+(defmethod f/literal 'vase.datomic.cloud/attributes [_ ])
+(defmethod f/literal 'vase.datomic.cloud/tx         [_ & assertions] (->CloudTx assertions))
+(defmethod f/literal 'vase.datomic.cloud/attributes [_ & attributes] (->CloudTx (literals/schema-tx attributes)))
 
 ;; Preload inteceptors available to all
 (def stock-interceptor-syms
