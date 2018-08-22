@@ -277,7 +277,7 @@
         get-clause            (get-or-get-in     'context from)
         assoc-data-clause     (assoc-or-assoc-in 'context to 'conformed)
         assoc-problems-clause (assoc-or-assoc-in 'context explain-to
-                                `(clojure.spec.alpha/explain-data ~spec 'val))]
+                                `(clojure.spec.alpha/explain-data ~spec ~'val))]
     `(fn [{~'request :request :as ~'context}]
        (let [~'val        ~get-clause
              ~'conformed (clojure.spec.alpha/conform ~spec ~'val)
@@ -300,6 +300,12 @@
 (defmethod print-method ConformAction [t ^java.io.Writer w]
   (.write w (str "#vase/conform" (into {} t))))
 
+
+(comment
+
+  (conform-action-exprs [:context :request :param] :specname :to :explain-to)
+
+  )
 
 (defn hash-set? [x]
   (instance? java.util.HashSet x))

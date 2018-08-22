@@ -32,4 +32,18 @@
           (nil?
             (-> {:query-data {:a 1 :b "string-not-allowed"}}
               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped nil))
-              (get :com.cognitect.vase.actions/explain-data)))))))
+              (get :com.cognitect.vase.actions/explain-data))))))
+
+
+  (testing "The 'from' part can be a vector to get nested data out of the context"
+    (is (= ::s/invalid
+          (-> {:context {:request {:query-data {:a 1 :b "string-not-allowed"}}}}
+            (helper/run-interceptor (make-conformer [:context :request :query-data] ::request-body :shaped nil))
+            (get :shaped))))
+
+    (is (= {:path [:b] :pred `boolean? :val "string-not-allowed" :via [::request-body ::b] :in [:b]}
+          (-> {:context {:request {:query-data {:a 1 :b "string-not-allowed"}}}}
+            (helper/run-interceptor (make-conformer [:context :request :query-data] ::request-body :shaped nil))
+            :com.cognitect.vase.actions/explain-data
+            :clojure.spec.alpha/problems
+            first)))))
