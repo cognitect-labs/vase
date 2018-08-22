@@ -10,24 +10,26 @@
 (s/def ::request-body (s/keys :req-un #{::a} :opt-un #{::b}))
 
 (defn make-conformer
-  [from spec to]
+  [from spec to explain-to]
   (i/-interceptor
-   (actions/->ConformAction :conformer from spec to nil "")))
+   (actions/->ConformAction :conformer from spec to explain-to "")))
 
 (deftest conform-action
   (testing "Happy path"
     (is (not= ::s/invalid
               (-> {:query-data {:a 1 :b true}}
-                  (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
+                  (helper/run-interceptor (make-conformer :query-data ::request-body :shaped nil))
                   (get :shaped)))))
 
   (testing "Non-conforming inputs"
     (is (= ::s/invalid
            (-> {:query-data {:a 1 :b "string-not-allowed"}}
-               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
-               (get :shaped))))
+               (helper/run-interceptor (make-conformer :query-data ::request-body :shaped nil))
+               (get :shaped)))))
+
+  (testing "Explain goes to :com.cognitect.vase.actions/explain-data by default"
     (is (not
-         (nil?
-          (-> {:query-data {:a 1 :b "string-not-allowed"}}
-              (helper/run-interceptor (make-conformer :query-data ::request-body :shaped))
+          (nil?
+            (-> {:query-data {:a 1 :b "string-not-allowed"}}
+              (helper/run-interceptor (make-conformer :query-data ::request-body :shaped nil))
               (get :com.cognitect.vase.actions/explain-data)))))))

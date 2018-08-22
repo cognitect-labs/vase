@@ -32,6 +32,7 @@
   (:require [clojure.walk :as walk]
             [clojure.spec.alpha :as s]
             [datomic.api :as d]
+            [datomic.client.api :as client]
             [io.pedestal.interceptor :as i]
             [com.cognitect.vase.edn :as edn]
             [com.cognitect.vase.util :as util]
@@ -108,11 +109,15 @@
    args
 
    :transaction
-   (->> tx-data
-        (d/transact conn)
-        deref
-        :tx-data
-        (map eav))})
+   (map eav (:tx-data (deref (d/transact conn tx-data))))})
+
+(defn apply-tx-cloud
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (map eav (:tx-data (client/transact conn {:tx-data tx-data})))})
 
 ;; Building Interceptors
 ;;
@@ -268,16 +273,18 @@
   spec validation on the data attached at `from`. If the data
   does not conform, the explain-data will be attached at `explain-to`"
   [from spec to explain-to]
-  (let [explain-to (or explain-to ::explain-data)]
+  (let [explain-to            (or explain-to ::explain-data)
+        get-clause            (get-or-get-in     'context from)
+        assoc-data-clause     (assoc-or-assoc-in 'context to 'conformed)
+        assoc-problems-clause (assoc-or-assoc-in 'context explain-to
+                                `(clojure.spec.alpha/explain-data ~spec 'val))]
     `(fn [{~'request :request :as ~'context}]
-       (let [val#           ~(get-or-get-in 'context from)
-             ~'conformed     (clojure.spec.alpha/conform ~spec val#)
-             ~'problems      (when (= :clojure.spec.alpha/invalid ~'conformed)
-                               (clojure.spec.alpha/explain-data ~spec val#))
-             ctx#           ~(assoc-or-assoc-in 'context to 'conformed)]
-         (if ~'problems
-           ~(assoc-or-assoc-in 'context explain-to 'problems)
-           ctx#)))))
+       (let [~'val        ~get-clause
+             ~'conformed (clojure.spec.alpha/conform ~spec ~'val)
+             ~'context   ~assoc-data-clause]
+         (if (clojure.spec.alpha/invalid? ~'conformed)
+           ~assoc-problems-clause
+           ~'context)))))
 
 (defrecord ConformAction [name from spec to explain-to doc]
   i/IntoInterceptor
@@ -297,9 +304,19 @@
 (defn hash-set? [x]
   (instance? java.util.HashSet x))
 
+(defn- query-call-expr
+  [cloud? dbform query paramssym]
+  (if cloud?
+    `(apply client/q '~query ~dbform ~paramssym)
+    `(apply d/q '~query ~dbform ~paramssym)))
+
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
   Datomic query.
+
+  `cloud?`, when truthy, indicates the generated code should be for
+  the Datomic Client API and Cloud. Otherwise, will be for Datomic Pro
+  and the Peer library.
 
   `query` holds a query expression in any supported Datomic
   format. Required.
@@ -321,7 +338,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [query variables coercions constants headers to]
+  [cloud? query variables coercions constants headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [args-sym  (gensym 'args)
         to        (or to ::query-data)
@@ -337,11 +354,10 @@
                                       `(coerce-arg-val ~args-sym ~k ~default-v)
                                       `(get ~args-sym ~k ~default-v))))
                               variables)
-             db#            (:db ~'request)
-             query-params# (concat vals# ~constants)
-             query-result#  (when (every? some? query-params#)
-                              (apply d/q '~query db# query-params#))
-             missing-params?# (not (every? some? query-params#))
+             ~'query-params (concat vals# ~constants)
+             query-result#  (when (every? some? ~'query-params)
+                              ~(query-call-expr cloud? `(:db ~'request) query 'query-params))
+             missing-params?# (not (every? some? ~'query-params))
              ~'response-body (cond
                               missing-params?#          (str
                                                          "Missing required query parameters; One or more parameters was `nil`."
@@ -360,27 +376,43 @@
            ~(assoc-or-assoc-in 'context to 'response-body))))))
 
 (comment
+
   (clojure.pprint/pprint
-    (query-action-exprs '[:find ?e
-                          :in $ ?someone ?fogus
-                          :where
-                          [(list ?someone ?fogus) [?emails ...]]
-                          [?e :user/userEmail ?emails]]
-                        '[[selector [*]]
-                          someone]
-                        '[selector]
-                        ["mefogus@gmail.com"]
-                        {}
-                        nil))
+    (query-action-exprs
+      true
+      '[:find ?e
+        :in $ ?someone ?fogus
+        :where
+        [(list ?someone ?fogus) [?emails ...]]
+        [?e :user/userEmail ?emails]]
+      '[[selector [*]]  someone]
+      '[selector]
+      ["mefogus@gmail.com"]
+      {}
+      nil))
+
+
+  (eval  (query-action-exprs true
+           '[:find ?e
+             :in $ ?someone ?fogus
+             :where
+             [(list ?someone ?fogus) [?emails ...]]
+             [?e :user/userEmail ?emails]]
+           '[[selector [*]]
+             someone]
+           '[selector]
+           ["mefogus@gmail.com"]
+           {}
+           nil))
   )
 
-(defrecord QueryAction [name params query edn-coerce constants headers to doc]
+(defrecord QueryAction [cloud? name params query edn-coerce constants headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
     (dynamic-interceptor
      name
      {:enter
-      (query-action-exprs query params (into #{} edn-coerce) constants headers to)
+      (query-action-exprs cloud? query params (into #{} edn-coerce) constants headers to)
 
       :action-literal
       :vase/query})))
@@ -392,6 +424,10 @@
   "Return code for a Pedestal context function that executes a
   transaction.
 
+  `cloud?`, when truthy, indicates the generated code should be for
+  the Datomic Client API and Cloud. Otherwise, will be for Datomic Pro
+  and the Peer library.
+
   `properties` is a collection of keywords that name Datomic
   attributes. When an HTTP request arrives, these keywords are matched
   with their parameter values in the request to form an entity map.
@@ -402,7 +438,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [properties db-op headers to]
+  [cloud? properties db-op headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [to (or to ::transact-data)]
     `(fn [{~'request :request :as ~'context}]
@@ -412,7 +448,7 @@
                              (get-in ~'request [:json-params :payload]))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)
-             ~'response-body (apply-tx
+             ~'response-body (~(if cloud? `apply-tx-cloud `apply-tx)
                              conn#
                              tx-data#
                              args#)
@@ -426,13 +462,13 @@
              ~(assoc-or-assoc-in 'context to 'response-body)
              [:request :db] (d/db conn#)))))))
 
-(defrecord TransactAction [name properties db-op headers to doc]
+(defrecord TransactAction [cloud? name properties db-op headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
     (dynamic-interceptor
      name
      {:enter
-      (transact-action-exprs properties db-op headers to)
+      (transact-action-exprs cloud? properties db-op headers to)
 
       :action-literal
       :vase/transact})))

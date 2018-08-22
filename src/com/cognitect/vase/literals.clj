@@ -94,6 +94,9 @@
   {:pre [(map? form)]}
   (actions/map->ConformAction form))
 
+(defn- for-cloud [a]
+  (assoc a :cloud? true))
+
 (defn query [form]
   {:pre [(map? form)
          (:query form)
@@ -102,11 +105,27 @@
          (-> form :name keyword?)]}
   (actions/map->QueryAction form))
 
+(defn query-cloud [form]
+  {:pre [(map? form)
+         (:query form)
+         (-> form :query vector?)
+         (:name form)
+         (-> form :name keyword?)]}
+  (for-cloud
+    (actions/map->QueryAction form)))
+
 (defn transact [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
   (actions/map->TransactAction (merge {:db-op :vase/assert-entity} form)))
+
+(defn transact-cloud [form]
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
+  (for-cloud
+    (actions/map->TransactAction (merge {:db-op :vase/assert-entity} form))))
 
 (defn intercept [form]
   {:pre [(map? form)

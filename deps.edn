@@ -1,5 +1,7 @@
 {:paths ["src"]
  :deps  {com.datomic/datomic-free {:mvn/version "0.9.5697"}
+         com.datomic/client-cloud {:mvn/version "0.8.63"}
+
          io.rkn/conformity        {:mvn/version "0.5.1"}
 
          ;; Pedestal
@@ -9,4 +11,5 @@
          com.cognitect/fern {:mvn/version "0.1.3"}
 
          ;; Nice errors
-         expound {:mvn/version "0.3.1"}}}
+         expound {:mvn/version "0.3.1"}}
+ :aliases {:repl {:extra-paths ["test" "test/resources"]}}}

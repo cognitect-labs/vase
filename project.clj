@@ -7,6 +7,7 @@
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5697" :exclusions [[org.slf4j/slf4j-api]
                                                                    [org.slf4j/slf4j-nop]]]
+                 [com.datomic/client-cloud "0.8.63"]
                  [io.rkn/conformity "0.5.1" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal

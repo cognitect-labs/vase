@@ -18,10 +18,10 @@
 (defn make-transaction
   ([properties]
    (interceptor/-interceptor
-    (actions/->TransactAction :transact properties nil nil nil "")))
+    (actions/->TransactAction false :transact properties nil nil nil "")))
   ([properties db-op headers to]
    (interceptor/-interceptor
-    (actions/->TransactAction :transact properties db-op headers to ""))))
+    (actions/->TransactAction false :transact properties db-op headers to ""))))
 
 (defn- context-with-db []
   (let [conn (db-helper/connection)]

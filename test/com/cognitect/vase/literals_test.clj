@@ -16,21 +16,18 @@
     [{:db/ident              :entity/attribute
       :db/valueType          :db.type/long
       :db/cardinality        :db.cardinality/one
-      :db/doc                "A docstring"
-      :db.install/_attribute :db.part/db}]
+      :db/doc                "A docstring"}]
 
     "Two attributes"
     "#vase/schema-tx[[:e/a1 :one :long \"\"] [:e/a2 :many :string \"docstring 2\"]]"
     [{:db/ident :e/a1
       :db/valueType :db.type/long
       :db/cardinality :db.cardinality/one
-      :db/doc ""
-      :db.install/_attribute :db.part/db}
+      :db/doc ""}
      {:db/ident              :e/a2
       :db/valueType          :db.type/string
       :db/cardinality        :db.cardinality/many
-      :db/doc                "docstring 2"
-      :db.install/_attribute :db.part/db}]
+      :db/doc                "docstring 2"}]
 
     "One toggle"
     "#vase/schema-tx[[:e/a :one :long :identity \"Doc\"]]"
@@ -38,8 +35,7 @@
       :db/valueType          :db.type/long
       :db/cardinality        :db.cardinality/one
       :db/unique             :db.unique/identity
-      :db/doc                "Doc"
-      :db.install/_attribute :db.part/db}]
+      :db/doc                "Doc"}]
 
     "Several toggles"
     "#vase/schema-tx[[:e/a :one :string :identity :index :component :no-history :fulltext \"Doc\"]]"
@@ -51,8 +47,7 @@
       :db/noHistory          true
       :db/fulltext           true
       :db/unique             :db.unique/identity
-      :db/doc                "Doc"
-      :db.install/_attribute :db.part/db}])
+      :db/doc                "Doc"}])
 
   (are [bad-input] (thrown? Throwable (read-string bad-input))
     "#vase/schema-tx[[:e/a :one-is-the-lonliest-number :long \"doc\"]]"
