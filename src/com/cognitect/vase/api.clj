@@ -97,7 +97,7 @@
            (add-routes (collect-routes conformed))
            (add-startups (collect-startups conformed)))))))
 
-(defn- execute-startups
+(defn execute-startups
   [service-map]
   (let [startups (map i/-interceptor (get service-map ::startups []))]
     (chain/execute service-map startups)))

@@ -49,6 +49,7 @@
 (defmethod f/literal 'vase/conform  [_ d] (actions/map->ConformAction (with-name d)))
 (defmethod f/literal 'vase/validate [_ d] (actions/map->ValidateAction (with-name d)))
 (defmethod f/literal 'vase/attach   [_ key val] (actions/map->AttachAction (with-name {:key key :val val})))
+(defmethod f/literal 'vase/intercept [_ d] (actions/map->InterceptAction (with-name d)))
 
 (defrecord Tx         [assertions]
   i/IntoInterceptor
@@ -104,13 +105,13 @@
   i/IntoInterceptor
   (-interceptor [_]
     (i/map->Interceptor
-     {:enter
-      (fn [ctx]
-        (if-let [conn (-> ctx :request :conn)]
-          (let [tx-result (client/transact conn {:tx-data assertions})]
-            (log/info :tx-result tx-result))
-          (log/warn :msg "Cannot execute Tx" :reason :no-connection))
-        ctx)})))
+      {:enter
+       (fn [ctx]
+         (if-let [conn (-> ctx :request :conn)]
+           (let [tx-result (client/transact conn {:tx-data assertions})]
+             (log/info :tx-result tx-result))
+           (log/warn :msg "Cannot execute Tx" :reason :no-connection))
+         ctx)})))
 
 (defmethod f/literal 'vase.datomic.cloud/client [_ client-config db-name]
   (->CloudConnection client-config db-name))
@@ -119,7 +120,7 @@
 (defmethod f/literal 'vase.datomic.cloud/tx         [_ & assertions] (->CloudTx assertions))
 (defmethod f/literal 'vase.datomic.cloud/attributes [_ & attributes] (->CloudTx (literals/schema-tx attributes)))
 
-;; Preload inteceptors available to all
+;; Preload interceptors available to all
 (def stock-interceptor-syms
   '[io.pedestal.http/log-request
     io.pedestal.http/not-found
