@@ -22,15 +22,15 @@
                  ;; Cleanup
                  [commons-codec "1.11"]
                  [cheshire "5.8.0"]]
-  :main          com.cognitect.vase.main
-  :pedantic? :warn
-  :uberjar-name "vase-standalone.jar"
-  :plugins [[camechis/deploy-uberjar "0.3.0"]]
-  :jvm-opts ~(let [version     (System/getProperty "java.version")
-                   [major _ _] (clojure.string/split version #"\.")]
-               (if (>= (java.lang.Integer/parseInt major) 9)
-                 ["--add-modules" "java.xml.bind"]
-                 []))
+  :main          ^:skip-aot com.cognitect.vase.main
+  :pedantic?     :warn
+  :uberjar-name  "vase-standalone.jar"
+  :plugins       []
+  :jvm-opts      ~(let [version     (System/getProperty "java.version")
+                        [major _ _] (clojure.string/split version #"\.")]
+                    (if (>= (java.lang.Integer/parseInt major) 9)
+                      ["--add-modules" "java.xml.bind"]
+                      []))
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
              :dev {:aliases {"crepl" ["trampoline" "run" "-m" "clojure.main/main"]
