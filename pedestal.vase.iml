@@ -5,12 +5,12 @@
     <output-test url="file://$MODULE_DIR$/target/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/dev-resources" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/dev" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/config" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/config" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dev-resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dev" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
@@ -19,7 +19,6 @@
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-classic:1.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-core:1.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: cheshire:5.8.0" level="project" />
-    <orderEntry type="library" name="Leiningen: cider/cider-nrepl:0.17.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Leiningen: clj-time:0.11.0" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: com.amazonaws/aws-java-sdk-core:1.11.210" level="project" />
@@ -68,6 +67,7 @@
     <orderEntry type="library" name="Leiningen: io.pedestal/pedestal.jetty:0.5.4" level="project" />
     <orderEntry type="library" name="Leiningen: io.pedestal/pedestal.log:0.5.4" level="project" />
     <orderEntry type="library" name="Leiningen: io.pedestal/pedestal.route:0.5.4" level="project" />
+    <orderEntry type="library" name="Leiningen: io.pedestal/pedestal.service-tools:0.5.4" level="project" />
     <orderEntry type="library" name="Leiningen: io.pedestal/pedestal.service:0.5.4" level="project" />
     <orderEntry type="library" name="Leiningen: io.rkn/conformity:0.5.1" level="project" />
     <orderEntry type="library" name="Leiningen: javax.servlet/javax.servlet-api:3.1.0" level="project" />
@@ -75,6 +75,7 @@
     <orderEntry type="library" name="Leiningen: joda-time:2.8.1" level="project" />
     <orderEntry type="library" name="Leiningen: mvxcvi/arrangement:1.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: mvxcvi/puget:1.0.1" level="project" />
+    <orderEntry type="library" name="Leiningen: ns-tracker:0.3.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.activemq/artemis-commons:1.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.activemq/artemis-core-client:1.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.geronimo.specs/geronimo-json_1.0_spec:1.0-alpha-1" level="project" />
@@ -91,7 +92,9 @@
     <orderEntry type="library" name="Leiningen: org.clojure/core.memoize:0.5.9" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.rrb-vector:0.0.11" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.specs.alpha:0.1.24" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/data.codec:0.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.priority-map:0.0.7" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/data.xml:0.2.0-alpha5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/java.classpath:0.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/spec.alpha:0.1.143" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/test.check:0.9.0" level="project" />
