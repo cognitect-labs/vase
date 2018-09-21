@@ -2,8 +2,6 @@ version: 2
 
 jobs:
   build:
-    java:
-      version: openjdk8
     docker:
       - image: circleci/clojure:lein-2.7.1
     environment:
