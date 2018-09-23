@@ -119,6 +119,8 @@
 (defmethod f/literal 'vase.datomic.cloud/attributes [_ ])
 (defmethod f/literal 'vase.datomic.cloud/tx         [_ & assertions] (->CloudTx assertions))
 (defmethod f/literal 'vase.datomic.cloud/attributes [_ & attributes] (->CloudTx (literals/schema-tx attributes)))
+(defmethod f/literal 'vase.datomic.cloud/transact   [_ d] (actions/map->TransactAction (assoc (with-name d) :cloud? true)))
+(defmethod f/literal 'vase.datomic.cloud/query      [_ d] (actions/map->QueryAction (assoc (with-name d) :cloud? true)))
 
 ;; Preload interceptors available to all
 (def stock-interceptor-syms

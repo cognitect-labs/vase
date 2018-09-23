@@ -81,6 +81,12 @@ sample.
 | vase.datomic/transact | Define an interceptor with the Datomic transaction action. |
 | vase.datomic/attributes | Define an interceptor that creates Datomic schema from short vector form. |
 | vase.datomic/tx | Define an interceptor that executes an arbitrary Datomic transaction. |
+| vase.datomic.cloud/connect | Connect to a Datomic Cloud database _and_ act as an interceptor to attach the connection to a request. |
+| vase.datomic.cloud/query | Define an interceptor to query a Datomic Cloud database. |
+| vase.datomic.cloud/transact | Define an interceptor to transact request bodies as Datomic Cloud entities. |
+| vase.datomic.cloud/attributes | Defing an interceptor that creates Datomic Cloud schema from short vector form. |
+| vase.datomic.cloud/tx | Define an interceptor that executes an arbitrary Datomic Cloud transaction. |
+
 
 # `:on-request` and `:on-startup`
 
@@ -156,6 +162,8 @@ that the old `#vase/schema-tx` reader literal used. The format is this:
 
 Multiple flags are allowed. Add as many as you like before the
 mandatory docstring.
+
+Both `vase.datomic/attributes` and `vase.datomic/tx` have exact matches in `vase.datomic.cloud/attributes` and `vase.datomic.cloud/tx`. The cloud versions work exactly the same way as the On-Prem versions.
 
 # Adding Your Own Literals
 

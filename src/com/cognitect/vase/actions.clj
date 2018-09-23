@@ -71,10 +71,7 @@
   [entity-data]
   (cond-> entity-data
     (vector? (:db/id entity-data))
-    (assoc :db/id (process-lookup-ref (:db/id entity-data)))
-
-    (nil? (:db/id entity-data))
-    (assoc :db/id (d/tempid :db.part/user))))
+    (assoc :db/id (process-lookup-ref (:db/id entity-data)))))
 
 (defn process-assert
   [args]
