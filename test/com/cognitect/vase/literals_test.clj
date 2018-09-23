@@ -82,9 +82,6 @@
   (is (= (actions/process-id {:db/id 1})
          {:db/id 1}))
 
-  (is (= (:part (:db/id (actions/process-id {})))
-         :db.part/user))
-
   (is (= (actions/process-id {:db/id ["user/age" 42]})
          {:db/id [:user/age 42]})))
 
