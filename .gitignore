@@ -50,6 +50,7 @@ Gemfile.lock
 .project
 */.settings
 .settings
+*.iml
 
 # OS X
 .DS_Store
