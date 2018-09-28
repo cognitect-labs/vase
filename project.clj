@@ -22,9 +22,6 @@
 
                  [com.cognitect/fern "0.1.3"]
 
-                 ;; Nice errors
-                 [expound "0.3.1"]
-
                  ;; Cleanup
                  [commons-codec "1.11"]
                  [cheshire "5.8.0"]]
