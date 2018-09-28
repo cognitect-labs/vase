@@ -98,23 +98,6 @@
   (let [{:keys [path-params params json-params edn-params]} request]
     (merge (if (empty? path-params) {} (decode-map path-params)) params json-params edn-params)))
 
-(def eav (juxt :e :a :v))
-
-(defn apply-tx
-  [conn tx-data args]
-  {:whitelist
-   args
-
-   :transaction
-   (map eav (:tx-data (deref (d/transact conn tx-data))))})
-
-(defn apply-tx-cloud
-  [conn tx-data args]
-  {:whitelist
-   args
-
-   :transaction
-   (map eav (:tx-data (client/transact conn {:tx-data tx-data})))})
 
 ;; Building Interceptors
 ;;
@@ -307,19 +290,25 @@
 (defn hash-set? [x]
   (instance? java.util.HashSet x))
 
-(defn- query-call-expr
-  [cloud? dbform query paramssym]
-  (if cloud?
-    `(apply client/q '~query ~dbform ~paramssym)
-    `(apply d/q '~query ~dbform ~paramssym)))
+(defprotocol DatomicCodeGen
+  (query-expr [this] "Return the correct code for issuing a query to this backend.")
+  (transact-expr [this] "Return the correct code for running a transaction on this backend."))
+
+(declare apply-tx apply-tx-cloud)
+
+(defn peer-code-gen []
+  (reify DatomicCodeGen
+    (query-expr [this] `d/q)
+    (transact-expr [this] `apply-tx)))
+
+(defn- cloud-code-gen []
+  (reify DatomicCodeGen
+    (query-expr [this] `client/q)
+    (transact-expr [this] `apply-tx-cloud)))
 
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
   Datomic query.
-
-  `cloud?`, when truthy, indicates the generated code should be for
-  the Datomic Client API and Cloud. Otherwise, will be for Datomic Pro
-  and the Peer library.
 
   `query` holds a query expression in any supported Datomic
   format. Required.
@@ -341,7 +330,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [cloud? query variables coercions constants headers to]
+  [code-gen query variables coercions constants headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [args-sym  (gensym 'args)
         to        (or to ::query-data)
@@ -359,7 +348,7 @@
                               variables)
              ~'query-params (concat vals# ~constants)
              query-result#  (when (every? some? ~'query-params)
-                              ~(query-call-expr cloud? `(:db ~'request) query 'query-params))
+                              (apply ~(query-expr code-gen) ~(list `quote query) (:db ~'request) ~'query-params))
              missing-params?# (not (every? some? ~'query-params))
              ~'response-body (cond
                               missing-params?#          (str
@@ -382,7 +371,7 @@
 
   (clojure.pprint/pprint
     (query-action-exprs
-      true
+      (peer-code-gen)
       '[:find ?e
         :in $ ?someone ?fogus
         :where
@@ -395,7 +384,8 @@
       nil))
 
 
-  (eval  (query-action-exprs true
+  (eval  (query-action-exprs
+           (peer-code-gen)
            '[:find ?e
              :in $ ?someone ?fogus
              :where
@@ -409,27 +399,55 @@
            nil))
   )
 
-(defrecord QueryAction [cloud? name params query edn-coerce constants headers to doc]
+(defrecord QueryAction [name params query edn-coerce constants headers to doc]
   i/IntoInterceptor
-  (-interceptor [_]
+  (-interceptor [this]
     (dynamic-interceptor
      name
      {:enter
-      (query-action-exprs cloud? query params (into #{} edn-coerce) constants headers to)
+      (query-action-exprs (peer-code-gen) query params (into #{} edn-coerce) constants headers to)
 
       :action-literal
-      :vase/query})))
+      :vase.datomic/query})))
 
 (defmethod print-method QueryAction [t ^java.io.Writer w]
-  (.write w (str "#vase/query" (into {} t))))
+  (.write w (str "#vase.datomic/query" (into {} t))))
+
+(defrecord CloudQueryAction [name params query edn-coerce constants headers to doc]
+  i/IntoInterceptor
+  (-interceptor [this]
+    (dynamic-interceptor
+     name
+     {:enter
+      (query-action-exprs (cloud-code-gen) query params (into #{} edn-coerce) constants headers to)
+
+      :action-literal
+      :vase.datomic.cloud/query})))
+
+(defmethod print-method CloudQueryAction [t ^java.io.Writer w]
+  (.write w (str "#vase.datomic.cloud/query" (into {} t))))
+
+(def eav (juxt :e :a :v))
+
+(defn apply-tx
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (map eav (:tx-data (deref (d/transact conn tx-data))))})
+
+(defn apply-tx-cloud
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (map eav (:tx-data (client/transact conn {:tx-data tx-data})))})
 
 (defn transact-action-exprs
   "Return code for a Pedestal context function that executes a
   transaction.
-
-  `cloud?`, when truthy, indicates the generated code should be for
-  the Datomic Client API and Cloud. Otherwise, will be for Datomic Pro
-  and the Peer library.
 
   `properties` is a collection of keywords that name Datomic
   attributes. When an HTTP request arrives, these keywords are matched
@@ -441,7 +459,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [cloud? properties db-op headers to]
+  [code-gen properties db-op headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [to (or to ::transact-data)]
     `(fn [{~'request :request :as ~'context}]
@@ -451,7 +469,7 @@
                              (get-in ~'request [:json-params :payload]))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)
-             ~'response-body (~(if cloud? `apply-tx-cloud `apply-tx)
+             ~'response-body (~(transact-expr code-gen)
                              conn#
                              tx-data#
                              args#)
@@ -465,19 +483,33 @@
              ~(assoc-or-assoc-in 'context to 'response-body)
              [:request :db] (d/db conn#)))))))
 
-(defrecord TransactAction [cloud? name properties db-op headers to doc]
+(defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
   (-interceptor [_]
     (dynamic-interceptor
      name
      {:enter
-      (transact-action-exprs cloud? properties db-op headers to)
+      (transact-action-exprs (peer-code-gen) properties db-op headers to)
 
       :action-literal
-      :vase/transact})))
+      :vase.datomic/transact})))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
-  (.write w (str "#vase/transact" (into {} t))))
+  (.write w (str "#vase.datomic/transact" (into {} t))))
+
+(defrecord CloudTransactAction [name properties db-op headers to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (dynamic-interceptor
+     name
+     {:enter
+      (transact-action-exprs (cloud-code-gen) properties db-op headers to)
+
+      :action-literal
+      :vase.datomic.cloud/transact})))
+
+(defmethod print-method CloudTransactAction [t ^java.io.Writer w]
+  (.write w (str "#vase.datomic.cloud/transact" (into {} t))))
 
 (defn- handle-intercept-option [x]
   (cond

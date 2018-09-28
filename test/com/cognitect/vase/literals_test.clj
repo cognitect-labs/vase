@@ -106,8 +106,10 @@
       "#vase/respond"  (lit/respond  {:name :responder})
       "#vase/redirect" (lit/redirect {:name :redirect :url ""})
       "#vase/validate" (lit/validate {:name :validate})
-      "#vase/query"    (lit/query    {:name :query :query []})
-      "#vase/transact" (lit/transact {:name :transact})
+      "#vase.datomic/query"    (lit/query    {:name :query :query []})
+      "#vase.datomic.cloud/query" (lit/query-cloud {:name :query :query []})
+      "#vase.datomic/transact" (lit/transact {:name :transact})
+      "#vase.datomic.cloud/transact" (lit/transact-cloud {:name :tr})
       "#vase/conform"  (lit/conform  {:name :conform})))
 
   (testing "actions round-trip through the reader"
@@ -116,7 +118,9 @@
       (lit/redirect {:name :redirect :url ""})
       (lit/validate {:name :validate})
       (lit/query    {:name :query :query []})
+      (lit/query-cloud {:name :query-cloud :query []})
       (lit/transact {:name :transact})
+      (lit/transact-cloud {:name :transact-cloud})
       (lit/conform  {:name :conform :from :from-key})))
 
   (testing "literals create IntoInterceptor values"
@@ -124,6 +128,8 @@
       "#vase/respond{:name :a}"
       "#vase/redirect{:name :b :url \"http://www.example.com\"}"
       "#vase/validate{:name :c}"
-      "#vase/query{:name :d :query []}"
-      "#vase/transact{:name :e}"
-      "#vase/conform{}")))
+      "#vase/conform{}"
+      "#vase.datomic/query{:name :d :query []}"
+      "#vase.datomic/transact{:name :e}"
+      "#vase.datomic.cloud/query{:name :d :query []}"
+      "#vase.datomic.cloud/transact{:name :e}")))

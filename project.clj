@@ -38,7 +38,7 @@
                     (if (>= (java.lang.Integer/parseInt major) 9)
                       ["--add-modules" "java.xml.bind"]
                       []))
-  :test-selectors {:default (complement :cloud)
+  :test-selectors {:default (complement :integration)
                    :cloud   :integration
                    :all     (constantly true)}
 
