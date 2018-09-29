@@ -20,7 +20,11 @@
                  [org.eclipse.jetty/jetty-util "9.4.10.v20180503"]
                  [org.eclipse.jetty/jetty-client "9.4.10.v20180503"]
 
-                 [com.cognitect/fern "0.1.3"]
+                 ;; Configuration
+                 [com.cognitect/fern "0.1.5"]
+
+                 ;; Replace Java EE module for JDK 11
+                 [javax.xml.bind/jaxb-api "2.3.0"]
 
                  ;; Cleanup
                  [commons-codec "1.11"]
@@ -32,7 +36,7 @@
   :plugins       []
   :jvm-opts      ~(let [version     (System/getProperty "java.version")
                         [major _ _] (clojure.string/split version #"\.")]
-                    (if (>= (java.lang.Integer/parseInt major) 9)
+                    (if (<= 9 (java.lang.Integer/parseInt major) 10)
                       ["--add-modules" "java.xml.bind"]
                       []))
   :test-selectors {:default (complement :integration)
