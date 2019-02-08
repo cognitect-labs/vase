@@ -32,6 +32,7 @@
   (:require [clojure.walk :as walk]
             [clojure.spec.alpha :as s]
             [datomic.api :as d]
+            [datomic.client.api :as client]
             [io.pedestal.interceptor :as i]
             [com.cognitect.vase.edn :as edn]
             [com.cognitect.vase.util :as util]
@@ -70,10 +71,7 @@
   [entity-data]
   (cond-> entity-data
     (vector? (:db/id entity-data))
-    (assoc :db/id (process-lookup-ref (:db/id entity-data)))
-
-    (nil? (:db/id entity-data))
-    (assoc :db/id (d/tempid :db.part/user))))
+    (assoc :db/id (process-lookup-ref (:db/id entity-data)))))
 
 (defn process-assert
   [args]
@@ -100,19 +98,6 @@
   (let [{:keys [path-params params json-params edn-params]} request]
     (merge (if (empty? path-params) {} (decode-map path-params)) params json-params edn-params)))
 
-(def eav (juxt :e :a :v))
-
-(defn apply-tx
-  [conn tx-data args]
-  {:whitelist
-   args
-
-   :transaction
-   (->> tx-data
-        (d/transact conn)
-        deref
-        :tx-data
-        (map eav))})
 
 ;; Building Interceptors
 ;;
@@ -253,21 +238,33 @@
 (defmethod print-method ValidateAction [t ^java.io.Writer w]
   (.write w (str "#vase/validate" (into {} t))))
 
+(defn- get-or-get-in
+  [mapsym wheresym]
+  (list (if (vector? wheresym) `get-in `get)
+    mapsym wheresym))
+
+(defn- assoc-or-assoc-in
+  [mapsym wheresym valsym]
+  (list (if (vector? wheresym) `assoc-in `assoc)
+    mapsym wheresym valsym))
+
 (defn conform-action-exprs
   "Return code for a Pedestal interceptor function that performs
   spec validation on the data attached at `from`. If the data
   does not conform, the explain-data will be attached at `explain-to`"
   [from spec to explain-to]
-  (let [explain-to (or explain-to ::explain-data)]
+  (let [explain-to            (or explain-to ::explain-data)
+        get-clause            (get-or-get-in     'context from)
+        assoc-data-clause     (assoc-or-assoc-in 'context to 'conformed)
+        assoc-problems-clause (assoc-or-assoc-in 'context explain-to
+                                `(clojure.spec.alpha/explain-data ~spec ~'val))]
     `(fn [{~'request :request :as ~'context}]
-       (let [val#           (get ~'context ~from)
-             conformed#     (clojure.spec.alpha/conform ~spec val#)
-             problems#      (when (= :clojure.spec.alpha/invalid conformed#)
-                              (clojure.spec.alpha/explain-data ~spec val#))
-             ctx# (assoc ~'context ~to conformed#)]
-         (if problems#
-           (assoc ctx# ~explain-to problems#)
-           ctx#)))))
+       (let [~'val        ~get-clause
+             ~'conformed (clojure.spec.alpha/conform ~spec ~'val)
+             ~'context   ~assoc-data-clause]
+         (if (clojure.spec.alpha/invalid? ~'conformed)
+           ~assoc-problems-clause
+           ~'context)))))
 
 (defrecord ConformAction [name from spec to explain-to doc]
   i/IntoInterceptor
@@ -284,8 +281,30 @@
   (.write w (str "#vase/conform" (into {} t))))
 
 
+(comment
+
+  (conform-action-exprs [:context :request :param] :specname :to :explain-to)
+
+  )
+
 (defn hash-set? [x]
   (instance? java.util.HashSet x))
+
+(defprotocol DatomicCodeGen
+  (query-expr [this] "Return the correct code for issuing a query to this backend.")
+  (transact-expr [this] "Return the correct code for running a transaction on this backend."))
+
+(declare apply-tx apply-tx-cloud)
+
+(defn peer-code-gen []
+  (reify DatomicCodeGen
+    (query-expr [this] `d/q)
+    (transact-expr [this] `apply-tx)))
+
+(defn- cloud-code-gen []
+  (reify DatomicCodeGen
+    (query-expr [this] `client/q)
+    (transact-expr [this] `apply-tx-cloud)))
 
 (defn query-action-exprs
   "Return code for a Pedestal interceptor function that performs a
@@ -311,7 +330,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [query variables coercions constants headers to]
+  [code-gen query variables coercions constants headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [args-sym  (gensym 'args)
         to        (or to ::query-data)
@@ -327,12 +346,11 @@
                                       `(coerce-arg-val ~args-sym ~k ~default-v)
                                       `(get ~args-sym ~k ~default-v))))
                               variables)
-             db#            (:db ~'request)
-             query-params# (concat vals# ~constants)
-             query-result#  (when (every? some? query-params#)
-                              (apply d/q '~query db# query-params#))
-             missing-params?# (not (every? some? query-params#))
-             response-body# (cond
+             ~'query-params (concat vals# ~constants)
+             query-result#  (when (every? some? ~'query-params)
+                              (apply ~(query-expr code-gen) ~(list `quote query) (:db ~'request) ~'query-params))
+             missing-params?# (not (every? some? ~'query-params))
+             ~'response-body (cond
                               missing-params?#          (str
                                                          "Missing required query parameters; One or more parameters was `nil`."
                                                          "  Got: " (keys ~args-sym)
@@ -340,42 +358,92 @@
                               (hash-set? query-result#) (into [] query-result#)
                               :else                     query-result#)
              resp#          (response/response
-                             response-body#
+                             ~'response-body
                              ~headers
                              (if query-result#
-                               (response/status-code response-body# (:errors ~'context))
+                               (response/status-code ~'response-body (:errors ~'context))
                                400))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
-           (assoc ~'context ~to response-body#))))))
+           ~(assoc-or-assoc-in 'context to 'response-body))))))
 
 (comment
+
   (clojure.pprint/pprint
-    (query-action-exprs '[:find ?e
-                          :in $ ?someone ?fogus
-                          :where
-                          [(list ?someone ?fogus) [?emails ...]]
-                          [?e :user/userEmail ?emails]]
-                        '[[selector [*]]
-                          someone]
-                        '[selector]
-                        ["mefogus@gmail.com"]
-                        {}))
+    (query-action-exprs
+      (peer-code-gen)
+      '[:find ?e
+        :in $ ?someone ?fogus
+        :where
+        [(list ?someone ?fogus) [?emails ...]]
+        [?e :user/userEmail ?emails]]
+      '[[selector [*]]  someone]
+      '[selector]
+      ["mefogus@gmail.com"]
+      {}
+      nil))
+
+
+  (eval  (query-action-exprs
+           (peer-code-gen)
+           '[:find ?e
+             :in $ ?someone ?fogus
+             :where
+             [(list ?someone ?fogus) [?emails ...]]
+             [?e :user/userEmail ?emails]]
+           '[[selector [*]]
+             someone]
+           '[selector]
+           ["mefogus@gmail.com"]
+           {}
+           nil))
   )
 
 (defrecord QueryAction [name params query edn-coerce constants headers to doc]
   i/IntoInterceptor
-  (-interceptor [_]
+  (-interceptor [this]
     (dynamic-interceptor
      name
      {:enter
-      (query-action-exprs query params (into #{} edn-coerce) constants headers to)
+      (query-action-exprs (peer-code-gen) query params (into #{} edn-coerce) constants headers to)
 
       :action-literal
-      :vase/query})))
+      :vase.datomic/query})))
 
 (defmethod print-method QueryAction [t ^java.io.Writer w]
-  (.write w (str "#vase/query" (into {} t))))
+  (.write w (str "#vase.datomic/query" (into {} t))))
+
+(defrecord CloudQueryAction [name params query edn-coerce constants headers to doc]
+  i/IntoInterceptor
+  (-interceptor [this]
+    (dynamic-interceptor
+     name
+     {:enter
+      (query-action-exprs (cloud-code-gen) query params (into #{} edn-coerce) constants headers to)
+
+      :action-literal
+      :vase.datomic.cloud/query})))
+
+(defmethod print-method CloudQueryAction [t ^java.io.Writer w]
+  (.write w (str "#vase.datomic.cloud/query" (into {} t))))
+
+(def eav (juxt :e :a :v))
+
+(defn apply-tx
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (map eav (:tx-data (deref (d/transact conn tx-data))))})
+
+(defn apply-tx-cloud
+  [conn tx-data args]
+  {:whitelist
+   args
+
+   :transaction
+   (map eav (:tx-data (client/transact conn {:tx-data tx-data})))})
 
 (defn transact-action-exprs
   "Return code for a Pedestal context function that executes a
@@ -391,7 +459,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [properties db-op headers to]
+  [code-gen properties db-op headers to]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [to (or to ::transact-data)]
     `(fn [{~'request :request :as ~'context}]
@@ -401,19 +469,19 @@
                              (get-in ~'request [:json-params :payload]))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)
-             response-body# (apply-tx
+             ~'response-body (~(transact-expr code-gen)
                              conn#
                              tx-data#
                              args#)
              resp#          (response/response
-                             response-body#
+                             ~'response-body
                              ~headers
-                             (response/status-code response-body# (:errors ~'context)))]
+                             (response/status-code ~'response-body (:errors ~'context)))]
          (if (empty? (:io.pedestal.interceptor.chain/queue ~'context))
            (assoc ~'context :response resp#)
-           (-> ~'context
-               (assoc ~to response-body#)
-               (assoc-in [:request :db] (d/db conn#))))))))
+           (assoc-in
+             ~(assoc-or-assoc-in 'context to 'response-body)
+             [:request :db] (d/db conn#)))))))
 
 (defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
@@ -421,13 +489,27 @@
     (dynamic-interceptor
      name
      {:enter
-      (transact-action-exprs properties db-op headers to)
+      (transact-action-exprs (peer-code-gen) properties db-op headers to)
 
       :action-literal
-      :vase/transact})))
+      :vase.datomic/transact})))
 
 (defmethod print-method TransactAction [t ^java.io.Writer w]
-  (.write w (str "#vase/transact" (into {} t))))
+  (.write w (str "#vase.datomic/transact" (into {} t))))
+
+(defrecord CloudTransactAction [name properties db-op headers to doc]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (dynamic-interceptor
+     name
+     {:enter
+      (transact-action-exprs (cloud-code-gen) properties db-op headers to)
+
+      :action-literal
+      :vase.datomic.cloud/transact})))
+
+(defmethod print-method CloudTransactAction [t ^java.io.Writer w]
+  (.write w (str "#vase.datomic.cloud/transact" (into {} t))))
 
 (defn- handle-intercept-option [x]
   (cond
@@ -452,7 +534,7 @@
 (defn- attach-action-exprs
   [key val]
   `(fn [~'context]
-     (assoc ~'context ~key ~val)))
+     ~(assoc-or-assoc-in 'context key val)))
 
 (defrecord AttachAction [name key val]
   i/IntoInterceptor

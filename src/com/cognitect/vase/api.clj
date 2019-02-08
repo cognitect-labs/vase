@@ -2,7 +2,6 @@
   "Public functions for submitting a data structure to Vase and
   getting back routes, specs, and even a whole Pedestal service map."
   (:require [clojure.spec.alpha :as s]
-            [expound.alpha :as expound]
             [clojure.string :as str]
             [io.pedestal.http :as http]
             [io.pedestal.interceptor :as i]
@@ -15,10 +14,12 @@
 
 (s/def ::interceptor  interceptor?)
 (s/def ::interceptors (s/coll-of ::interceptor :min-count 1))
+(s/def ::route-name   keyword?)
 (s/def ::route        (s/cat :path ::path
                              :verb #{:get :put :post :delete :head :options :patch}
                              :interceptors (s/or :single ::interceptor
-                                                 :vector ::interceptors)))
+                                             :vector ::interceptors)
+                             :route-name (s/? ::route-name)))
 (s/def ::routes       (s/coll-of ::route :min-count 1))
 (s/def ::on-startup   (s/nilable ::interceptors))
 (s/def ::on-request   (s/nilable ::interceptors))
@@ -32,8 +33,6 @@
   (let [s (str base path)]
     (str/replace s #"//" "/")))
 
-;; TODO - coll? returns true on records. We need to be more specific
-;; about whether we have one thing or several
 (defn- base-interceptors
   [on-request {:keys [interceptors]}]
   (let [[one-or-many intc] interceptors]
@@ -44,13 +43,15 @@
 (defn- routes-for-api
   [api]
   (let [base   (:path api "/")
-        on-req (:on-request api [])]
+        on-req (or (:on-request api) [])]
     (mapv
-     (fn [route]
-       [(base-route base route)
-        (:verb route)
-        (base-interceptors on-req route)])
-     (:routes api #{}))))
+      (fn [route]
+        (cond-> [(base-route base route)
+                 (:verb route)
+                 (base-interceptors on-req route)]
+          (some? (:route-name route))
+          (into [:route-name (:route-name route)])))
+      (:routes api #{}))))
 
 (defn- collect-routes
   [spec]
@@ -89,13 +90,13 @@
   ([spec starter-map]
    (let [conformed (s/conform ::service spec)]
      (if (s/invalid? conformed)
-       (throw (ex-info (str "Can't create service map.\n" (expound/expound-str ::service spec)) {}))
+       (throw (ex-info (str "Can't create service map.\n" (s/explain ::service spec)) {}))
        (-> starter-map
            (merge (:service-map conformed))
            (add-routes (collect-routes conformed))
            (add-startups (collect-startups conformed)))))))
 
-(defn- execute-startups
+(defn execute-startups
   [service-map]
   (let [startups (map i/-interceptor (get service-map ::startups []))]
     (chain/execute service-map startups)))

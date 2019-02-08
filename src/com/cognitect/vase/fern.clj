@@ -12,6 +12,7 @@
             [com.cognitect.vase.actions :as actions]
             [io.pedestal.interceptor :as i]
             [datomic.api :as d]
+            [datomic.client.api :as client]
             [com.cognitect.vase.literals :as literals]
             [io.pedestal.log :as log])
   (:import [clojure.lang IObj]))
@@ -48,6 +49,7 @@
 (defmethod f/literal 'vase/conform  [_ d] (actions/map->ConformAction (with-name d)))
 (defmethod f/literal 'vase/validate [_ d] (actions/map->ValidateAction (with-name d)))
 (defmethod f/literal 'vase/attach   [_ key val] (actions/map->AttachAction (with-name {:key key :val val})))
+(defmethod f/literal 'vase/intercept [_ d] (actions/map->InterceptAction (with-name d)))
 
 (defrecord Tx         [assertions]
   i/IntoInterceptor
@@ -85,7 +87,42 @@
     (map->Connection uri-or-map)
     (map->Connection {:uri uri-or-map :allow-create? true})))
 
-;; Preload inteceptors available to all
+(defrecord CloudConnection [client-config db-name]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (let [client (client/client client-config)
+          _      (client/create-database client {:db-name db-name})
+          cxn    (client/connect client {:db-name db-name})]
+      (i/map->Interceptor
+        {:enter
+         (fn [ctx]
+           (update ctx :request assoc
+             :client client
+             :conn   cxn
+             :db     (client/db cxn)))}))))
+
+(defrecord CloudTx [assertions]
+  i/IntoInterceptor
+  (-interceptor [_]
+    (i/map->Interceptor
+      {:enter
+       (fn [ctx]
+         (if-let [conn (-> ctx :request :conn)]
+           (let [tx-result (client/transact conn {:tx-data assertions})]
+             (log/info :tx-result tx-result))
+           (log/warn :msg "Cannot execute Tx" :reason :no-connection))
+         ctx)})))
+
+(defmethod f/literal 'vase.datomic.cloud/client [_ client-config db-name]
+  (->CloudConnection client-config db-name))
+
+(defmethod f/literal 'vase.datomic.cloud/attributes [_ ])
+(defmethod f/literal 'vase.datomic.cloud/tx         [_ & assertions] (->CloudTx assertions))
+(defmethod f/literal 'vase.datomic.cloud/attributes [_ & attributes] (->CloudTx (literals/schema-tx attributes)))
+(defmethod f/literal 'vase.datomic.cloud/transact   [_ d] (actions/map->CloudTransactAction (assoc (with-name d) :cloud? true)))
+(defmethod f/literal 'vase.datomic.cloud/query      [_ d] (actions/map->CloudQueryAction (assoc (with-name d) :cloud? true)))
+
+;; Preload interceptors available to all
 (def stock-interceptor-syms
   '[io.pedestal.http/log-request
     io.pedestal.http/not-found
@@ -119,7 +156,8 @@
 
 (defn- constructed-stock-interceptors
   []
-  {'io.pedestal.http.ring-middlewares/session (ring-middlewares/session)})
+  {'io.pedestal.http.ring-middlewares/session (ring-middlewares/session)
+   'io.pedestal.http.body-params/body-params (io.pedestal.http.body-params/body-params)})
 
 (defn stock-interceptors
   []

@@ -66,7 +66,8 @@ the context.
 
 ## #vase/query
 
-Run a datalog query and return the results as JSON
+Run a datalog query using the [Datomic API](https://docs.datomic.com/on-prem/clojure/index.html)
+and return the results as JSON.
 
 | Param       | Meaning                                                                                                           |
 |-------------|------------------------------------------------------------------------------------------------------------------ |
@@ -83,11 +84,20 @@ If this is the last interceptor in the chain, it generates a response.
 If this is not the last interceptor in the chain, it attaches the
 query results to the context map at the `:to` key
 
+## #vase.datomic/query
+
+Same as `#vase/query`.
+
+## #vase.datomic.cloud/query
+
+Like `#vase.datomic/query` but runs a datalog query using the [Datomic Cloud Client API](https://docs.datomic.com/client-api/datomic.client.api.html).
+
+
 ## #vase/transact
 
-Execute a Datomic transaction. Return the results (the tx-result) as
-JSON. The new database value will be used for any subsequent datalog
-queries.
+Execute a Datomic transaction [DatomicAPI](https://docs.datomic.com/on-prem/clojure/index.html).
+Return the results (the tx-result) as JSON. The new database value
+will be used for any subsequent datalog queries.
 
 | Param       | Meaning                                                                                                                    |
 |-------------|--------------------------------------------------------------------------------------------------------------------------- |
@@ -101,6 +111,14 @@ If this is the last interceptor in the chain, it generates a response.
 
 If this is not the last interceptor in the chain, it attaches the
 transaction result to the context map at the `:to` key.
+
+## #vase.datomic/transact
+
+Same as `#vase/transact`.
+
+## #vase.datomic.cloud/transact
+
+Like `#vase.datomic/transact` but runs a Datomic transaction using the [Datomic Client API](https://docs.datomic.com/client-api/datomic.client.api.html).
 
 ## #vase/intercept
 

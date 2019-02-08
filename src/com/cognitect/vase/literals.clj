@@ -46,11 +46,9 @@
             (str "Short schema toggles must be taken from " accepted-schema-toggles) opt-toggles)
     (schema-assert (contains? accepted-kinds kind) (str "The value type must be one of " accepted-kinds) kind)
     (schema-assert (contains? accepted-cards card) (str "The cardinality must be one of " accepted-cards) card)
-    (merge {:db/id                 (d/tempid :db.part/db)
-            :db/ident              ident
+    (merge {:db/ident              ident
             :db/valueType          (keyword "db.type" (name kind))
             :db/cardinality        (keyword "db.cardinality" (name card))
-            :db.install/_attribute :db.part/db
             :db/doc                doc-string}
            (reduce (fn [m opt]
                      (merge m (case opt
@@ -96,6 +94,9 @@
   {:pre [(map? form)]}
   (actions/map->ConformAction form))
 
+(defn- for-cloud [a]
+  (assoc a :cloud? true))
+
 (defn query [form]
   {:pre [(map? form)
          (:query form)
@@ -104,11 +105,25 @@
          (-> form :name keyword?)]}
   (actions/map->QueryAction form))
 
+(defn query-cloud [form]
+  {:pre [(map? form)
+         (:query form)
+         (-> form :query vector?)
+         (:name form)
+         (-> form :name keyword?)]}
+  (actions/map->CloudQueryAction form))
+
 (defn transact [form]
   {:pre [(map? form)
          (:name form)
          (-> form :name keyword?)]}
   (actions/map->TransactAction (merge {:db-op :vase/assert-entity} form)))
+
+(defn transact-cloud [form]
+  {:pre [(map? form)
+         (:name form)
+         (-> form :name keyword?)]}
+  (actions/map->CloudTransactAction (merge {:db-op :vase/assert-entity} form)))
 
 (defn intercept [form]
   {:pre [(map? form)

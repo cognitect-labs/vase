@@ -6,30 +6,43 @@
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5697" :exclusions [[org.slf4j/slf4j-api]
-                                                                   [org.slf4j/slf4j-nop]]]
+                                                                   [org.slf4j/slf4j-nop]
+                                                                   [org.eclipse.jetty/jetty-util]
+                                                                   [org.eclipse.jetty/jetty-client]]]
+                 [com.datomic/client-cloud "0.8.63"]
                  [io.rkn/conformity "0.5.1" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal
                  [io.pedestal/pedestal.service "0.5.4"]
                  [io.pedestal/pedestal.jetty "0.5.4"]
 
-                 [com.cognitect/fern "0.1.3"]
+                 ;; Pin Jetty versions to avoid conflict between Datomic and Pedestal
+                 [org.eclipse.jetty/jetty-util "9.4.10.v20180503"]
+                 [org.eclipse.jetty/jetty-client "9.4.10.v20180503"]
 
-                 ;; Nice errors
-                 [expound "0.3.1"]
+                 ;; Configuration
+                 [com.cognitect/fern "0.1.5"]
+
+                 ;; Replace Java EE module for JDK 11
+                 [javax.xml.bind/jaxb-api "2.3.0"]
 
                  ;; Cleanup
                  [commons-codec "1.11"]
                  [cheshire "5.8.0"]]
-  :main          com.cognitect.vase.main
-  :pedantic? :warn
-  :uberjar-name "vase-standalone.jar"
-  :plugins [[camechis/deploy-uberjar "0.3.0"]]
-  :jvm-opts ~(let [version     (System/getProperty "java.version")
-                   [major _ _] (clojure.string/split version #"\.")]
-               (if (>= (java.lang.Integer/parseInt major) 9)
-                 ["--add-modules" "java.xml.bind"]
-                 []))
+
+  :main          ^:skip-aot com.cognitect.vase.main
+  :pedantic?     :warn
+  :uberjar-name  "vase-standalone.jar"
+  :plugins       []
+  :jvm-opts      ~(let [version     (System/getProperty "java.version")
+                        [major _ _] (clojure.string/split version #"\.")]
+                    (if (<= 9 (java.lang.Integer/parseInt major) 10)
+                      ["--add-modules" "java.xml.bind"]
+                      []))
+  :test-selectors {:default (complement :integration)
+                   :cloud   :integration
+                   :all     (constantly true)}
+
   :profiles {:srepl {:jvm-opts ^:replace ["-XX:+UseG1GC"
                                           "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
              :dev {:aliases {"crepl" ["trampoline" "run" "-m" "clojure.main/main"]

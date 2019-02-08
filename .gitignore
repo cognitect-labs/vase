@@ -1,4 +1,5 @@
 # Project related
+.rebel_readline_history
 my-new-payload.edn
 data/
 /datomic/
@@ -48,6 +49,7 @@ Gemfile.lock
 .project
 */.settings
 .settings
+*.iml
 
 # OS X
 .DS_Store
