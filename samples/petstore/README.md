@@ -6,7 +6,7 @@ Vase.
 
 # Running the sample
 
-1. Start it up with `clj -m com.cognitect.vase.main petstore.fern`
+1. Start it up with `clj -Mrun`
 2. Go to [localhost:8080/index.html](http://localhost:8080/index.html)
    to see the Swagger UI.
 3. Click `default`

@@ -91,7 +91,7 @@
                 }
             },
             "delete": {
-                "description": "Deletes pets based on db/id. Post data looks like:\n\n{ \"payload\": [ { \"db/id\": [\"pet-store.pet/id\", 0] } ] }\n",
+                "description": "Deletes pets based on db/id. Post data looks like:\n\n{ \"payload\": [ { \"db/id\": [\"pet/id\", 0] } ] }\n",
                 "operationId": "deletePet",
                 "produces": [
                     "application/json"
@@ -168,14 +168,14 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "pet-store.pet/id": {
+                "pet/id": {
                     "type": "integer",
                     "format": "int64"
                 },
-                "pet-store.pet/name": {
+                "pet/name": {
                     "type": "string"
                 },
-                "pet-store.pet/tag": {
+                "pet/tag": {
                     "type": "string"
                 }
             }
@@ -188,18 +188,18 @@
                     "items": {
                         "type": "object",
                         "required": [
-                            "pet-store.pet/id",
-                            "pet-store.pet/name"
+                            "pet/id",
+                            "pet/name"
                         ],
                         "properties": {
-                            "pet-store.pet/id": {
+                            "pet/id": {
                                 "type": "integer",
                                 "format": "int64"
                             },
-                            "pet-store.pet/name": {
+                            "pet/name": {
                                 "type": "string"
                             },
-                            "pet-store.pet/tag": {
+                            "pet/tag": {
                                 "type": "string"
                             }
                         }

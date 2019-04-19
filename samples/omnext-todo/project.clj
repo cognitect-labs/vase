@@ -1,15 +1,15 @@
-(defproject omnext-todo "0.9.3-SNAPSHOT"
+(defproject omnext-todo "0.9.4-SNAPSHOT"
   :description "Vase sample application, Todo list compatible with Om.next"
   :url "https://github.com/cognitect-labs/vase/tree/master/samples/omnext-todo"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-beta3"]
-                 [io.pedestal/pedestal.service "0.5.3"]
-                 [com.cognitect/pedestal.vase "0.9.3-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.10.0"]
+                 [io.pedestal/pedestal.service "0.5.5"]
+                 [com.cognitect/pedestal.vase "0.9.3"]
 
                  ;; Remove this line and uncomment one of the next lines to
                  ;; use Immutant or Tomcat instead of Jetty:
-                 [io.pedestal/pedestal.jetty "0.5.3"]
+                 [io.pedestal/pedestal.jetty "0.5.5"]
                  ;; [io.pedestal/pedestal.immutant "0.5.3"]
                  ;; [io.pedestal/pedestal.tomcat "0.5.3"]
 
@@ -24,15 +24,15 @@
 
                  ;; Deps cleanup
                  ;;  -- Om and Pedestal
-                 [com.cognitect/transit-clj "0.8.300"]
+                 [com.cognitect/transit-clj "0.8.313"]
                  ;;  -- Vase and Pedestal
-                 [cheshire "5.8.0"]]
+                 [cheshire "5.8.1"]]
   :pedantic? :abort
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   ;; If you use HTTP/2 or ALPN, use the java-agent to pull in the correct alpn-boot dependency
   ;:java-agents [[org.mortbay.jetty.alpn/jetty-alpn-agent "2.0.3"]]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "omnext-todo.server/run-dev"]}
-                   :dependencies [[io.pedestal/pedestal.service-tools "0.5.3"]]}
+                   :dependencies [[io.pedestal/pedestal.service-tools "0.5.5"]]}
              :uberjar {:aot [omnext-todo.server]}}
   :main ^{:skip-aot true} omnext-todo.server)

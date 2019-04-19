@@ -1,7 +1,10 @@
-{:deps  {com.cognitect/pedestal.vase    {:local/root "../../"}
-         io.pedestal/pedestal.service   {:mvn/version "0.5.4"}
-         io.pedestal/pedestal.jetty     {:mvn/version "0.5.4"}
-         ch.qos.logback/logback-classic {:mvn/version "1.2.3"}
+{:deps  {com.cognitect/pedestal.vase    {:local/root "../../" :exclusions [org.slf4j/slf4j-nop]}
+         io.pedestal/pedestal.service   {:mvn/version "0.5.5"}
+         io.pedestal/pedestal.jetty     {:mvn/version "0.5.5"}
+         ch.qos.logback/logback-classic {:mvn/version "1.2.3" :exclusions [org.slf4j/slf4j-api]}
          org.slf4j/jul-to-slf4j         {:mvn/version "1.7.25"}
          org.slf4j/jcl-over-slf4j       {:mvn/version "1.7.25"}
-         org.slf4j/log4j-over-slf4j     {:mvn/version "1.7.25"}}}
+         org.slf4j/log4j-over-slf4j     {:mvn/version "1.7.25"}}
+ :paths ["src" "resources"]
+ :aliases {:run {:main-opts ["-m" "com.cognitect.vase.main" "petstore.fern"]}
+           :dev {:extra-deps {io.pedestal/pedestal.service-tools {:mvn/version "0.5.5"}}}}}

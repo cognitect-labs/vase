@@ -63,4 +63,6 @@ autodoc/
 # Builds
 out/
 
+.cpcache
+
 .kein
