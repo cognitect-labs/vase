@@ -45,7 +45,7 @@ Stable versions are currently deployed to the Clojars repository.
 [Leiningen](https://github.com/technomancy/leiningen) dependency information:
 
 ```clj
- [com.cognitect/pedestal.vase "0.9.4"]
+ [com.cognitect/pedestal.vase "0.9.3"]
 ```
 
 [Maven](http://maven.apache.org/) dependency information:
@@ -54,7 +54,7 @@ Stable versions are currently deployed to the Clojars repository.
 <dependency>
   <groupId>com.cognitect</groupId>
   <artifactId>pedestal.vase</artifactId>
-  <version>0.9.4</version>
+  <version>0.9.3</version>
 </dependency>
 ```
 
