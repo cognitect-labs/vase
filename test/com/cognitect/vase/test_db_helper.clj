@@ -61,6 +61,13 @@
      :db/doc "A short blurb about the user"
      :db/fulltext true :db/index true}
     {:db/id #db/id[:db.part/db]
+     :db/ident :user/userActive?
+     :db/valueType :db.type/boolean
+     :db/cardinality :db.cardinality/one
+     :db.install/_attribute :db.part/db
+     :db/doc "User active flag."
+     :db/index true}
+    {:db/id #db/id[:db.part/db]
      :db/ident :loanOffer/loanId
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one

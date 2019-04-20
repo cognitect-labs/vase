@@ -465,7 +465,7 @@
     `(fn [{~'request :request :as ~'context}]
        (let [;args#          (merged-parameters ~'request)
              args#          (mapv
-                             #(into {} (filter second (select-keys % ~(vec properties))))
+                             #(into {} (remove (comp nil? second) (select-keys % ~(vec properties))))
                              (get-in ~'request [:json-params :payload]))
              tx-data#       (~(tx-processor db-op) args#)
              conn#          (:conn ~'request)

@@ -137,6 +137,27 @@
       (is (found? {}
                   (:whitelist txdata-results))))))
 
+(deftest test-payload-with-booleans
+  (db-helper/with-database db-helper/query-test-txes
+    (let [action         (make-transaction [:user/userEmail :user/userActive?])
+          response       (:response (helper/run-interceptor
+                                     (with-json-payload
+                                       (context-with-db)
+                                       [{:user/userEmail "peter.weyland@wy.com"
+                                         :user/userActive? false}
+                                        {:user/userEmail   "david8@wy.com"
+                                         :user/userActive? true}])
+                                     action))
+          txdata-results (:body response)]
+      (is (map? txdata-results))
+      (is (= 2 (count (:whitelist txdata-results))))
+      (is (found? {:user/userEmail   "peter.weyland@wy.com"
+                   :user/userActive? false}
+                  (:whitelist txdata-results)))
+      (is (found? {:user/userEmail   "david8@wy.com"
+                   :user/userActive? true}
+                  (:whitelist txdata-results))))))
+
 (deftest test-headers-pass-through
   (db-helper/with-database db-helper/query-test-txes
     (let [action         (make-transaction [:user/userEmail] nil {"Extra-Header" "passed"} nil)
