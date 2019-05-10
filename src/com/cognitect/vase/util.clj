@@ -7,7 +7,7 @@
   (:import (java.io ByteArrayInputStream
                     FileInputStream
                     File)
-           (javax.xml.bind DatatypeConverter)))
+           (java.util Base64)))
 
 (defn map-vals
   [f m]
@@ -21,13 +21,13 @@
 
 (defn short-hash []
   (subs
-    (DatatypeConverter/printBase64Binary
-      (byte-array (loop [i 0
-                         ret (transient [])]
-                    (if (< i 8)
-                      (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
-                      (persistent! ret)))))
-    0 11))
+   (.encodeToString (Base64/getEncoder)
+                    (byte-array (loop [i   0
+                                       ret (transient [])]
+                                  (if (< i 8)
+                                    (recur (inc i) (conj! ret (.byteValue ^Long (long (rand 100)))))
+                                    (persistent! ret)))))
+   0 11))
 
 ;; This function is useful when writing your own action literals,
 ;; allowing you to expand symbol names within the descriptors.
