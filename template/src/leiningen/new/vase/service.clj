@@ -2,7 +2,9 @@
   (:require [com.cognitect.vase.try :as try :refer [try->]]
             [fern.easy :as fe]
             [com.cognitect.vase.fern :as fern]
-            [com.cognitect.vase.api :as a])
+            [com.cognitect.vase.api :as a]
+            [io.pedestal.http :s server]
+            [clojure.java.io :as io])
   (:gen-class))
 
 (defn run-server
@@ -19,7 +21,7 @@
          (:! Throwable t (fe/print-other-exception t filename))))
 
 (defn run-dev []
-  (run-server "{{namespace}}_service.fern") :io.pedestal.http/join? false)
+  (run-server (io/resource "{{namespace}}_service.fern") :io.pedestal.http/join? false))
 
 (def vase-fern-url "https://github.com/cognitect-labs/vase/blob/master/docs/vase_and_fern.md")
 
