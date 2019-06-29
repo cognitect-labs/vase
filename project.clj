@@ -2,32 +2,28 @@
   :description "Vase: Pedestal API Container"
   :url "https://github.com/cognitect-labs/vase"
   :dependencies [;; Platform
-                 [org.clojure/clojure "1.10.0"]
+                 [org.clojure/clojure "1.10.1"]
 
                  ;; Datomic
                  [com.datomic/datomic-free "0.9.5697" :exclusions [[org.slf4j/slf4j-api]
                                                                    [org.slf4j/slf4j-nop]
                                                                    [org.eclipse.jetty/jetty-util]
                                                                    [org.eclipse.jetty/jetty-client]]]
-                 [com.datomic/client-cloud "0.8.71" :exclusions [commons-logging]]
+                 [com.datomic/client-cloud "0.8.78" :exclusions [commons-logging]]
                  [io.rkn/conformity "0.5.1" :exclusions [com.datomic/datomic-free]]
 
                  ;; Pedestal
-                 [io.pedestal/pedestal.service "0.5.5"]
-                 [io.pedestal/pedestal.jetty "0.5.5"]
+                 [io.pedestal/pedestal.service "0.5.7"]
+                 [io.pedestal/pedestal.jetty "0.5.7"]
 
                  ;; Pin Jetty versions to avoid conflict between Datomic and Pedestal
-                 [org.eclipse.jetty/jetty-util "9.4.10.v20180503"]
-                 [org.eclipse.jetty/jetty-client "9.4.10.v20180503"]
+                 [org.eclipse.jetty/jetty-client "9.4.18.v20190429"]
 
                  ;; Pin core.async to avoid conflict between Datomic and Pedestal
-                 [org.clojure/core.async "0.4.474"]
-
-                 ;; Pin transit-clj to avoid conflict between Datomic and Pedestal
-                 [com.cognitect/transit-clj "0.8.313"]
+                 [org.clojure/core.async "0.4.490"]
 
                  ;; Pin joda-time to avoid conflict between Datomic and Pedestal
-                 [joda-time "2.8.2"]
+                 [joda-time "2.9.9"]
 
                  ;; Configuration
                  [com.cognitect/fern "0.1.5"]
@@ -61,17 +57,17 @@
                                     "resources"
                                     "test/resources"]
                    :dependencies [[org.clojure/tools.trace "0.7.10"]
-                                  [org.clojure/tools.namespace "0.3.0-alpha3" :exclusions [[org.clojure/tools.reader]]]
+                                  [org.clojure/tools.namespace "0.3.0" :exclusions [[org.clojure/tools.reader]]]
                                   [org.clojure/tools.reader "1.3.2"]
                                   [org.clojure/test.check "0.9.0"]
                                    ;; Logging
-                                  [org.slf4j/slf4j-api "1.7.25"]
+                                  [org.slf4j/slf4j-api "1.7.26"]
                                   [ch.qos.logback/logback-classic "1.2.3" :exclusions [[org.slf4j/slf4j-api]]]
-                                  [org.slf4j/jul-to-slf4j "1.7.25"]
-                                  [org.slf4j/jcl-over-slf4j "1.7.25"]
-                                  [org.slf4j/log4j-over-slf4j "1.7.25"]]}
+                                  [org.slf4j/jul-to-slf4j "1.7.26"]
+                                  [org.slf4j/jcl-over-slf4j "1.7.26"]
+                                  [org.slf4j/log4j-over-slf4j "1.7.26"]]}
              :test {:dependencies [[org.clojure/test.check "0.9.0"]
-                                   [io.pedestal/pedestal.service-tools "0.5.5" :exclusions [[org.slf4j/log4j-over-slf4j]
+                                   [io.pedestal/pedestal.service-tools "0.5.7" :exclusions [[org.slf4j/log4j-over-slf4j]
                                                                                             [org.slf4j/jul-to-slf4j]
                                                                                             [org.slf4j/jcl-over-slf4j]]]]
                     :resource-paths ["resources"
