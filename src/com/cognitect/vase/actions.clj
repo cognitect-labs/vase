@@ -459,7 +459,7 @@
 
   `headers` is an expression that evaluates to a map of header
   name (string) to header value (string). May be nil."
-  [code-gen properties db-op headers to]
+  [code-gen properties db-op headers to cloud?]
   (assert (or (nil? headers) (map? headers)) (str "Headers should be a map. I got " headers))
   (let [to (or to ::transact-data)]
     `(fn [{~'request :request :as ~'context}]
@@ -481,7 +481,7 @@
            (assoc ~'context :response resp#)
            (assoc-in
              ~(assoc-or-assoc-in 'context to 'response-body)
-             [:request :db] (d/db conn#)))))))
+             [:request :db] (if ~cloud? (client/db conn#) (d/db conn#))))))))
 
 (defrecord TransactAction [name properties db-op headers to doc]
   i/IntoInterceptor
@@ -489,7 +489,7 @@
     (dynamic-interceptor
      name
      {:enter
-      (transact-action-exprs (peer-code-gen) properties db-op headers to)
+      (transact-action-exprs (peer-code-gen) properties db-op headers to false)
 
       :action-literal
       :vase.datomic/transact})))
@@ -503,7 +503,7 @@
     (dynamic-interceptor
      name
      {:enter
-      (transact-action-exprs (cloud-code-gen) properties db-op headers to)
+      (transact-action-exprs (cloud-code-gen) properties db-op headers to true)
 
       :action-literal
       :vase.datomic.cloud/transact})))
