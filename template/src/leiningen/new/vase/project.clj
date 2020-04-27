@@ -13,6 +13,9 @@
                  ;; [io.pedestal/pedestal.immutant "0.5.4"]
                  ;; [io.pedestal/pedestal.tomcat "0.5.4"]
 
+                 ;; Add JAXB as a dependency since it was removed in JDK 11
+                 [javax.xml.bind/jaxb-api "2.3.0"]
+
                  [ch.qos.logback/logback-classic "1.2.3" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
