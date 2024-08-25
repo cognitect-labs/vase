@@ -2,8 +2,8 @@
   (:require [io.pedestal.interceptor.helpers :as helpers :refer [defon-request]]
             [io.pedestal.interceptor :as i]
             [clojure.stacktrace :as ctrace]
-            [clj-time.core :as clj-time]
-            [com.cognitect.vase.util :as util]))
+            [com.cognitect.vase.util :as util])
+  (:import (java.time Instant)))
 
 (def request-id-header "vaserequest-id")
 
@@ -11,7 +11,7 @@
   (i/-interceptor
    {:name  ::attach-received-time
     :doc   "Attaches a timestamp to every request."
-    :enter (fn [ctx] (assoc-in ctx [:request :received-time] (clj-time/now)))}))
+    :enter (fn [ctx] (assoc-in ctx [:request :received-time] (Instant/now)))}))
 
 (def attach-request-id
   (i/-interceptor

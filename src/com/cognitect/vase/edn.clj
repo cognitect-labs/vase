@@ -1,4 +1,5 @@
 (ns com.cognitect.vase.edn
+  (:refer-clojure :exclude [read])
   (:require   [clojure.edn :as edn]
               [clojure.java.io :as io]
               [clojure.string :as cstr])
