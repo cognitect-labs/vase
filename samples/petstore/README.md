@@ -24,16 +24,11 @@ Vase.
 
 # Datomic Setup
 
-This sample uses Datomic with an in-memory database. Since Vase
-already depends on "datomic-free," you don't need to add anything
-specific for the in-memory case.
+This sample uses Datomic with an in-memory database.
 
-If you want to use on-disk storage with Datomic Pro, two steps are
-needed:
-
-1. In `project.clj`, uncomment the dependency for `com.datomic/datomic-pro`
-2. Change the connection defined in `resources/petstore.fern` as
-   described in comments in that file.
+If you want to use on-disk storage with Datomic Pro, you need to
+change the connection defined in `resources/petstore.fern` as
+described in comments in that file.
 
 ```clojure
 :vase.descriptor/datomic-uri "datomic:dev://localhost:4334/pet-store"
