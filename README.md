@@ -140,8 +140,8 @@ Your path to get running depends on what you need to do:
 
 By default, Vase uses an in-memory Datomic database, using the
 [publicly available
-Datomic-free](https://clojars.org/com.datomic/datomic-free) version
-located in Clojars.
+Datomic Peer](https://central.sonatype.com/artifact/com.datomic/peer)
+located in Maven Central.
 
 ## Run Vase Standalone
 
