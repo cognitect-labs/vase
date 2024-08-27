@@ -1,12 +1,12 @@
 {:paths ["src"]
- :deps  {com.datomic/datomic-free {:mvn/version "0.9.5697"}
-         com.datomic/client-cloud {:mvn/version "0.8.63"}
+ :deps {com.datomic/peer         {:mvn/version "1.0.7187"}
+        com.datomic/client-cloud {:mvn/version "1.0.130"}
 
-         io.rkn/conformity        {:mvn/version "0.5.1"}
+        io.rkn/conformity {:mvn/version "0.5.4"}
 
-         ;; Pedestal
-         io.pedestal/pedestal.service {:mvn/version "0.5.4"}
-         io.pedestal/pedestal.jetty   {:mvn/version "0.5.4"}
+        ;; Pedestal
+        io.pedestal/pedestal.service {:mvn/version "0.6.3"}
+        io.pedestal/pedestal.jetty   {:mvn/version "0.6.3"}
 
-         com.cognitect/fern {:mvn/version "0.1.5"}}
+        com.cognitect/fern {:mvn/version "0.1.6"}}
  :aliases {:repl {:extra-paths ["test" "test/resources"]}}}
